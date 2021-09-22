@@ -1,3 +1,6 @@
+testing the bot
+
+
 # substrate-tip-bot
 
 > A GitHub App built with [Probot](https://github.com/probot/probot) that A GitHub bot to submit tips on behalf of the network.
