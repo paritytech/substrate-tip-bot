@@ -4,38 +4,47 @@
  */
 module.exports = (app) => {
   // Your code here
-  app.log.info("Yay, the app was loaded!");
+  app.log.info("Tip bot was loaded!");
 
   app.on("issue_comment", async (context) => {
+    // Get all the relevant contextual information.
     let commentText = context.payload.comment.body
-    if (
-      !context.payload.issue.hasOwnProperty("pull_request") ||
-      context.payload.action !== "created" ||
-      !commentText.startsWith("/tip")
-    ) {
-      return
-    }
-
-    //console.log(context);
-
-    let problemsText = [];
-
-    let addressRegex = /(polkadot|kusama) address:\s?([a-z0-9]+)/i
-
     let pullRequestBody = context.payload.issue.body;
     let pullRequestUrl = context.payload.issue.html_url;
     let tipper = context.payload.comment.user.login;
     let contributor = context.payload.issue.user.login;
+    let pullRequestNumber = context.payload.issue.number;
+    let pullRequestRepo = context.payload.repository.name;
+
+    // The bot only triggers on creation of a new comment on a pull request.
+    if (
+      !context.payload.issue.hasOwnProperty("pull_request") ||
+      context.payload.action !== "created" ||
+      !commentText.startsWith("/tip")
+      // TODO: check commenter is member of parity org
+    ) {
+      return
+    }
+
+    // Any problems along the way will be stored here, and used to return an error if needed.
+    let problemsText = [];
 
     if (tipper === contributor) {
       // todo undo
       //problemsText.push(`Contributor and tipper cannot be the same person!`)
     }
 
+    // TODO check contributor is NOT member of parity org (or better, not a member of the org where the repo lives)
+    // if (contributor is in github org) {
+    //   problemsText.push(`Contributor can't be a member of Parity!`)
+    // }
+
+    // We will populate this information by processing the pull request and tip comment.
     let network, address, size;
 
+    // match "polkadot address: <ADDRESS>"
+    let addressRegex = /(polkadot|kusama) address:\s?([a-z0-9]+)/i;
     let maybeMatch = pullRequestBody.match(addressRegex);
-    console.log("maybe match: ", maybeMatch);
     if (maybeMatch.length != 3) {
       problemsText.push(`Contributor did not properly post their Polkadot or Kusama address. Make sure the pull request has: "{network} address: {address}".`);
     } else {
@@ -43,16 +52,15 @@ module.exports = (app) => {
       if (network !== "polkadot" && network !== "kusama") {
         problemsText.push(`Invalid network: ${maybeMatch[1]}. Please select "polkadot" or "kusama".`);
       }
-
       address = maybeMatch[2];
     }
 
-    // text payload should be: "/tip { small / medium / large }"
+    // Tip initiation comment should be: "/tip { small / medium / large }"
     let textParts = commentText.split(" ");
-
     if (textParts.length !== 2) {
-      problemsText.push(`Invalid command! \n payload should be: /tip { small / medium / large }.`);
+      problemsText.push(`Invalid command! Payload should be: "/tip { small / medium / large }".`);
     } else {
+      // We already match `/tip` at the top of this program, so just check size.
       size = textParts[1].toLowerCase();
       if (size == "s") {
         size = "small";
@@ -61,7 +69,6 @@ module.exports = (app) => {
       } else if (size == "l") {
         size = "large";
       }
-
       if (!["small", "medium", "large"].includes(size)) {
         problemsText.push(`Invalid tip size. Please specify one of small, medium, or large.`)
       }
@@ -75,8 +82,10 @@ module.exports = (app) => {
       }
       postComment(context, comment);
     } else {
-      //postComment(context, `Valid command! \n ${tipper} wants to tip ${contributor} (${address} on ${network}) a ${size} tip for pull request ${pullRequestUrl}.`);
-      let result = await tipUser(address, contributor, network, pullRequestUrl, size);
+      console.log(`Valid command! \n ${tipper} wants to tip ${contributor} (${address} on ${network}) a ${size} tip for pull request ${pullRequestUrl}.`);
+      // Send the transaction to the network.
+      let result = await tipUser(address, contributor, network, pullRequestNumber, pullRequestRepo, size);
+      // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
       if (result) {
         postComment(context, `A ${size} tip was successfully submitted for ${contributor} (${address} on ${network}).`);
       } else {
@@ -87,6 +96,7 @@ module.exports = (app) => {
   });
 };
 
+// Simple helper function to post a comment on github.
 function postComment(context, body) {
   const issueComment = context.issue({
     body: body,
@@ -98,7 +108,7 @@ var { ApiPromise, WsProvider, Keyring } = require('@polkadot/api');
 var { cryptoWaitReady } = require('@polkadot/util-crypto');
 
 // TODO add some kind of timeout then return an error
-async function tipUser(address, contributor, network, pullRequestUrl, size) {
+async function tipUser(address, contributor, network, pullRequestNumber, pullRequestRepo, size) {
   await cryptoWaitReady();
   const keyring = new Keyring({ type: 'sr25519' });
   // Substrate node we are connected to and listening to remarks
@@ -126,7 +136,9 @@ async function tipUser(address, contributor, network, pullRequestUrl, size) {
 
   let account = keyring.addFromUri('//Alice', { name: 'Alice default' });
 
-  let reason = `TO ${contributor} (${size}): ${pullRequestUrl}`;
+  let reason = `TO: ${contributor} FOR: ${pullRequestRepo}#${pullRequestNumber} (${size})`;
+  // TODO before submitting, check tip does not already exist via a storage query.
+  // TODO potentially prevent duplicates by also checking for reasons with the other sizes.
   const unsub = await api.tx.tips.reportAwesome(reason, address)
     .signAndSend(account, (result) => {
       console.log(`Current status is ${result.status}`);
