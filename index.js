@@ -21,7 +21,6 @@ module.exports = (app) => {
       !context.payload.issue.hasOwnProperty("pull_request") ||
       context.payload.action !== "created" ||
       !commentText.startsWith("/tip")
-      // TODO: check commenter is member of parity org
     ) {
       return
     }
@@ -38,6 +37,11 @@ module.exports = (app) => {
     // if (contributor is in github org) {
     //   problemsText.push(`Contributor can't be a member of Parity!`)
     // }
+
+    // TODO temporarily, only allow whitelisted users access to the bot.
+    if (!process.env.ALLOWED_USERS.includes(tipper)) {
+      problemsText.push(`You are not allowed to access the tip bot. Only ${process.env.ALLOWED_USERS} are allowed.`)
+    }
 
     // We will populate this information by processing the pull request and tip comment.
     let network, address, size;
@@ -87,7 +91,7 @@ module.exports = (app) => {
       let result = await tipUser(address, contributor, network, pullRequestNumber, pullRequestRepo, size);
       // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
       if (result) {
-        postComment(context, `A ${size} tip was successfully submitted for ${contributor} (${address} on ${network}).`);
+        postComment(context, `A ${size} tip was successfully submitted for ${contributor} (${address} on ${network}). \n\n https://polkadot.js.org/apps/#/treasury/tips`);
       } else {
         postComment(context, `Could not submit tip :( Notify someone at Parity.`);
       }
