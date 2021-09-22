@@ -43,13 +43,13 @@ module.exports = (app) => {
     let network, address, size;
 
     // match "polkadot address: <ADDRESS>"
-    let addressRegex = /(polkadot|kusama) address:\s?([a-z0-9]+)/i;
+    let addressRegex = /(polkadot|kusama|localtest) address:\s?([a-z0-9]+)/i;
     let maybeMatch = pullRequestBody.match(addressRegex);
     if (maybeMatch.length != 3) {
       problemsText.push(`Contributor did not properly post their Polkadot or Kusama address. Make sure the pull request has: "{network} address: {address}".`);
     } else {
       network = maybeMatch[1].toLowerCase();
-      if (network !== "polkadot" && network !== "kusama") {
+      if (!["polkadot", "kusma", "localtest"].includes(network)) {
         problemsText.push(`Invalid network: ${maybeMatch[1]}. Please select "polkadot" or "kusama".`);
       }
       address = maybeMatch[2];
@@ -111,16 +111,21 @@ var { cryptoWaitReady } = require('@polkadot/util-crypto');
 async function tipUser(address, contributor, network, pullRequestNumber, pullRequestRepo, size) {
   await cryptoWaitReady();
   const keyring = new Keyring({ type: 'sr25519' });
-  // Substrate node we are connected to and listening to remarks
-  const provider = new WsProvider('ws://localhost:9944');
-  // let provider;
-  // if (network == "polkadot") {
-  //   provider = new WsProvider('wss://rpc.polkadot.io/');
-  // } else if (network == "kusama") {
-  //   provider = new WsProvider('wss://kusama-rpc.polkadot.io/');
-  // } else {
-  //   return;
-  // }
+
+  // Connect to the appropriate network.
+  let provider, account;
+  if (network == "localtest") {
+    provider = new WsProvider('ws://localhost:9944');
+    account = keyring.addFromUri('//Alice', { name: 'Alice default' });
+  } else if (network == "polkadot") {
+    provider = new WsProvider('wss://rpc.polkadot.io/');
+    account = keyring.addFromUri(process.env.ACCOUNT_SEED);
+  } else if (network == "kusama") {
+    provider = new WsProvider('wss://kusama-rpc.polkadot.io/');
+    account = keyring.addFromUri(process.env.ACCOUNT_SEED);
+  } else {
+    return;
+  }
 
   const api = await ApiPromise.create({ provider });
 
@@ -133,8 +138,6 @@ async function tipUser(address, contributor, network, pullRequestNumber, pullReq
   console.log(
     `You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`
   );
-
-  let account = keyring.addFromUri('//Alice', { name: 'Alice default' });
 
   let reason = `TO: ${contributor} FOR: ${pullRequestRepo}#${pullRequestNumber} (${size})`;
   // TODO before submitting, check tip does not already exist via a storage query.
