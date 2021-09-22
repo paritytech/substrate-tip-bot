@@ -16,6 +16,8 @@
     "test": "jest"
   },
   "dependencies": {
+    "@polkadot/api": "^6.0.5",
+    "@polkadot/util-crypto": "^7.4.1",
     "probot": "^11.0.1"
   },
   "devDependencies": {
