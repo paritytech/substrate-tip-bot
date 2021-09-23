@@ -49,7 +49,7 @@ module.exports = (app) => {
     // match "polkadot address: <ADDRESS>"
     let addressRegex = /(polkadot|kusama|localtest) address:\s?([a-z0-9]+)/i;
     let maybeMatch = pullRequestBody.match(addressRegex);
-    if (maybeMatch.length != 3) {
+    if (!maybeMatch || maybeMatch.length != 3) {
       problemsText.push(`Contributor did not properly post their Polkadot or Kusama address. Make sure the pull request has: "{network} address: {address}".`);
     } else {
       network = maybeMatch[1].toLowerCase();
