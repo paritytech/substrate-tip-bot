@@ -53,7 +53,7 @@ module.exports = (app) => {
       problemsText.push(`Contributor did not properly post their Polkadot or Kusama address. Make sure the pull request has: "{network} address: {address}".`);
     } else {
       network = maybeMatch[1].toLowerCase();
-      if (!["polkadot", "kusma", "localtest"].includes(network)) {
+      if (!["polkadot", "kusama", "localtest"].includes(network)) {
         problemsText.push(`Invalid network: ${maybeMatch[1]}. Please select "polkadot" or "kusama".`);
       }
       address = maybeMatch[2];
