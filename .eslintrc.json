@@ -1,0 +1,10 @@
+{
+    "extends": [
+        "eslint:recommended",
+        "prettier:recommended",
+        "@typescript-eslint/recommended"
+    ],
+    "env": {
+        "commonjs": true
+    }
+}
