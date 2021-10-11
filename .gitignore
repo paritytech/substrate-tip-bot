@@ -1,7 +1,9 @@
-node_modules
+node_modules/
+coverage/
+lib/
+dist/
+
 npm-debug.log
 *.pem
 !mock-cert.pem
 .env
-coverage
-lib
