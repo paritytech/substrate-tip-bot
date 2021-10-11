@@ -1,11 +1,11 @@
 {
-  "name": "substrate-tip-bot",
+  "name": "@substrate/substrate-tip-bot",
   "version": "1.0.0",
   "private": true,
   "description": "A GitHub bot to submit tips on behalf of the network.",
-  "author": "Shawn Tabrizi <shawntabrizi@gmail.com>",
-  "license": "ISC",
-  "homepage": "https://github.com/shawntabrizi/substrate-tip-bot",
+  "author": "Parity Technologies <admin@parity.io> (https://parity.io)",
+  "license": "MIT",
+  "homepage": "https://github.com/paritytech/substrate-tip-bot",
   "keywords": [
     "probot",
     "github",
