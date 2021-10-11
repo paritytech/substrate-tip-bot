@@ -8,6 +8,19 @@
     "commonjs": true,
     "es6": true
   },
+  "overrides": [
+    {
+      "files": ["**/*.test.js"],
+      "env": {
+        "mocha": true
+      },
+      "plugins": ["mocha"],
+      "rules": {
+        "mocha/no-exclusive-tests": "error",
+        "mocha/no-pending-tests": "error"
+      }
+    }
+  ],
   "rules": {
     "prefer-const": "warn"
   }
