@@ -8,13 +8,13 @@ module.exports = (app) => {
 
   app.on('issue_comment', async (context) => {
     // Get all the relevant contextual information.
-    let commentText = context.payload.comment.body;
-    let pullRequestBody = context.payload.issue.body;
-    let pullRequestUrl = context.payload.issue.html_url;
-    let tipper = context.payload.comment.user.login;
-    let contributor = context.payload.issue.user.login;
-    let pullRequestNumber = context.payload.issue.number;
-    let pullRequestRepo = context.payload.repository.name;
+    const commentText = context.payload.comment.body;
+    const pullRequestBody = context.payload.issue.body;
+    const pullRequestUrl = context.payload.issue.html_url;
+    const tipper = context.payload.comment.user.login;
+    const contributor = context.payload.issue.user.login;
+    const pullRequestNumber = context.payload.issue.number;
+    const pullRequestRepo = context.payload.repository.name;
 
     // The bot only triggers on creation of a new comment on a pull request.
     if (
@@ -29,7 +29,7 @@ module.exports = (app) => {
     }
 
     // Any problems along the way will be stored here, and used to return an error if needed.
-    let problemsText = [];
+    const problemsText = [];
 
     if (tipper === contributor) {
       // todo undo
@@ -52,8 +52,8 @@ module.exports = (app) => {
     let network, address, size;
 
     // match "polkadot address: <ADDRESS>"
-    let addressRegex = /(polkadot|kusama|localtest) address:\s?([a-z0-9]+)/i;
-    let maybeMatch = pullRequestBody.match(addressRegex);
+    const addressRegex = /(polkadot|kusama|localtest) address:\s?([a-z0-9]+)/i;
+    const maybeMatch = pullRequestBody.match(addressRegex);
     if (!maybeMatch || maybeMatch.length != 3) {
       problemsText.push(
         `Contributor did not properly post their Polkadot or Kusama address. Make sure the pull request has: "{network} address: {address}".`
@@ -69,7 +69,7 @@ module.exports = (app) => {
     }
 
     // Tip initiation comment should be: "/tip { small / medium / large }"
-    let textParts = commentText.split(' ');
+    const textParts = commentText.split(' ');
     if (textParts.length !== 2) {
       problemsText.push(
         `Invalid command! Payload should be: "/tip { small / medium / large }".`
@@ -104,7 +104,7 @@ module.exports = (app) => {
         `Valid command! \n ${tipper} wants to tip ${contributor} (${address} on ${network}) a ${size} tip for pull request ${pullRequestUrl}.`
       );
       // Send the transaction to the network.
-      let result = await tipUser(
+      const result = await tipUser(
         address,
         contributor,
         network,
@@ -179,7 +179,7 @@ async function tipUser(
     `You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`
   );
 
-  let reason = `TO: ${contributor} FOR: ${pullRequestRepo}#${pullRequestNumber} (${size})`;
+  const reason = `TO: ${contributor} FOR: ${pullRequestRepo}#${pullRequestNumber} (${size})`;
   // TODO before submitting, check tip does not already exist via a storage query.
   // TODO potentially prevent duplicates by also checking for reasons with the other sizes.
   const unsub = await api.tx.tips
