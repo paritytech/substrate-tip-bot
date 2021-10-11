@@ -1,9 +1,14 @@
 {
-    "extends": [
-        "eslint:recommended",
-        "prettier"
-    ],
-    "env": {
-        "commonjs": true
-    }
+  "extends": ["eslint:recommended", "prettier"],
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "env": {
+    "node": true,
+    "commonjs": true,
+    "es6": true
+  },
+  "rules": {
+    "prefer-const": "warn"
+  }
 }
