@@ -23,8 +23,6 @@ Followed by a _comment_ on said pull request
 /tip {small | medium | large}
 ```
 
-
-
 ## Local development 🔧
 
 To use this bot, you'll need to have an `.env` file. Most of the options will
@@ -37,23 +35,24 @@ A reference env file is placed at `.env.example` to copy over
 $ cp .env.example .env
 ```
 
-After registering and configuring the bot, we can run it like so
+After registering and configuring the bot environment, we can run it. We use
+[Nodemon](https://nodemon.io/) for hot-reloading, the `probot` package
+automatically parses the relevant `.env` values.
 
 ```sh
-$ npm start
+$ yarn start
 ```
 
 ### Docker
 
 To run the bot via Docker, we need to build and then run it like so
 
-
 ```sh
 $ docker build -t substrate-tip-bot .
 ```
 
 ```sh
-$ docker run \ 
+$ docker run \
     -e APP_ID=<app-id> \
     -e PRIVATE_KEY=<pem-value> \
     substrate-tip-bot

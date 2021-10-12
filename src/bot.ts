@@ -1,12 +1,71 @@
-/**
- * This is the main entrypoint to your Probot app
- * @param {import('probot').Probot} app
- */
-module.exports = (app) => {
-  // Your code here
-  app.log.info('Tip bot was loaded!');
+import { Probot, run } from 'probot';
+import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
+import { cryptoWaitReady } from '@polkadot/util-crypto';
 
-  app.on('issue_comment', async (context) => {
+import { postComment } from './helpers/github';
+
+// TODO add some kind of timeout then return an error
+// TODO Unit tests
+export async function tipUser(
+  address,
+  contributor,
+  network,
+  pullRequestNumber,
+  pullRequestRepo,
+  size
+) {
+  await cryptoWaitReady();
+  const keyring = new Keyring({ type: 'sr25519' });
+
+  // Connect to the appropriate network.
+  let provider, account;
+  if (network == 'localtest') {
+    provider = new WsProvider('ws://localhost:9944');
+    account = keyring.addFromUri('//Alice', { name: 'Alice default' });
+  } else if (network == 'polkadot') {
+    provider = new WsProvider('wss://rpc.polkadot.io/');
+    account = keyring.addFromUri(process.env.ACCOUNT_SEED);
+  } else if (network == 'kusama') {
+    provider = new WsProvider('wss://kusama-rpc.polkadot.io/');
+    account = keyring.addFromUri(process.env.ACCOUNT_SEED);
+  } else {
+    return;
+  }
+
+  const api = await ApiPromise.create({ provider });
+
+  // Get general information about the node we are connected to
+  const [chain, nodeName, nodeVersion] = await Promise.all([
+    api.rpc.system.chain(),
+    api.rpc.system.name(),
+    api.rpc.system.version(),
+  ]);
+  console.log(
+    `You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`
+  );
+
+  const reason = `TO: ${contributor} FOR: ${pullRequestRepo}#${pullRequestNumber} (${size})`;
+  // TODO before submitting, check tip does not already exist via a storage query.
+  // TODO potentially prevent duplicates by also checking for reasons with the other sizes.
+  const unsub = await api.tx.tips
+    .reportAwesome(reason, address)
+    .signAndSend(account, (result) => {
+      console.log(`Current status is ${result.status}`);
+      if (result.status.isInBlock) {
+        console.log(`Tip included at blockHash ${result.status.asInBlock}`);
+      } else if (result.status.isFinalized) {
+        console.log(`Tip finalized at blockHash ${result.status.asFinalized}`);
+        unsub();
+      }
+    });
+
+  return true;
+}
+
+export default function bot(bot: Probot) {
+  bot.log.info('Tip bot was loaded!');
+
+  bot.on('issue_comment', async (context) => {
     // Get all the relevant contextual information.
     const commentText = context.payload.comment.body;
     const pullRequestBody = context.payload.issue.body;
@@ -127,72 +186,6 @@ module.exports = (app) => {
     }
     return;
   });
-};
-
-// Simple helper function to post a comment on github.
-function postComment(context, body) {
-  const issueComment = context.issue({
-    body: body,
-  });
-  return context.octokit.issues.createComment(issueComment);
 }
 
-var { ApiPromise, WsProvider, Keyring } = require('@polkadot/api');
-var { cryptoWaitReady } = require('@polkadot/util-crypto');
-
-// TODO add some kind of timeout then return an error
-async function tipUser(
-  address,
-  contributor,
-  network,
-  pullRequestNumber,
-  pullRequestRepo,
-  size
-) {
-  await cryptoWaitReady();
-  const keyring = new Keyring({ type: 'sr25519' });
-
-  // Connect to the appropriate network.
-  let provider, account;
-  if (network == 'localtest') {
-    provider = new WsProvider('ws://localhost:9944');
-    account = keyring.addFromUri('//Alice', { name: 'Alice default' });
-  } else if (network == 'polkadot') {
-    provider = new WsProvider('wss://rpc.polkadot.io/');
-    account = keyring.addFromUri(process.env.ACCOUNT_SEED);
-  } else if (network == 'kusama') {
-    provider = new WsProvider('wss://kusama-rpc.polkadot.io/');
-    account = keyring.addFromUri(process.env.ACCOUNT_SEED);
-  } else {
-    return;
-  }
-
-  const api = await ApiPromise.create({ provider });
-
-  // Get general information about the node we are connected to
-  const [chain, nodeName, nodeVersion] = await Promise.all([
-    api.rpc.system.chain(),
-    api.rpc.system.name(),
-    api.rpc.system.version(),
-  ]);
-  console.log(
-    `You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`
-  );
-
-  const reason = `TO: ${contributor} FOR: ${pullRequestRepo}#${pullRequestNumber} (${size})`;
-  // TODO before submitting, check tip does not already exist via a storage query.
-  // TODO potentially prevent duplicates by also checking for reasons with the other sizes.
-  const unsub = await api.tx.tips
-    .reportAwesome(reason, address)
-    .signAndSend(account, (result) => {
-      console.log(`Current status is ${result.status}`);
-      if (result.status.isInBlock) {
-        console.log(`Tip included at blockHash ${result.status.asInBlock}`);
-      } else if (result.status.isFinalized) {
-        console.log(`Tip finalized at blockHash ${result.status.asFinalized}`);
-        unsub();
-      }
-    });
-
-  return true;
-}
+run(bot);
