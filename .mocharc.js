@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-  require: '@babel/register',
-  spec: ['test/**/*.test.js'],
+  require: 'ts-node/register',
+  spec: ['test/**/*.test.ts'],
   sort: true,
 };

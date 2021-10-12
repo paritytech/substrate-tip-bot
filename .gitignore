@@ -8,3 +8,4 @@ npm-debug.log
 !mock-cert.pem
 .env
 .eslintcache
+yarn-error.log

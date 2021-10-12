@@ -5,8 +5,8 @@ import nock from 'nock';
 import { Probot, ProbotOctokit } from 'probot';
 import { assert } from 'chai';
 
-import myProbotApp from '..';
-import payload from './fixtures/issues.opened';
+import myProbotApp from '../src/bot';
+import payload from './fixtures/issues.opened.json';
 
 describe('Substrate tip bot', () => {
   let probot;
@@ -51,7 +51,7 @@ describe('Substrate tip bot', () => {
 
       // Test that a comment is posted
       .post('/repos/hiimbex/testing-things/issues/1/comments', (body) => {
-        expect(body).toMatchObject(issueCreatedBody);
+        assert.deepEqual(body, issueCreatedBody);
         return true;
       })
       .reply(200);
