@@ -175,7 +175,7 @@ export default function bot(bot: Probot) {
       if (result) {
         postComment(
           context,
-          `A ${size} tip was successfully submitted for ${contributor} (${address} on ${network}). \n\n https://polkadot.js.org/apps/#/treasury/tips`
+          `A ${size} tip was successfully submitted for ${contributor} (${address} on ${network}). \n\n https://polkadot.js.org/apps/#/treasury/tips ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`
         );
       } else {
         postComment(
