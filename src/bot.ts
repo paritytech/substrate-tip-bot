@@ -91,8 +91,7 @@ export default function bot(bot: Probot) {
     const problemsText = [];
 
     if (tipper === contributor) {
-      // todo undo
-      //problemsText.push(`Contributor and tipper cannot be the same person!`)
+      problemsText.push(`Contributor and tipper cannot be the same person!`)
     }
 
     // TODO check contributor is NOT member of parity org (or better, not a member of the org where the repo lives)
@@ -100,7 +99,6 @@ export default function bot(bot: Probot) {
     //   problemsText.push(`Contributor can't be a member of Parity!`)
     // }
 
-    // TODO temporarily, only allow whitelisted users access to the bot.
     if (!process.env.ALLOWED_USERS.includes(tipper)) {
       problemsText.push(
         `You are not allowed to access the tip bot. Only ${process.env.ALLOWED_USERS} are allowed.`
@@ -115,7 +113,7 @@ export default function bot(bot: Probot) {
     const maybeMatch = pullRequestBody.match(addressRegex);
     if (!maybeMatch || maybeMatch.length != 3) {
       problemsText.push(
-        `Contributor did not properly post their Polkadot or Kusama address. Make sure the pull request has: "{network} address: {address}".`
+        `Contributor did not properly post their Polkadot or Kusama address. \n\n Make sure the pull request description has: "{network} address: {address}".`
       );
     } else {
       network = maybeMatch[1].toLowerCase();
@@ -171,11 +169,21 @@ export default function bot(bot: Probot) {
         pullRequestRepo,
         size
       );
+
+      let tipUrl;
+      if (network == 'polkadot') {
+        tipUrl = "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frpc.polkadot.io#/treasury/tips";
+      } else if (network == 'kusama') {
+        tipUrl = "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fkusama-rpc.polkadot.io#/treasury/tips";
+      } else {
+        tipUrl = "https://polkadot.js.org/apps/#/treasury/tips";
+      }
+
       // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
       if (result) {
         postComment(
           context,
-          `A ${size} tip was successfully submitted for ${contributor} (${address} on ${network}). \n\n https://polkadot.js.org/apps/#/treasury/tips`
+          `A ${size} tip was successfully submitted for ${contributor} (${address} on ${network}). \n\n ${tipUrl}`
         );
       } else {
         postComment(
