@@ -183,7 +183,7 @@ export default function bot(bot: Probot) {
       if (result) {
         postComment(
           context,
-          `A ${size} tip was successfully submitted for ${contributor} (${address} on ${network}). \n\n ${tipUrl}`
+          `A ${size} tip was successfully submitted for ${contributor} (${address} on ${network}). \n\n ${tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`
         );
       } else {
         postComment(
