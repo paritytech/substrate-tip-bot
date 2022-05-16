@@ -9,7 +9,7 @@ import { State } from "./types"
 
 /* TODO add some kind of timeout then return an error
    TODO Unit tests */
-export async function tipUser(
+const tipUser = async (
   { seedOfTipperAccount, bot }: State,
   {
     contributor,
@@ -28,7 +28,7 @@ export async function tipUser(
     pullRequestRepo: string
     tipSize: string
   },
-) {
+) => {
   await cryptoWaitReady()
   const keyring = new Keyring({ type: "sr25519" })
 
