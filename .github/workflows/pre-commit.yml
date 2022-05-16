@@ -1,0 +1,49 @@
+name: pre-commit
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+env:
+  CI: true
+  PYTHON_VERSION: 3.8.12
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Use cached node_modules
+      uses: actions/cache@v1
+      with:
+        path: node_modules
+        key: node_modules+${{ hashFiles('**/yarn.lock') }}
+
+    - name: Install
+      run: yarn install --immutable
+
+    - name: Set up pre-commit environment
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Get pip cache dir
+      id: get-pip-cache
+      run: |
+        echo "::set-output name=dir::$(pip cache dir)"
+
+    - name: Use cached pre-commit environment
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pre-commit
+          ${{ steps.get-pip-cache.outputs.dir }}
+        key: py-lints+${{ env.PYTHON_VERSION }}+${{ hashFiles('.pre-commit-config.yaml') }}
+
+    - name: Install pre-commit
+      run: pip install pre-commit
+
+    - name: Run pre-commit
+      run: pre-commit run --all-files --show-diff-on-failure --color=always
