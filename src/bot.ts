@@ -44,13 +44,15 @@ const tipUser = async (
       }
       case "polkadot": {
         return {
-          provider: new WsProvider("wss://rpc.polkadot.io/"),
+          provider: new WsProvider("wss://rpc.polkadot.io"),
           botTipAccount: keyring.addFromUri(seedOfTipperAccount),
         }
       }
       case "kusama": {
         return {
-          provider: new WsProvider("wss://kusama-rpc.polkadot.io/"),
+          provider: new WsProvider(
+            `wss://${contributor.account.network}-rpc.polkadot.io`,
+          ),
           botTipAccount: keyring.addFromUri(seedOfTipperAccount),
         }
       }
@@ -80,7 +82,7 @@ const tipUser = async (
   /* TODO before submitting, check tip does not already exist via a storage query.
      TODO potentially prevent duplicates by also checking for reasons with the other sizes. */
   const unsub = await api.tx.tips
-    .reportAwesome(reason, botTipAccount)
+    .reportAwesome(reason, botTipAccount.address)
     .signAndSend(botTipAccount, (result) => {
       bot.log(`Current status is ${result.status.toString()}`)
       if (result.status.isInBlock) {
@@ -142,11 +144,11 @@ const onIssueComment = async (
   const contributorAccount = (() => {
     const matches = pullRequestBody.match(
       // match "polkadot address: <ADDRESS>"
-      /(polkadot|kusama|localtest)\s*address:\s*([a-z0-9]+)/i,
+      /(\S+)\s*address:\s*([a-z0-9]+)/i,
     )
     if (!matches || matches.length != 3) {
       throw new Error(
-        `Contributor did not properly post their Polkadot or Kusama address. \n\n Make sure the pull request description has: "{network} address: {address}".`,
+        `Contributor did not properly post their account address.\n\nMake sure the pull request description has: "{network} address: {address}".`,
       )
     }
 
@@ -216,8 +218,15 @@ const onIssueComment = async (
       case "kusama": {
         return "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fkusama-rpc.polkadot.io#/treasury/tips"
       }
+      case "localtest": {
+        return "https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/treasury/tips"
+      }
       default: {
-        return "https://polkadot.js.org/apps/#/treasury/tips"
+        const exhaustivenessCheck: never = contributorAccount.network
+        throw new Error(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `Network is not handled properly in tipUrl: ${exhaustivenessCheck}`,
+        )
       }
     }
   })()
@@ -237,7 +246,6 @@ const main = (bot: Probot) => {
   const seedOfTipperAccount = envVar("ACCOUNT_SEED")
 
   const state = { allowedTipRequesters, seedOfTipperAccount, bot }
-  bot.log.info("State", state)
 
   bot.log.info("Tip bot was loaded!")
 
