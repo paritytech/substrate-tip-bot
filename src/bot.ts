@@ -32,7 +32,7 @@ const tipUser = async (
   await cryptoWaitReady()
   const keyring = new Keyring({ type: "sr25519" })
 
-  const { provider, botTipAccount } = (() => {
+  const { provider, botTipAccount, tipUrl } = (() => {
     switch (contributor.account.network) {
       case "localtest": {
         return {
@@ -40,12 +40,16 @@ const tipUser = async (
           botTipAccount: keyring.addFromUri("//Alice", {
             name: "Alice default",
           }),
+          tipUrl:
+            "https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/treasury/tips",
         }
       }
       case "polkadot": {
         return {
           provider: new WsProvider("wss://rpc.polkadot.io"),
           botTipAccount: keyring.addFromUri(seedOfTipperAccount),
+          tipUrl:
+            "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frpc.polkadot.io#/treasury/tips",
         }
       }
       case "kusama": {
@@ -54,6 +58,7 @@ const tipUser = async (
             `wss://${contributor.account.network}-rpc.polkadot.io`,
           ),
           botTipAccount: keyring.addFromUri(seedOfTipperAccount),
+          tipUrl: `https://polkadot.js.org/apps/?rpc=wss%3A%2F%${contributor.account.network}-rpc.polkadot.io#/treasury/tips`,
         }
       }
       default: {
@@ -97,7 +102,7 @@ const tipUser = async (
       }
     })
 
-  return true
+  return { success: true, tipUrl }
 }
 
 const onIssueComment = async (
@@ -203,37 +208,16 @@ const onIssueComment = async (
     `Valid command!\n${tipRequester} wants to tip ${contributor} (${contributorAccount.address} on ${contributorAccount.network}) a ${tipSize} tip for pull request ${pullRequestUrl}.`,
   )
 
-  const result = await tipUser(state, {
+  const tipResult = await tipUser(state, {
     contributor: { githubUsername: contributor, account: contributorAccount },
     pullRequestNumber,
     pullRequestRepo,
     tipSize,
   })
 
-  const tipUrl = (() => {
-    switch (contributorAccount.network) {
-      case "polkadot": {
-        return "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frpc.polkadot.io#/treasury/tips"
-      }
-      case "kusama": {
-        return "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fkusama-rpc.polkadot.io#/treasury/tips"
-      }
-      case "localtest": {
-        return "https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/treasury/tips"
-      }
-      default: {
-        const exhaustivenessCheck: never = contributorAccount.network
-        throw new Error(
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Network is not handled properly in tipUrl: ${exhaustivenessCheck}`,
-        )
-      }
-    }
-  })()
-
   // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
-  return result
-    ? `A ${tipSize} tip was successfully submitted for ${contributor} (${contributorAccount.address} on ${contributorAccount.network}). \n\n ${tipUrl}`
+  return tipResult.success
+    ? `A ${tipSize} tip was successfully submitted for ${contributor} (${contributorAccount.address} on ${contributorAccount.network}). \n\n ${tipResult.tipUrl}`
     : "Could not submit tip :( Notify someone at Parity."
 }
 
