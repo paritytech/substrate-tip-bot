@@ -3,6 +3,9 @@ coverage/
 lib/
 dist/
 
+#IDE
+.idea
+
 npm-debug.log
 *.pem
 !mock-cert.pem
