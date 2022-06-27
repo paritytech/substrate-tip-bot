@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "lint": "yarn eslint && yarn typecheck && yarn prettier",
     "fix:eslint": "eslint --fix",
     "fix:prettier": "prettier --write",
     "fix": "yarn fix:eslint '{*,**/*}.{js,ts}' && yarn fix:prettier '{*,**/*}.json'",
