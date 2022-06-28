@@ -15,7 +15,7 @@ LABEL io.parity.image.authors="cicd-team@parity.io" \
     io.parity.image.revision="${VCS_REF}" \
     io.parity.image.created="${BUILD_DATE}"
 
-RUN apk -U upgrade --no-cache
+RUN apk -U upgrade --no-cache && apk add --no-cache git
 
 WORKDIR /usr/src/app
 
