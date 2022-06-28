@@ -17,7 +17,7 @@ variables:
   KUBE_NAMESPACE:                  "substrate-tip-bot"
   CI_REGISTRY:                     "docker.io/paritytech"
   GIT_STRATEGY:                    fetch
-  CI_IMAGE:                        node:16.10-alpine
+  CI_IMAGE:                        node:16.10
   DOCKERHUB_REPO:                  "paritytech"
   IMAGE_NAME:                      docker.io/$DOCKERHUB_REPO/substrate-tip-bot
   DOCKER_TAG:                      "${CI_COMMIT_SHORT_SHA}"
@@ -99,7 +99,6 @@ check-linting:
   <<:                              *common-refs
   <<:                              *kubernetes-env
   script:
-    # - apk update && apk add --no-cache git pre-commit
     - yarn --immutable
     - yarn lint
 
