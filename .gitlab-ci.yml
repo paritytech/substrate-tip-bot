@@ -99,7 +99,7 @@ check-linting:
   <<:                              *common-refs
   <<:                              *kubernetes-env
   script:
-    - apk update && apk add --no-cache git pre-commit
+    # - apk update && apk add --no-cache git pre-commit
     - yarn --immutable
     - yarn lint
 
