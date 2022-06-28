@@ -2,6 +2,11 @@ common:
   env:
     APP_HOST: "https://substrate-tip-bot.parity-stg.parity.io"
     DATABASE_NAME: "substrate-tip-bot"
+  secrets:
+    WEBHOOK_SECRET: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#WEBHOOK_SECRET
+    PRIVATE_KEY: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#PRIVATE_KEY
+    GITHUB_CLIENT_SECRET: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#GITHUB_CLIENT_SECRET
+    ACCOUNT_SEED: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#ACCOUNT_SEED
   ingress:
     annotations:
       external-dns.alpha.kubernetes.io/target: traefik-external.parity-stg.parity.io.
