@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "lint": "yarn eslint --quiet '{*,**/*}.{js,ts}' && yarn prettier --check '{*,**/*}.json' && yarn typecheck",
     "fix:eslint": "eslint --fix",
     "fix:prettier": "prettier --write",
     "fix": "yarn fix:eslint '{*,**/*}.{js,ts}' && yarn fix:prettier '{*,**/*}.json'",
@@ -33,8 +34,10 @@
     "@resolritter/tsc-files": "^1.1.4",
     "@types/node": "^16.10.3",
     "dotenv": "^16.0.1",
+    "eslint-plugin-prettier": "^4.1.0",
     "nodemon": "^2.0.13",
     "opstooling-js-style": "https://github.com/paritytech/opstooling-js-style#master",
+    "prettier": "^2.7.1",
     "rimraf": "^3.0.2",
     "smee-client": "^1.2.2",
     "ts-node": "^10.3.0",
