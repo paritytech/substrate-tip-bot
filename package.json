@@ -13,7 +13,7 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "pre-commit run --color=always --all --show-diff-on-failure",
+    "lint": "yarn eslint --quiet '{*,**/*}.{js,ts}' && yarn prettier --check '{*,**/*}.json' && yarn typecheck",
     "fix:eslint": "eslint --fix",
     "fix:prettier": "prettier --write",
     "fix": "yarn fix:eslint '{*,**/*}.{js,ts}' && yarn fix:prettier '{*,**/*}.json'",
