@@ -82,7 +82,7 @@ $ yarn start
 ```
 
 ### Create a PR and test it
-You'll need to gh users: contributor and maintainer
+You'll need 2 gh users: contributor and maintainer (since it's not allowed for contributors to send a tip to themselves)
 
 - From contributor GH account: create a PR and add into PR description `localtest address: <contributor polkadot address>`
 - From maintainer GH account: write `/tip small` in comments so the bot sends funds to <contributor polkadot address>
