@@ -23,6 +23,8 @@ Followed by a _comment_ on said pull request
 /tip {small | medium | large}
 ```
 
+
+
 ## Local development 🔧
 
 To use this bot, you'll need to have an `.env` file. Most of the options will
@@ -35,6 +37,42 @@ A reference env file is placed at `.env.example` to copy over
 $ cp .env.example .env
 ```
 
+### Run polkadot or substrate `localtest` network locally
+
+- Follow readme in https://github.com/paritytech/polkadot#development to run local network. 
+  - Among all dependencies, main steps are (from repo): 
+    - Compile `cargo b -r`
+    - Run `./target/release/polkadot --dev`
+- [Create 2 accounts: for "bot" & for "contributor"](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/accounts) 
+  - Save the seeds & passwords somewhere
+  - Set `ACCOUNT_SEED` as bot's seed in `.env` file  
+- Transfer some meaningful amount from test accounts (like Alice) to a new bot account (from which bot will be send tip to the contributor)
+
+### Create GitHub application for testing
+
+- Note: During app creation save according env variables to `.env` file
+- Read [Getting-started](https://gitlab.parity.io/groups/parity/opstooling/-/wikis/Bots/Development/Getting-started) doc to get a sense of how to work with bots
+- Follow [creating app](https://gitlab.parity.io/groups/parity/opstooling/-/wikis/Bots/Development/Create-a-new-GitHub-App)
+and [installing app](https://gitlab.parity.io/groups/parity/opstooling/-/wikis/Bots/Development/Installing-the-GitHub-App)
+guidance
+- `WEBHOOK_PROXY_URL` you can generate via https://smee.io/new
+
+#### Github app permissions
+
+##### Repository permissions:
+- **Issues**: Read-only
+  - Allows for interacting with the comments API
+- **Pull Requests**: Read & write
+  - Allows for posting comments on pull requests
+##### Organization permissions
+- **Members**: Read-only
+  - Related to $ALLOWED_ORGANIZATIONS: this permission enables the bot to request the organization membership of the command's requester even if their membership is private
+##### Event subscriptions
+- **Issue comment**
+  - Allows for receiving events for pull request comments
+
+### Start a bot
+
 After registering and configuring the bot environment, we can run it. We use
 [Nodemon](https://nodemon.io/) for hot-reloading, the `probot` package
 automatically parses the relevant `.env` values.
@@ -42,6 +80,12 @@ automatically parses the relevant `.env` values.
 ```sh
 $ yarn start
 ```
+
+### Create a PR and test it
+You'll need 2 gh users: contributor and maintainer (since it's not allowed for contributors to send a tip to themselves)
+
+- From contributor GH account: create a PR and add into PR description `localtest address: <contributor polkadot address>`
+- From maintainer GH account: write `/tip small` in comments so the bot sends funds to <contributor polkadot address>
 
 ### Docker
 
