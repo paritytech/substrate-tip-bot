@@ -7,6 +7,7 @@ common:
     PRIVATE_KEY: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#PRIVATE_KEY
     GITHUB_CLIENT_SECRET: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#GITHUB_CLIENT_SECRET
     ACCOUNT_SEED: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#ACCOUNT_SEED
+    ALLOWED_USERS: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#ALLOWED_USERS
   ingress:
     annotations:
       external-dns.alpha.kubernetes.io/target: traefik-external.parity-stg.parity.io.
