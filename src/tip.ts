@@ -58,8 +58,8 @@ export function parseContributorAccount(
   }
 
   const network =
-    networkInput in validNetworks
-      ? validNetworks[networkInput as keyof typeof validNetworks]
+    networkInput.toLowerCase() in validNetworks
+      ? validNetworks[networkInput.toLowerCase() as keyof typeof validNetworks]
       : undefined
   if (!network) {
     throw new Error(
@@ -111,7 +111,7 @@ export async function tipUser(
   /* TODO before submitting, check tip does not already exist via a storage query.
      TODO potentially prevent duplicates by also checking for reasons with the other sizes. */
   const unsub = await api.tx.tips
-    .reportAwesome(reason, botTipAccount.address)
+    .reportAwesome(reason, contributor.account.address)
     .signAndSend(botTipAccount, (result: SubmittableResult) => {
       bot.log(`Current status is ${result.status.toString()}`)
       if (result.status.isInBlock) {
