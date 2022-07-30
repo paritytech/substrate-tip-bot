@@ -21,8 +21,8 @@
     "build": "rimraf dist; babel src/ --extensions '.ts,.js' --out-dir dist/"
   },
   "dependencies": {
-    "@polkadot/api": "^8.1.1",
-    "@polkadot/util-crypto": "^9.0.1",
+    "@polkadot/api": "^9.0.1",
+    "@polkadot/util-crypto": "^10.1.2",
     "opstooling-js": "https://github.com/paritytech/opstooling-js#v0.0.3",
     "probot": "^11.0.1"
   },
