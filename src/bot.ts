@@ -95,6 +95,10 @@ const main = (bot: Probot) => {
         }`,
       })
     }
+    
+    void onIssueComment(state, context, tipRequester)
+      .then(respondOnResult)
+      .catch(respondOnResult)
 }
 
 void run(main)
