@@ -28,7 +28,7 @@ const onIssueComment = async (
   if (
     !isPullRequest(context) ||
     context.payload.action !== "created" ||
-    !botMention?.startsWith("/tip")
+    !(botMention?.startsWith("/tip") || botMention?.startsWith("\\tip"))
   ) {
     return
   }
