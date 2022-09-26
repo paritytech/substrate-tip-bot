@@ -1,0 +1,35 @@
+common:
+  fullnameOverride: "substrate-tip-bot"
+  extraLabels:
+    team: "opstooling"
+  serviceAccount:
+    create: false
+  image:
+    repository: paritytech/substrate-tip-bot
+  envFrom:
+    - secretRef:
+        name: substrate-tip-bot
+  service:
+    ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-dns01
+      kubernetes.io/ingress.class: traefik-external
+      traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+  # Enable after endpoint is created
+  # livenessProbe:
+  #   httpGet:
+  #     path: /health
+  #     port: 8000
+  #     scheme: HTTP
+  # readinessProbe:
+  #   httpGet:
+  #     path: /health
+  #     port: 8000
+  #     scheme: HTTP

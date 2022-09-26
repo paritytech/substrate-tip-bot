@@ -1,0 +1,29 @@
+common:
+  env:
+    APP_HOST: "https://substrate-tip-bot.parity-stg.parity.io"
+    DATABASE_NAME: "substrate-tip-bot"
+  secrets:
+    WEBHOOK_SECRET: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#WEBHOOK_SECRET
+    PRIVATE_KEY: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#PRIVATE_KEY
+    GITHUB_CLIENT_SECRET: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#GITHUB_CLIENT_SECRET
+    ACCOUNT_SEED: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#ACCOUNT_SEED
+    ALLOWED_USERS: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#ALLOWED_USERS
+    APP_ID: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#APP_ID
+  ingress:
+    annotations:
+      external-dns.alpha.kubernetes.io/target: traefik-external.parity-stg.parity.io.
+    rules:
+    - host: substrate-tip-bot.parity-stg.parity.io
+      http:
+        paths:
+        - path: /
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: substrate-tip-bot
+              port:
+                name: http
+    tls:
+    - hosts:
+      - substrate-tip-bot.parity-stg.parity.io
+      secretName: substrate-tip-bot.parity-stg.parity.io

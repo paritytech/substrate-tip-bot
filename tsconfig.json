@@ -1,15 +1,24 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "esnext",
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "sourceMap": true,
-    "alwaysStrict": true,
+    "baseUrl": ".",
+    "noEmit": true,
+    "outDir": "build",
+    "sourceMap": false,
     "declaration": false,
+    "noFallthroughCasesInSwitch": true,
+    "allowJs": true,
+    "moduleResolution": "node",
+    "module": "commonjs",
+    "target": "ES2021", // Node.js LTS 16
+    "lib": ["ES2021"], // Node.js LTS 16
+    "strict": true,
+    "noImplicitAny": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-    "types": ["mocha", "chai", "node"]
+    "useUnknownInCatchVariables": false,
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types", "./src"]
   },
-  "exclude": ["node_modules"]
+  "include": ["src"]
 }

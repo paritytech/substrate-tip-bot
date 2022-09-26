@@ -1,199 +1,100 @@
-import { Probot, run } from 'probot';
-import { ApiPromise, WsProvider, Keyring } from '@polkadot/api';
-import { cryptoWaitReady } from '@polkadot/util-crypto';
+import { displayError, envVar } from "opstooling-js"
+import { Probot, run } from "probot"
 
-import { postComment } from './helpers/github';
+import { isPullRequest } from "./github"
+import { getTipSize, parseContributorAccount, tipUser } from "./tip"
+import { IssueCommentCreatedContext, State } from "./types"
 
-// TODO add some kind of timeout then return an error
-// TODO Unit tests
-export async function tipUser(
-  address,
-  contributor,
-  network,
-  pullRequestNumber,
-  pullRequestRepo,
-  size
-) {
-  await cryptoWaitReady();
-  const keyring = new Keyring({ type: 'sr25519' });
+const onIssueComment = async (
+  state: State,
+  context: IssueCommentCreatedContext,
+  tipRequester: string,
+) => {
+  const { allowedTipRequesters, bot } = state
 
-  // Connect to the appropriate network.
-  let provider, account;
-  if (network == 'localtest') {
-    provider = new WsProvider('ws://localhost:9944');
-    account = keyring.addFromUri('//Alice', { name: 'Alice default' });
-  } else if (network == 'polkadot') {
-    provider = new WsProvider('wss://rpc.polkadot.io/');
-    account = keyring.addFromUri(process.env.ACCOUNT_SEED);
-  } else if (network == 'kusama') {
-    provider = new WsProvider('wss://kusama-rpc.polkadot.io/');
-    account = keyring.addFromUri(process.env.ACCOUNT_SEED);
-  } else {
-    return;
+  const commentText = context.payload.comment.body
+  const pullRequestBody = context.payload.issue.body
+  const pullRequestUrl = context.payload.issue.html_url
+  const contributorLogin = context.payload.issue.user.login
+  const pullRequestNumber = context.payload.issue.number
+  const pullRequestRepo = context.payload.repository.name
+
+  const [botMention, tipSizeInput] = commentText.split(" ") as (
+    | string
+    | undefined
+  )[]
+
+  // The bot only triggers on creation of a new comment on a pull request.
+  if (
+    !isPullRequest(context) ||
+    context.payload.action !== "created" ||
+    !botMention?.startsWith("/tip")
+  ) {
+    return
   }
 
-  const api = await ApiPromise.create({ provider });
+  if (tipRequester === contributorLogin) {
+    return "Contributor and tipper cannot be the same person!"
+  }
 
-  // Get general information about the node we are connected to
-  const [chain, nodeName, nodeVersion] = await Promise.all([
-    api.rpc.system.chain(),
-    api.rpc.system.name(),
-    api.rpc.system.version(),
-  ]);
-  console.log(
-    `You are connected to chain ${chain} using ${nodeName} v${nodeVersion}`
-  );
+  if (!allowedTipRequesters.includes(tipRequester)) {
+    return `You are not allowed to request a tip. Only ${allowedTipRequesters.join(
+      ", ",
+    )} are allowed.`
+  }
 
-  const reason = `TO: ${contributor} FOR: ${pullRequestRepo}#${pullRequestNumber} (${size})`;
-  // TODO before submitting, check tip does not already exist via a storage query.
-  // TODO potentially prevent duplicates by also checking for reasons with the other sizes.
-  const unsub = await api.tx.tips
-    .reportAwesome(reason, address)
-    .signAndSend(account, (result) => {
-      console.log(`Current status is ${result.status}`);
-      if (result.status.isInBlock) {
-        console.log(`Tip included at blockHash ${result.status.asInBlock}`);
-      } else if (result.status.isFinalized) {
-        console.log(`Tip finalized at blockHash ${result.status.asFinalized}`);
-        unsub();
-      }
-    });
+  const contributorAccount = parseContributorAccount(pullRequestBody)
+  const tipSize = getTipSize(tipSizeInput)
 
-  return true;
+  bot.log(
+    `Valid command!\n${tipRequester} wants to tip ${contributorLogin} (${contributorAccount.address} on ${contributorAccount.network}) a ${tipSize} tip for pull request ${pullRequestUrl}.`,
+  )
+
+  const tipResult = await tipUser(state, {
+    contributor: {
+      githubUsername: contributorLogin,
+      account: contributorAccount,
+    },
+    pullRequestNumber,
+    pullRequestRepo,
+    tipSize,
+  })
+
+  // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
+  return tipResult.success
+    ? `A ${tipSize} tip was successfully submitted for ${contributorLogin} (${contributorAccount.address} on ${contributorAccount.network}). \n\n ${tipResult.tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`
+    : "Could not submit tip :( Notify someone at Parity."
 }
 
-export default function bot(bot: Probot) {
-  bot.log.info('Tip bot was loaded!');
+const main = (bot: Probot) => {
+  const allowedTipRequesters = JSON.parse(envVar("ALLOWED_USERS")) as unknown[]
+  if (!Array.isArray(allowedTipRequesters)) {
+    throw new Error("$ALLOWED_USERS needs to be an array")
+  }
 
-  bot.on('issue_comment', async (context) => {
-    // Get all the relevant contextual information.
-    const commentText = context.payload.comment.body;
-    const pullRequestBody = context.payload.issue.body;
-    const pullRequestUrl = context.payload.issue.html_url;
-    const tipper = context.payload.comment.user.login;
-    const contributor = context.payload.issue.user.login;
-    const pullRequestNumber = context.payload.issue.number;
-    const pullRequestRepo = context.payload.repository.name;
+  const seedOfTipperAccount = envVar("ACCOUNT_SEED")
 
-    // The bot only triggers on creation of a new comment on a pull request.
-    if (
-      !Object.prototype.hasOwnProperty.call(
-        context.payload.issue,
-        'pull_request'
-      ) ||
-      context.payload.action !== 'created' ||
-      !commentText.startsWith('/tip')
-    ) {
-      return;
-    }
+  const state = { allowedTipRequesters, seedOfTipperAccount, bot }
 
-    // Any problems along the way will be stored here, and used to return an error if needed.
-    const problemsText = [];
+  bot.log.info("Tip bot was loaded!")
 
-    if (tipper === contributor) {
-      problemsText.push(`Contributor and tipper cannot be the same person!`)
-    }
+  bot.on("issue_comment", (context) => {
+    const tipRequester = context.payload.comment.user.login
 
-    // TODO check contributor is NOT member of parity org (or better, not a member of the org where the repo lives)
-    // if (contributor is in github org) {
-    //   problemsText.push(`Contributor can't be a member of Parity!`)
-    // }
-
-    if (!process.env.ALLOWED_USERS.includes(tipper)) {
-      problemsText.push(
-        `You are not allowed to access the tip bot. Only ${process.env.ALLOWED_USERS} are allowed.`
-      );
-    }
-
-    // We will populate this information by processing the pull request and tip comment.
-    let network, address, size;
-
-    // match "polkadot address: <ADDRESS>"
-    const addressRegex = /(polkadot|kusama|localtest) address:\s?([a-z0-9]+)/i;
-    const maybeMatch = pullRequestBody.match(addressRegex);
-    if (!maybeMatch || maybeMatch.length != 3) {
-      problemsText.push(
-        `Contributor did not properly post their Polkadot or Kusama address. \n\n Make sure the pull request description has: "{network} address: {address}".`
-      );
-    } else {
-      network = maybeMatch[1].toLowerCase();
-      if (!['polkadot', 'kusama', 'localtest'].includes(network)) {
-        problemsText.push(
-          `Invalid network: ${maybeMatch[1]}. Please select "polkadot" or "kusama".`
-        );
-      }
-      address = maybeMatch[2];
-    }
-
-    // Tip initiation comment should be: "/tip { small / medium / large }"
-    const textParts = commentText.split(' ');
-    if (textParts.length !== 2) {
-      problemsText.push(
-        `Invalid command! Payload should be: "/tip { small / medium / large }".`
-      );
-    } else {
-      // We already match `/tip` at the top of this program, so just check size.
-      size = textParts[1].toLowerCase();
-      if (size == 's') {
-        size = 'small';
-      } else if (size == 'm') {
-        size = 'medium';
-      } else if (size == 'l') {
-        size = 'large';
-      }
-      if (!['small', 'medium', 'large'].includes(size)) {
-        problemsText.push(
-          `Invalid tip size. Please specify one of small, medium, or large.`
-        );
-      }
-    }
-
-    if (problemsText.length > 0) {
-      // there was some error to get to this point, lets list them.
-      let comment =
-        'Please fix the following problems before calling the tip bot again:';
-      for (const problem of problemsText) {
-        comment += `\n * ${problem}`;
-      }
-      postComment(context, comment);
-    } else {
-      console.log(
-        `Valid command! \n ${tipper} wants to tip ${contributor} (${address} on ${network}) a ${size} tip for pull request ${pullRequestUrl}.`
-      );
-      // Send the transaction to the network.
-      const result = await tipUser(
-        address,
-        contributor,
-        network,
-        pullRequestNumber,
-        pullRequestRepo,
-        size
-      );
-
-      let tipUrl;
-      if (network == 'polkadot') {
-        tipUrl = "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frpc.polkadot.io#/treasury/tips";
-      } else if (network == 'kusama') {
-        tipUrl = "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fkusama-rpc.polkadot.io#/treasury/tips";
-      } else {
-        tipUrl = "https://polkadot.js.org/apps/#/treasury/tips";
+    const respondOnResult = async (result: string | Error | undefined) => {
+      if (result === undefined) {
+        return
       }
 
-      // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
-      if (result) {
-        postComment(
-          context,
-          `A ${size} tip was successfully submitted for ${contributor} (${address} on ${network}). \n\n ${tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`
-        );
-      } else {
-        postComment(
-          context,
-          `Could not submit tip :( Notify someone at Parity.`
-        );
-      }
+      await context.octokit.issues.createComment({
+        owner: context.payload.repository.owner.login,
+        repo: context.payload.repository.name,
+        issue_number: context.payload.issue.number,
+        body: `@${tipRequester} ${
+          result instanceof Error ? `ERROR: ${displayError(result)}` : result
+        }`,
+      })
     }
-    return;
-  });
 }
 
-run(bot);
+void run(main)
