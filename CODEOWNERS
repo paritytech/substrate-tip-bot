@@ -20,5 +20,5 @@
 * @paritytech/opstooling
 
 # CI
-/.gitlab-ci.yml @paritytech/ci
-/.github @paritytech/ci
+/.gitlab-ci.yml @paritytech/ci @paritytech/opstooling
+/.github @paritytech/ci @paritytech/opstooling
