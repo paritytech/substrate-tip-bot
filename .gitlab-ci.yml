@@ -17,7 +17,8 @@ variables:
   KUBE_NAMESPACE:                  "substrate-tip-bot"
   CI_REGISTRY:                     "docker.io/paritytech"
   GIT_STRATEGY:                    fetch
-  CI_IMAGE:                        node:16.10
+  CI_IMAGE:                        "node:16.10"
+  BUILDAH_IMAGE:                   "quay.io/buildah/stable:v1.27"
   DOCKERHUB_REPO:                  "paritytech"
   IMAGE_NAME:                      docker.io/$DOCKERHUB_REPO/substrate-tip-bot
   DOCKER_TAG:                      "${CI_COMMIT_SHORT_SHA}"
@@ -55,7 +56,7 @@ variables:
 
 # template task for building and pushing an image
 .build-push-docker-image:          &build-push-docker-image
-  image:                           quay.io/buildah/stable
+  image:                           $BUILDAH_IMAGE
   script:
     - test "$Docker_Hub_User_Parity" -a "$Docker_Hub_Pass_Parity" ||
       ( echo "no docker credentials provided"; exit 1 )
@@ -79,7 +80,7 @@ variables:
 # test that docker image can build
 
 .build-only-docker-image:          &build-only-docker-image
-  image:                           quay.io/buildah/stable
+  image:                           $BUILDAH_IMAGE
   script:
     - buildah bud
       --format=docker
