@@ -36,7 +36,7 @@
     "dotenv": "^16.0.1",
     "eslint-plugin-prettier": "^4.1.0",
     "nodemon": "^2.0.13",
-    "opstooling-js-style": "https://github.com/paritytech/opstooling-js-style#master",
+    "opstooling-js-style": "https://github.com/paritytech/opstooling-js-style#8578c0d55043e4e3db94f7fdf8b698bc4a86e58d",
     "prettier": "^2.7.1",
     "rimraf": "^3.0.2",
     "smee-client": "^1.2.2",
