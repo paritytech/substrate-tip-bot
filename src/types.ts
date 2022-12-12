@@ -1,4 +1,3 @@
-import { HandlerFunction } from "@octokit/webhooks/dist-types/types";
 import { WsProvider } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Probot } from "probot";
@@ -23,10 +22,9 @@ export type Contributor = {
   account: ContributorAccount;
 };
 
-export type IssueCommentCreatedContext = Parameters<HandlerFunction<"issue_comment.created", unknown>>[0];
-
 export type State = {
-  allowedTipRequesters: unknown[];
+  allowedGitHubOrg: string;
+  allowedGitHubTeam: string;
   seedOfTipperAccount: string;
   bot: Probot;
 };

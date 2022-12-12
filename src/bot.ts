@@ -1,24 +1,30 @@
+import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
+import { github } from "opstooling-integrations";
 import { displayError, envVar } from "opstooling-js";
 import { Probot, run } from "probot";
 
-import { isPullRequest } from "./github";
 import { getTipSize, parseContributorAccount, tipUser } from "./tip";
-import { IssueCommentCreatedContext, State } from "./types";
+import { State } from "./types";
 
-const onIssueComment = async (state: State, context: IssueCommentCreatedContext, tipRequester: string) => {
-  const { allowedTipRequesters, bot } = state;
+const onIssueComment = async (
+  state: State,
+  event: IssueCommentCreatedEvent,
+  tipRequester: string,
+  octokitInstance: github.GitHubInstance,
+) => {
+  const { allowedGitHubOrg, allowedGitHubTeam, bot } = state;
 
-  const commentText = context.payload.comment.body;
-  const pullRequestBody = context.payload.issue.body;
-  const pullRequestUrl = context.payload.issue.html_url;
-  const contributorLogin = context.payload.issue.user.login;
-  const pullRequestNumber = context.payload.issue.number;
-  const pullRequestRepo = context.payload.repository.name;
+  const commentText = event.comment.body;
+  const pullRequestBody = event.issue.body;
+  const pullRequestUrl = event.issue.html_url;
+  const contributorLogin = event.issue.user.login;
+  const pullRequestNumber = event.issue.number;
+  const pullRequestRepo = event.repository.name;
 
   const [botMention, tipSizeInput] = commentText.split(" ") as (string | undefined)[];
 
   // The bot only triggers on creation of a new comment on a pull request.
-  if (!isPullRequest(context) || context.payload.action !== "created" || !botMention?.startsWith("/tip")) {
+  if (!event.issue.pull_request || event.action !== "created" || !botMention?.startsWith("/tip")) {
     return;
   }
 
@@ -26,8 +32,13 @@ const onIssueComment = async (state: State, context: IssueCommentCreatedContext,
     return "Contributor and tipper cannot be the same person!";
   }
 
-  if (!allowedTipRequesters.includes(tipRequester)) {
-    return `You are not allowed to request a tip. Only ${allowedTipRequesters.join(", ")} are allowed.`;
+  if (
+    !(await github.isGithubTeamMember(
+      { org: allowedGitHubOrg, team: allowedGitHubTeam, username: tipRequester },
+      { octokitInstance },
+    ))
+  ) {
+    return `You are not allowed to request a tip. Only members of ${allowedGitHubOrg}/${allowedGitHubTeam} are allowed.`;
   }
 
   const contributorAccount = parseContributorAccount(pullRequestBody);
@@ -51,35 +62,56 @@ const onIssueComment = async (state: State, context: IssueCommentCreatedContext,
 };
 
 const main = (bot: Probot) => {
-  const allowedTipRequesters = JSON.parse(envVar("ALLOWED_USERS")) as unknown[];
-  if (!Array.isArray(allowedTipRequesters)) {
-    throw new Error("$ALLOWED_USERS needs to be an array");
-  }
-
-  const seedOfTipperAccount = envVar("ACCOUNT_SEED");
-
-  const state = { allowedTipRequesters, seedOfTipperAccount, bot };
+  const state: State = {
+    bot,
+    allowedGitHubOrg: envVar("APPROVERS_GH_ORG"),
+    allowedGitHubTeam: envVar("APPROVERS_GH_TEAM"),
+    seedOfTipperAccount: envVar("ACCOUNT_SEED"),
+  };
 
   bot.log.info("Tip bot was loaded!");
 
-  bot.on("issue_comment", (context) => {
+  bot.on("issue_comment.created", async (context) => {
     const tipRequester = context.payload.comment.user.login;
+    const installationId = (
+      await github.getRepoInstallation({
+        owner: context.payload.repository.owner.login,
+        repo: context.payload.repository.name,
+      })
+    ).data.id;
+
+    const octokitInstance = await github.getInstance({
+      authType: "installation",
+      appId: envVar("GITHUB_APP_ID"),
+      installationId: String(installationId),
+      privateKey: envVar("GITHUB_PRIVATE_KEY"),
+    });
 
     const respondOnResult = async (result: string | Error | undefined) => {
       if (result === undefined) {
         return;
       }
 
-      await context.octokit.issues.createComment({
-        owner: context.payload.repository.owner.login,
-        repo: context.payload.repository.name,
-        issue_number: context.payload.issue.number,
-        body: `@${tipRequester} ${result instanceof Error ? `ERROR: ${displayError(result)}` : result}`,
-      });
+      await github.createComment(
+        {
+          owner: context.payload.repository.owner.login,
+          repo: context.payload.repository.name,
+          issue_number: context.payload.issue.number,
+          body: `@${tipRequester} ${result instanceof Error ? `ERROR: ${displayError(result)}` : result}`,
+        },
+        { octokitInstance },
+      );
     };
 
-    void onIssueComment(state, context, tipRequester).then(respondOnResult).catch(respondOnResult);
+    void onIssueComment(state, context.payload, tipRequester, octokitInstance).then(respondOnResult, respondOnResult);
   });
 };
+
+process.env.PRIVATE_KEY = Buffer.from(envVar("PRIVATE_KEY_BASE64"), "base64").toString();
+
+// Aligning environment between Probot and opstooling-integrations
+process.env.GITHUB_APP_ID = process.env.APP_ID;
+process.env.GITHUB_AUTH_TYPE = "app";
+process.env.GITHUB_PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 void run(main);

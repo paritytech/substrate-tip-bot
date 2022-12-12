@@ -14,12 +14,15 @@ export function getTipSize(tipSizeInput: string | undefined): TipSize {
   return validTipSizes[tipSizeInput];
 }
 
-export function parseContributorAccount(pullRequestBody: string): ContributorAccount {
-  const matches = pullRequestBody.match(
-    // match "polkadot address: <ADDRESS>"
-    /(\S+)\s*address:\s*([a-z0-9]+)/i,
-  );
-  if (!matches || matches.length != 3) {
+export function parseContributorAccount(pullRequestBody: string | null): ContributorAccount {
+  const matches =
+    typeof pullRequestBody === "string" &&
+    pullRequestBody.match(
+      // match "polkadot address: <ADDRESS>"
+      /(\S+)\s*address:\s*([a-z0-9]+)/i,
+    );
+
+  if (matches === false || matches === null || matches.length != 3) {
     throw new Error(
       `Contributor did not properly post their account address.\n\nMake sure the pull request description has: "{network} address: {address}".`,
     );
