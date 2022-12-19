@@ -95,7 +95,7 @@ check-linting:
   <<:                              *common-refs
   <<:                              *kubernetes-env
   script:
-    - yarn --immutable
+    - yarn --network-concurrency 1 --immutable
     - yarn lint
 
 build-docker-bot:

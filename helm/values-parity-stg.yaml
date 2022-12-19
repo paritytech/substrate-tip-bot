@@ -2,12 +2,13 @@ common:
   env:
     APP_HOST: "https://substrate-tip-bot.parity-stg.parity.io"
     DATABASE_NAME: "substrate-tip-bot"
+    APPROVERS_GH_ORG: "paritytech-stg"
+    APPROVERS_GH_TEAM: "tip-bot-approvers"
   secrets:
     WEBHOOK_SECRET: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#WEBHOOK_SECRET
     PRIVATE_KEY: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#PRIVATE_KEY
     GITHUB_CLIENT_SECRET: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#GITHUB_CLIENT_SECRET
     ACCOUNT_SEED: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#ACCOUNT_SEED
-    ALLOWED_USERS: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#ALLOWED_USERS
     APP_ID: ref+vault://kv/cicd/gitlab/parity/mirrors/substrate-tip-bot/parity-stg#APP_ID
   ingress:
     annotations:
