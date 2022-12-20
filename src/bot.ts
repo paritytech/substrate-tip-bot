@@ -107,7 +107,9 @@ const main = (bot: Probot) => {
   });
 };
 
-process.env.PRIVATE_KEY = Buffer.from(envVar("PRIVATE_KEY_BASE64"), "base64").toString();
+if (process.env.PRIVATE_KEY_BASE64 && !process.env.PRIVATE_KEY) {
+  process.env.PRIVATE_KEY = Buffer.from(envVar("PRIVATE_KEY_BASE64"), "base64").toString();
+}
 
 // Aligning environment between Probot and opstooling-integrations
 process.env.GITHUB_APP_ID = process.env.APP_ID;
