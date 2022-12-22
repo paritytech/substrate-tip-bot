@@ -7,7 +7,9 @@
 
 ## Usage
 
-This bot relies on GitHub pull request that opt in via a body text comment to specify what Substrate network and address to send tips to.
+This bot relies on GitHub pull request that opt in via a body text comment to specify what Substrate network and address to send tips to.  
+
+Permission to send out tips is limited for a GitHub team, that's configured with `APPROVERS_GH_ORG` + `APPROVERS_GH_TEAM` environment variables. For production, it's [@paritytech/tip-bot-approvers](https://github.com/orgs/paritytech/teams/tip-bot-approvers)  
 
 ### Pull request body
 
@@ -22,8 +24,6 @@ Followed by a _comment_ on said pull request
 ```sh
 /tip {small | medium | large}
 ```
-
-
 
 ## Local development 🔧
 
