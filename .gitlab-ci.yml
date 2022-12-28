@@ -119,6 +119,14 @@ publish-docker-bot:
 
 .deploy:                           &deploy-k8s
   script:
+    # Change the app version during build so that Kubernetes is able to update
+    # the deployment even if the images' tags did not change
+    # $CI_PIPELINE_ID is guaranteed to be unique
+    - export KUBERNETES_VERSION_TAG="$CI_PIPELINE_ID"
+    # Those values are embedded in the annotations and that's how the change is
+    # noticed
+    - |-
+      sed -i "s/appVersion:.*/appVersion: $KUBERNETES_VERSION_TAG/" helm/Chart.yaml
     # https://docs.gitlab.com/ee/ci/examples/authenticating-with-hashicorp-vault/#example
     - export VAULT_TOKEN="$(vault write -field=token auth/$VAULT_AUTH_PATH/login role=$VAULT_AUTH_ROLE jwt=$CI_JOB_JWT)"
     - helm dependency update helm/
@@ -142,8 +150,8 @@ deploy-stg:
   variables:
     CI_IMAGE:                      "paritytech/kubetools:3.5.3"
     ENVIRONMENT:                   parity-stg
-  environment:
-    name:                          parity-stg
+  tags:
+    - substrate-tip-bot-stg
 
 deploy-prod:
   stage:                           production
@@ -153,5 +161,5 @@ deploy-prod:
   variables:
     CI_IMAGE:                      "paritytech/kubetools:3.5.3"
     ENVIRONMENT:                   parity-prod
-  environment:
-    name:                          parity-prod
+  tags:
+    - substrate-tip-bot-prod
