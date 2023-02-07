@@ -1,5 +1,7 @@
 # substrate-tip-bot
 
+[![GitHub Issue Sync](https://github.com/paritytech/substrate-tip-bot/actions/workflows/github-issue-sync.yml/badge.svg)](https://github.com/paritytech/substrate-tip-bot/actions/workflows/github-issue-sync.yml)
+
 > A GitHub App built with [Probot](https://github.com/probot/probot) that can submit tips on behalf
 > of a [Substrate](https://github.com/paritytech/substrate) based network.
 
