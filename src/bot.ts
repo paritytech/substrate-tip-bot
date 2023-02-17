@@ -4,7 +4,7 @@ import { displayError, envVar } from "opstooling-js";
 import { Probot, run } from "probot";
 
 import { getTipSize, parseContributorAccount, tipUser } from "./tip";
-import { State } from "./types";
+import { ContributorAccount, State } from "./types";
 
 const onIssueComment = async (
   state: State,
@@ -41,8 +41,19 @@ const onIssueComment = async (
     return `You are not allowed to request a tip. Only members of ${allowedGitHubOrg}/${allowedGitHubTeam} are allowed.`;
   }
 
-  const contributorAccount = parseContributorAccount(pullRequestBody);
-  const tipSize = getTipSize(tipSizeInput);
+  let contributorAccount: ContributorAccount;
+  try {
+    contributorAccount = parseContributorAccount(pullRequestBody);
+  } catch (error) {
+    return error.message;
+  }
+
+  let tipSize: string;
+  try {
+    tipSize = getTipSize(tipSizeInput);
+  } catch (error) {
+    return error.message;
+  }
 
   bot.log(
     `Valid command!\n${tipRequester} wants to tip ${contributorLogin} (${contributorAccount.address} on ${contributorAccount.network}) a ${tipSize} tip for pull request ${pullRequestUrl}.`,
