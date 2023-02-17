@@ -83,7 +83,7 @@ export async function tipUser(
 
   const reason = `TO: ${contributor.githubUsername} FOR: ${pullRequestRepo}#${pullRequestNumber} (${tipSize})`;
   /* TODO before submitting, check tip does not already exist via a storage query.
-     TODO potentially prevent duplicates by also checking for reasons with the other sizes. */
+         TODO potentially prevent duplicates by also checking for reasons with the other sizes. */
   const unsub = await api.tx.tips
     .reportAwesome(reason, contributor.account.address)
     .signAndSend(botTipAccount, (result: SubmittableResult) => {
@@ -95,7 +95,7 @@ export async function tipUser(
         unsub();
       }
     });
-
+  await api.disconnect();
   return { success: true, tipUrl };
 }
 
@@ -108,7 +108,7 @@ async function getContributorMetadata(state: State, contributor: Contributor): P
   switch (contributor.account.network) {
     case "localtest": {
       return {
-        provider: new WsProvider("ws://localhost:9944"),
+        provider: new WsProvider("ws://127.0.0.1:9944"),
         botTipAccount: keyring.addFromUri("//Alice", { name: "Alice default" }),
         tipUrl: "https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/treasury/tips",
       };
