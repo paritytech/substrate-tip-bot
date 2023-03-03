@@ -115,6 +115,23 @@ publish-docker-bot:
   variables:
     DOCKERFILE:                    "Dockerfile"
 
+publish-docker-image-description:
+  stage:                           build
+  <<:                              *kubernetes-env
+  variables:
+    CI_IMAGE:                      paritytech/dockerhub-description
+    DOCKERHUB_REPOSITORY:          paritytech/substrate-tip-bot
+    DOCKER_USERNAME:               $Docker_Hub_User_Parity
+    DOCKER_PASSWORD:               $Docker_Hub_Pass_Parity
+    README_FILEPATH:               $CI_PROJECT_DIR/Dockerfile.README.md
+    SHORT_DESCRIPTION:             "A GitHub App built with Probot that can submit tips on behalf of a Substrate based network"
+  rules:
+    - if: $CI_COMMIT_REF_NAME == "master"
+      changes:
+      - Dockerfile.README.md
+  script:
+    - cd / && sh entrypoint.sh
+
 #### stage:                        deploy
 
 .deploy:                           &deploy-k8s
