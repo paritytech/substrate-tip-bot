@@ -100,7 +100,7 @@ async function getContributorMetadata(state: State, contributor: Contributor): P
     case "localtest": {
       return {
         provider: new WsProvider("ws://127.0.0.1:9944"),
-        botTipAccount: keyring.addFromUri("//Alice", { name: "Alice default" }),
+        botTipAccount,
         tipUrl: "https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/treasury/tips",
       };
     }
