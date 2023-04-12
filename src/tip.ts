@@ -2,7 +2,7 @@ import { ApiPromise, Keyring, SubmittableResult, WsProvider } from "@polkadot/ap
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import assert from "assert";
 
-import { Contributor, ContributorAccount, State, TipMetadata, TipNetwork, TipSize } from "./types";
+import { Contributor, ContributorAccount, State, Tip, TipMetadata, TipNetwork, TipSize } from "./types";
 
 export function getTipSize(tipSizeInput: string | undefined): TipSize {
   const validTipSizes: { [key: string]: TipSize } = { small: "small", medium: "medium", large: "large" } as const;
@@ -55,19 +55,10 @@ export function parseContributorAccount(pullRequestBody: string | null): Contrib
    TODO Unit tests */
 export async function tipUser(
   state: State,
-  {
-    contributor,
-    pullRequestNumber,
-    pullRequestRepo,
-    tipSize,
-  }: {
-    contributor: Contributor;
-    pullRequestNumber: number;
-    pullRequestRepo: string;
-    tipSize: string;
-  },
+  tip: Tip,
 ): Promise<{ success: boolean; tipUrl: string }> {
   const { bot } = state;
+  const { contributor, pullRequestNumber, pullRequestRepo, tipSize} = tip;
   const { provider, botTipAccount, tipUrl } = await getContributorMetadata(state, contributor);
 
   const api = await ApiPromise.create({ provider });

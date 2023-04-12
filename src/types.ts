@@ -28,3 +28,10 @@ export type State = {
   seedOfTipperAccount: string;
   bot: Probot;
 };
+
+export type Tip = {
+  contributor: Contributor;
+  pullRequestNumber: number;
+  pullRequestRepo: string;
+  tipSize: string;
+}
