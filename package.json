@@ -21,8 +21,9 @@
     "build": "rimraf dist; babel src/ --extensions '.ts,.js' --out-dir dist/"
   },
   "dependencies": {
-    "@polkadot/api": "^9.0.1",
-    "@polkadot/util-crypto": "^10.1.2",
+    "@polkadot/api": "^10.0.1",
+    "@polkadot/util": "^11.0.1",
+    "@polkadot/util-crypto": "^11.0.1",
     "opstooling-integrations": "https://github.com/paritytech/opstooling-integrations#v2.0.0",
     "opstooling-js": "https://github.com/paritytech/opstooling-js#v0.0.14",
     "probot": "^12.2.8"
@@ -32,6 +33,7 @@
     "@babel/core": "^7.15.8",
     "@babel/preset-env": "^7.15.8",
     "@babel/preset-typescript": "^7.15.0",
+    "@polkadot/keyring": "^11.0.1",
     "@resolritter/tsc-files": "^1.1.4",
     "@types/node": "^16.10.3",
     "dotenv": "^16.0.1",
