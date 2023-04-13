@@ -22,11 +22,14 @@ import { State, TipRequest } from "./types";
 
 const randomAddress = () => createTestKeyring().addFromSeed(randomAsU8a(32)).address;
 
+const logMock: any = console.log.bind(console); // eslint-disable-line @typescript-eslint/no-explicit-any
+logMock.error = console.error.bind(console);
+
 const state: State = {
   allowedGitHubOrg: "test",
   allowedGitHubTeam: "test",
   seedOfTipperAccount: "//Bob",
-  bot: { log: console.log.bind(console) } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+  bot: { log: logMock } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
 };
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 

@@ -31,29 +31,30 @@ export async function tipOpenGov(opts: {
   const encodedHash = blake2AsHex(encodedProposal);
   const proposalLength = xt.length - 1;
 
-  const unsub = await api.tx.preimage
+  const preimage_unsub = await api.tx.preimage
     .notePreimage(encodedProposal)
     .signAndSend(botTipAccount, { nonce: -1 }, (result) => {
       if (result.status.isInBlock) {
-        bot.log(`Current status is ${result.status.toString()}`);
         bot.log(`Preimage Upload included at blockHash ${result.status.asInBlock.toString()}`);
-        if (process.env.NODE_ENV === "test") {
-          // Don't wait for finalization if this is only a test.
-          unsub();
-        }
       } else if (result.status.isFinalized) {
         bot.log(`Preimage Upload finalized at blockHash ${result.status.asFinalized.toString()}`);
-        unsub();
+        preimage_unsub();
       }
     });
 
-  await api.tx.referenda
+  const referenda_unsub = await api.tx.referenda
     .submit(
-      /* Seems like there should be a better way to meet the TS types
-         other than stringify. */
-      JSON.stringify({ Origins: track.track }),
+      // TODO: There should be a way to set those types properly.
+      { Origins: track.track } as any, // eslint-disable-line
       { Lookup: { hash: encodedHash, length: proposalLength } },
-      JSON.stringify({ after: 10 }),
+      { after: 10 } as any, // eslint-disable-line
     )
-    .signAndSend(botTipAccount, { nonce: -1 });
+    .signAndSend(botTipAccount, { nonce: -1 }, (result) => {
+      if (result.status.isInBlock) {
+        bot.log(`Tip referendum included at blockHash ${result.status.asInBlock.toString()}`);
+      } else if (result.status.isFinalized) {
+        bot.log(`Tip referendum finalized at blockHash ${result.status.asFinalized.toString()}`);
+        referenda_unsub();
+      }
+    });
 }
