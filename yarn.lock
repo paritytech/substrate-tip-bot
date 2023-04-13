@@ -1952,7 +1952,7 @@
     rxjs "^7.8.0"
     tslib "^2.5.0"
 
-"@polkadot/api@10.3.2", "@polkadot/api@^10.0.1":
+"@polkadot/api@10.3.2", "@polkadot/api@^10.3.2":
   version "10.3.2"
   resolved "https://registry.yarnpkg.com/@polkadot/api/-/api-10.3.2.tgz#59236ca7a8f5058a94ee48b8aa085f50ddd8a6d6"
   integrity sha512-7lJI9bHHfiepbQvEdgqrt60jmFCw/6FvSqi9R2S9RbYdz/LD0PVF1GavpyU0tWDUfFg+jUGi2Qw4DLml455BiQ==

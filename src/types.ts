@@ -5,6 +5,7 @@ import { Probot } from "probot";
 export type TipNetwork = "localtest" | "kusama" | "polkadot";
 
 export type TipSize = "small" | "medium" | "large";
+export type OpenGovTrack = "SmallTipper" | "BigTipper";
 
 export type TipMetadata = {
   provider: WsProvider;
@@ -29,9 +30,14 @@ export type State = {
   bot: Probot;
 };
 
-export type Tip = {
+export type TipRequest = {
   contributor: Contributor;
   pullRequestNumber: number;
   pullRequestRepo: string;
-  tipSize: string;
-}
+  tip: {
+    type: "gov1" | "opengov";
+    size: TipSize;
+  };
+};
+
+export type TipResult = { success: boolean; tipUrl: string };

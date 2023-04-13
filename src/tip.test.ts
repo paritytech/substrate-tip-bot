@@ -1,40 +1,31 @@
 import "@polkadot/api-augment";
-import { createTestKeyring } from "@polkadot/keyring";
 import { ApiPromise } from "@polkadot/api";
+import { createTestKeyring } from "@polkadot/keyring";
 import { HttpProvider } from "@polkadot/rpc-provider";
-import { BN } from "@polkadot/util";
 import { randomAsU8a } from "@polkadot/util-crypto";
-import { until } from "opstooling-js";
 import assert from "assert";
+
 import { tipUser } from "./tip";
-import { State, Tip } from "./types";
-
-
+import { State, TipRequest } from "./types";
 
 const randomAddress = () => createTestKeyring().addFromSeed(randomAsU8a(32)).address;
 
 const state: State = {
-  allowedGitHubOrg: 'test',
-  allowedGitHubTeam: 'test',
-  seedOfTipperAccount: '//Bob',
-  bot: {
-    log: console.log.bind(console)
-  } as any
-}
-const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3" //Bob
+  allowedGitHubOrg: "test",
+  allowedGitHubTeam: "test",
+  seedOfTipperAccount: "//Bob",
+  bot: { log: console.log.bind(console) } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+};
+const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
-const tip: Tip = {
-  tipSize: 'small',
-  contributor: {
-    githubUsername: 'test',
-    account: {
-      address: randomAddress(),
-      network: 'localtest'
-    }
-  },
-  pullRequestRepo: 'test',
-  pullRequestNumber: 1
-}
+const getTipRequest = (tip: TipRequest["tip"]): TipRequest => {
+  return {
+    tip,
+    contributor: { githubUsername: "test", account: { address: randomAddress(), network: "localtest" } },
+    pullRequestRepo: "test",
+    pullRequestNumber: 1,
+  };
+};
 
 describe("tip", () => {
   const polkadotApi = new ApiPromise({
@@ -43,30 +34,28 @@ describe("tip", () => {
   });
 
   const getUserBalance = async (userAddress: string) => {
-    console.log('here2')
+    console.log("here2");
     const { data } = await polkadotApi.query.system.account(userAddress);
     return data.free.toBn();
   };
 
   beforeAll(async () => {
     await polkadotApi.isReady;
-    console.log('here1')
-  })
+    assert((await getUserBalance(tipperAccount)).gtn(0));
+  });
 
-  test('read initial tipper balance', async () => {
-    const balance = await getUserBalance(tipperAccount)
-    assert(balance.gtn(0))
-  })
+  for (const govType of ["gov1", "opengov"]) {
+    describe(govType, () => {
+      for (const tipSize of ["small", "medium", "large"]) {
+        test(`tips a user (${tipSize})`, async () => {
+          const tipRequest = getTipRequest({ type: "gov1", size: "small" });
 
-  test('tips a user (gov1)', async () => {
-    debugger;
-    const initialBalance = await getUserBalance(tip.contributor.account.address)
-    console.log({initialBalance: initialBalance.toString()})
+          const { success, tipUrl } = await tipUser(state, tipRequest);
 
-    await tipUser(state, tip)
-
-    const balance = await getUserBalance(tip.contributor.account.address)
-    console.log({balance: balance.toString()})
-
-  })
+          expect(success).toBeTruthy();
+          console.log(`Assert the results manually: ${tipUrl}`);
+        });
+      }
+    });
+  }
 });

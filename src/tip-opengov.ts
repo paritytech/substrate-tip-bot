@@ -1,70 +1,59 @@
 import "@polkadot/api-augment";
 import "@polkadot/types-augment";
+import { ApiPromise } from "@polkadot/api";
+import type { SubmittableExtrinsic } from "@polkadot/api/promise/types";
+import { KeyringPair } from "@polkadot/keyring/types";
+import { blake2AsHex } from "@polkadot/util-crypto";
+import assert from "assert";
 
-import { ApiPromise, Keyring, SubmittableResult, WsProvider } from "@polkadot/api";
-import { blake2AsHex } from '@polkadot/util-crypto';
-import type { SubmittableExtrinsic } from '@polkadot/api/promise/types';
-import { Contributor, State } from "./types";
+import { State, TipRequest } from "./types";
 
-export async function Gov2tipUser(
+export async function tipOpenGov(opts: {
+  state: State;
+  api: ApiPromise;
+  tipRequest: TipRequest;
+  botTipAccount: KeyringPair;
+}): Promise<void> {
+  const {
+    state: { bot },
+    api,
+    tipRequest,
+    botTipAccount,
+  } = opts;
+  const { contributor } = tipRequest;
+  assert(tipRequest.tip.type === "opengov");
 
-): Promise<{ success: boolean; tipUrl: string }> {
-  //export async function Gov2tipUser(api, amount, recipientAccount) {
-
-  const wsProvider = new WsProvider('ws://127.0.0.1:9944');
-  const api = await ApiPromise.create({ provider: wsProvider });
-  await api.isReady;
-
-  const keyring = new Keyring({ type: "sr25519" });
-
-  const seedOfTipperAccount = "//Alice"
-  const seedOfRecipientAccount = "//Charlie"
-
-  const botTipAccount = keyring.addFromUri(seedOfTipperAccount);
-  const recipientAccount = keyring.addFromUri(seedOfRecipientAccount);
-
-  const proposal = {
-    amount: 5000000000000, //50 DOT
-    beneficiary: recipientAccount,
-  }
-
-  const xt = api.tx.treasury.spend(proposal.amount, proposal.beneficiary.address);
-  const encodedProposal = (xt as SubmittableExtrinsic)?.method.toHex() || '';
+  const xt = api.tx.treasury.spend(5000000000000, contributor.account.address);
+  const encodedProposal = (xt as SubmittableExtrinsic)?.method.toHex() || "";
   const encodedHash = blake2AsHex(encodedProposal);
-  //const proposalLength = xt.length - 1;
+  const proposalLength = xt.length - 1;
 
-  const unsub_preimage = await api.tx.preimage
-    .notePreimage(encodedProposal)
-    .signAndSend(botTipAccount, (result: SubmittableResult) => {
+  const preimageFinalizedPromise = new Promise<void>(async (res, rej) => {
+    const unsub = await api.tx.preimage.notePreimage(encodedProposal).signAndSend(botTipAccount, (result) => {
       if (result.status.isInBlock) {
-        console.log(`Current status is ${result.status.toString()}`);
-        console.log(`Preimage Upload included at blockHash ${result.status.asInBlock.toString()}`);
+        bot.log(`Current status is ${result.status.toString()}`);
+        bot.log(`Preimage Upload included at blockHash ${result.status.asInBlock.toString()}`);
+        /* if (process.env.NODE_ENV === "test") {
+             // Don't wait for finalization if this is only a test.
+             unsub();
+             res();
+           } */
       } else if (result.status.isFinalized) {
-        console.log(`Preimage Upload finalized at blockHash ${result.status.asFinalized.toString()}`);
-        unsub_preimage();
+        bot.log(`Preimage Upload finalized at blockHash ${result.status.asFinalized.toString()}`);
+        unsub();
+        res();
       }
     });
+  });
 
-  const unsub_referenda = await api.tx.proxy
-    .proxy(
-      botTipAccount.address,
-      'Governance',
-      api.tx.referenda.submit(
-        '{ "Origins": "SmallTipper" }',
-        encodedHash,
-        '{ "after": 10 }'
-      )
+  await preimageFinalizedPromise;
+
+  await api.tx.referenda
+    .submit(
+      { Origins: "SmallTipper" } as any, // eslint-disable-line
+      { Lookup: { hash: encodedHash, length: proposalLength } },
+      { after: 10 } as any, // eslint-disable-line
+      // '{ "after": 10 }'
     )
-    .signAndSend(botTipAccount, (result: SubmittableResult) => {
-      console.log(`Current status is ${result.status.toString()}`);
-      if (result.status.isInBlock) {
-        console.log(`Referendum submitted at blockHash ${result.status.asInBlock.toString()}`);
-      } else if (result.status.isFinalized) {
-        console.log(`Referendum finalized at blockHash ${result.status.asInBlock.toString()}`);
-        unsub_referenda();
-      }
-    });
-
-  return { success: true, tipUrl: "" };
+    .signAndSend(botTipAccount);
 }
-

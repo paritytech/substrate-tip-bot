@@ -22,7 +22,7 @@
     "test": "NODE_OPTIONS='--experimental-vm-modules --es-module-specifier-resolution=node' jest"
   },
   "dependencies": {
-    "@polkadot/api": "^10.0.1",
+    "@polkadot/api": "^10.3.2",
     "@polkadot/util": "^11.0.1",
     "@polkadot/util-crypto": "^11.0.1",
     "opstooling-integrations": "https://github.com/paritytech/opstooling-integrations#v2.0.0",

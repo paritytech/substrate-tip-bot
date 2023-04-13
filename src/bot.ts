@@ -3,15 +3,16 @@ import { github } from "opstooling-integrations";
 import { displayError, envVar } from "opstooling-js";
 import { Probot, run } from "probot";
 
-import { getTipSize, parseContributorAccount, tipUser } from "./tip";
-import { ContributorAccount, State } from "./types";
+import { tipUser } from "./tip";
+import { ContributorAccount, State, TipSize } from "./types";
+import { getTipSize, parseContributorAccount } from "./util";
 
 const onIssueComment = async (
   state: State,
   event: IssueCommentCreatedEvent,
   tipRequester: string,
   octokitInstance: github.GitHubInstance,
-) => {
+): Promise<string | Error | undefined> => {
   const { allowedGitHubOrg, allowedGitHubTeam, bot } = state;
 
   const commentText = event.comment.body;
@@ -48,7 +49,7 @@ const onIssueComment = async (
     return error.message;
   }
 
-  let tipSize: string;
+  let tipSize: TipSize;
   try {
     tipSize = getTipSize(tipSizeInput);
   } catch (error) {
@@ -63,7 +64,7 @@ const onIssueComment = async (
     contributor: { githubUsername: contributorLogin, account: contributorAccount },
     pullRequestNumber,
     pullRequestRepo,
-    tipSize,
+    tip: { size: tipSize, type: botMention === "/tip2" ? "opengov" : "gov1" },
   });
 
   // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
