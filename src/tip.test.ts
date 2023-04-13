@@ -6,7 +6,7 @@ import { randomAsU8a } from "@polkadot/util-crypto";
 import assert from "assert";
 
 import { tipUser } from "./tip";
-import { State, TipRequest } from "./types";
+import { State, TipRequest, TipSize } from "./types";
 
 const randomAddress = () => createTestKeyring().addFromSeed(randomAsU8a(32)).address;
 
@@ -27,6 +27,9 @@ const getTipRequest = (tip: TipRequest["tip"]): TipRequest => {
   };
 };
 
+const govTypes = ["gov1", "opengov"] as const
+const tipSizes = ["small", "medium", "large"] as const
+
 describe("tip", () => {
   const polkadotApi = new ApiPromise({
     provider: new HttpProvider("http://localhost:9933"),
@@ -34,7 +37,6 @@ describe("tip", () => {
   });
 
   const getUserBalance = async (userAddress: string) => {
-    console.log("here2");
     const { data } = await polkadotApi.query.system.account(userAddress);
     return data.free.toBn();
   };
@@ -44,11 +46,11 @@ describe("tip", () => {
     assert((await getUserBalance(tipperAccount)).gtn(0));
   });
 
-  for (const govType of ["gov1", "opengov"]) {
+  for (const govType of govTypes) {
     describe(govType, () => {
-      for (const tipSize of ["small", "medium", "large"]) {
+      for (const tipSize of tipSizes) {
         test(`tips a user (${tipSize})`, async () => {
-          const tipRequest = getTipRequest({ type: "gov1", size: "small" });
+          const tipRequest = getTipRequest({ type: govType, size: tipSize });
 
           const { success, tipUrl } = await tipUser(state, tipRequest);
 

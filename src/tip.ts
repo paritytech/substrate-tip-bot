@@ -9,7 +9,7 @@ import { getContributorMetadata } from "./util";
    TODO Unit tests */
 export async function tipUser(state: State, tipRequest: TipRequest): Promise<TipResult> {
   const { bot } = state;
-  const { provider, tipUrl, botTipAccount } = await getContributorMetadata(state, tipRequest.contributor);
+  const { provider, tipUrl, botTipAccount } = await getContributorMetadata(state, tipRequest);
 
   const api = await ApiPromise.create({ provider });
   await api.isReady;

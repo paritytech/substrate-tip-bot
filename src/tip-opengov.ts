@@ -29,15 +29,15 @@ export async function tipOpenGov(opts: {
   const proposalLength = xt.length - 1;
 
   const preimageFinalizedPromise = new Promise<void>(async (res, rej) => {
-    const unsub = await api.tx.preimage.notePreimage(encodedProposal).signAndSend(botTipAccount, (result) => {
+    const unsub = await api.tx.preimage.notePreimage(encodedProposal).signAndSend(botTipAccount, {nonce: -1},(result) => {
       if (result.status.isInBlock) {
         bot.log(`Current status is ${result.status.toString()}`);
         bot.log(`Preimage Upload included at blockHash ${result.status.asInBlock.toString()}`);
-        /* if (process.env.NODE_ENV === "test") {
-             // Don't wait for finalization if this is only a test.
-             unsub();
-             res();
-           } */
+        if (process.env.NODE_ENV === "test") {
+           // Don't wait for finalization if this is only a test.
+           unsub();
+           res();
+         }
       } else if (result.status.isFinalized) {
         bot.log(`Preimage Upload finalized at blockHash ${result.status.asFinalized.toString()}`);
         unsub();
@@ -55,5 +55,5 @@ export async function tipOpenGov(opts: {
       { after: 10 } as any, // eslint-disable-line
       // '{ "after": 10 }'
     )
-    .signAndSend(botTipAccount);
+    .signAndSend(botTipAccount, {nonce: -1});
 }
