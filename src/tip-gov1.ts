@@ -33,5 +33,4 @@ export async function tipGov1(opts: {
         unsub();
       }
     });
-  await api.disconnect();
 }
