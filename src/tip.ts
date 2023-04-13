@@ -42,8 +42,9 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
   } catch (e) {
     bot.log.error(e.message);
     return { success: false, tipUrl };
+  } finally {
+    await api.disconnect();
   }
 
-  await api.disconnect();
   return { success: true, tipUrl };
 }
