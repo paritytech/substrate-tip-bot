@@ -2,16 +2,8 @@ import { Keyring, WsProvider } from "@polkadot/api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import assert from "assert";
 
-import {
-  Contributor,
-  ContributorAccount,
-  OpenGovTrack,
-  State,
-  TipMetadata,
-  TipNetwork,
-  TipRequest,
-  TipSize
-} from "./types";
+import { OPENGOV_LARGE_TIP_VALUE, OPENGOV_MEDIUM_TIP_VALUE, OPENGOV_SMALL_TIP_VALUE } from "./constants";
+import { ContributorAccount, OpenGovTrack, State, TipMetadata, TipNetwork, TipRequest, TipSize } from "./types";
 
 const validTipSizes: { [key: string]: TipSize } = { small: "small", medium: "medium", large: "large" } as const;
 
@@ -23,10 +15,10 @@ export function getTipSize(tipSizeInput: string | undefined): TipSize {
   return validTipSizes[tipSizeInput];
 }
 
-export function tipSizeToOpenGovTrack(tipSize: TipSize): OpenGovTrack {
-  if (tipSize === "small") return "SmallTipper";
-  if (tipSize === "medium") return "BigTipper"; // Medium tip goes into Small or Big track?
-  if (tipSize === "large") return "BigTipper";
+export function tipSizeToOpenGovTrack(tipSize: TipSize): { track: OpenGovTrack; value: number } {
+  if (tipSize === "small") return { track: "SmallTipper", value: OPENGOV_SMALL_TIP_VALUE };
+  if (tipSize === "medium") return { track: "BigTipper", value: OPENGOV_MEDIUM_TIP_VALUE };
+  if (tipSize === "large") return { track: "BigTipper", value: OPENGOV_LARGE_TIP_VALUE };
 
   throw new Error(`Invalid tip size. Please specify one of ${Object.keys(validTipSizes).join(", ")}.`);
 }
@@ -73,8 +65,11 @@ export async function getContributorMetadata(state: State, tipRequest: TipReques
   const { seedOfTipperAccount } = state;
   const keyring = new Keyring({ type: "sr25519" });
   const botTipAccount = keyring.addFromUri(seedOfTipperAccount);
-  const {contributor, tip: {type}} = tipRequest
-  const tipUrlPath = type === "opengov" ? "referenda" : "treasury/tips"
+  const {
+    contributor,
+    tip: { type },
+  } = tipRequest;
+  const tipUrlPath = type === "opengov" ? "referenda" : "treasury/tips";
 
   switch (contributor.account.network) {
     case "localtest": {

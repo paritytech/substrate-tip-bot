@@ -24,7 +24,7 @@ export async function tipGov1(opts: {
          TODO potentially prevent duplicates by also checking for reasons with the other sizes. */
   const unsub = await api.tx.tips
     .reportAwesome(reason, contributor.account.address)
-    .signAndSend(botTipAccount, {nonce: -1},(result: SubmittableResult) => {
+    .signAndSend(botTipAccount, { nonce: -1 }, (result: SubmittableResult) => {
       bot.log(`Current status is ${result.status.toString()}`);
       if (result.status.isInBlock) {
         bot.log(`Tip included at blockHash ${result.status.asInBlock.toString()}`);

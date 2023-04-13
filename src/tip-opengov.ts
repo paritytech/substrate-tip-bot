@@ -7,6 +7,7 @@ import { blake2AsHex } from "@polkadot/util-crypto";
 import assert from "assert";
 
 import { State, TipRequest } from "./types";
+import { tipSizeToOpenGovTrack } from "./util";
 
 export async function tipOpenGov(opts: {
   state: State;
@@ -23,37 +24,36 @@ export async function tipOpenGov(opts: {
   const { contributor } = tipRequest;
   assert(tipRequest.tip.type === "opengov");
 
-  const xt = api.tx.treasury.spend(5000000000000, contributor.account.address);
+  const track = tipSizeToOpenGovTrack(tipRequest.tip.size);
+
+  const xt = api.tx.treasury.spend(track.value, contributor.account.address);
   const encodedProposal = (xt as SubmittableExtrinsic)?.method.toHex() || "";
   const encodedHash = blake2AsHex(encodedProposal);
   const proposalLength = xt.length - 1;
 
-  const preimageFinalizedPromise = new Promise<void>(async (res, rej) => {
-    const unsub = await api.tx.preimage.notePreimage(encodedProposal).signAndSend(botTipAccount, {nonce: -1},(result) => {
+  const unsub = await api.tx.preimage
+    .notePreimage(encodedProposal)
+    .signAndSend(botTipAccount, { nonce: -1 }, (result) => {
       if (result.status.isInBlock) {
         bot.log(`Current status is ${result.status.toString()}`);
         bot.log(`Preimage Upload included at blockHash ${result.status.asInBlock.toString()}`);
         if (process.env.NODE_ENV === "test") {
-           // Don't wait for finalization if this is only a test.
-           unsub();
-           res();
-         }
+          // Don't wait for finalization if this is only a test.
+          unsub();
+        }
       } else if (result.status.isFinalized) {
         bot.log(`Preimage Upload finalized at blockHash ${result.status.asFinalized.toString()}`);
         unsub();
-        res();
       }
     });
-  });
-
-  await preimageFinalizedPromise;
 
   await api.tx.referenda
     .submit(
-      { Origins: "SmallTipper" } as any, // eslint-disable-line
+      /* Seems like there should be a better way to meet the TS types
+         other than stringify. */
+      JSON.stringify({ Origins: track.track }),
       { Lookup: { hash: encodedHash, length: proposalLength } },
-      { after: 10 } as any, // eslint-disable-line
-      // '{ "after": 10 }'
+      JSON.stringify({ after: 10 }),
     )
-    .signAndSend(botTipAccount, {nonce: -1});
+    .signAndSend(botTipAccount, { nonce: -1 });
 }

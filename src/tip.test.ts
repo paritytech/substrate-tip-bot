@@ -1,3 +1,15 @@
+/*
+These are semi-automatic tests that will send out
+different sizes of tips (both gov1 and opengov),
+but do not have meaningful assertions.
+
+They rely on manually inspecting the produced tips in the browser UI.
+The URLs are printed in the output.
+
+These tests do not cover the part with GitHub interaction,
+they execute the tipping functions directly.
+ */
+
 import "@polkadot/api-augment";
 import { ApiPromise } from "@polkadot/api";
 import { createTestKeyring } from "@polkadot/keyring";
@@ -6,7 +18,7 @@ import { randomAsU8a } from "@polkadot/util-crypto";
 import assert from "assert";
 
 import { tipUser } from "./tip";
-import { State, TipRequest, TipSize } from "./types";
+import { State, TipRequest } from "./types";
 
 const randomAddress = () => createTestKeyring().addFromSeed(randomAsU8a(32)).address;
 
@@ -27,8 +39,8 @@ const getTipRequest = (tip: TipRequest["tip"]): TipRequest => {
   };
 };
 
-const govTypes = ["gov1", "opengov"] as const
-const tipSizes = ["small", "medium", "large"] as const
+const govTypes = ["gov1", "opengov"] as const;
+const tipSizes = ["small", "medium", "large"] as const;
 
 describe("tip", () => {
   const polkadotApi = new ApiPromise({
