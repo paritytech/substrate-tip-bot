@@ -1,7 +1,7 @@
 import { ApiPromise } from "@polkadot/api";
 
-import { tipGov1 } from "./tip-gov1";
 import { tipOpenGov } from "./tip-opengov";
+import { tipTreasury } from "./tip-treasury";
 import { State, TipRequest, TipResult } from "./types";
 import { getContributorMetadata } from "./util";
 
@@ -25,8 +25,8 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
 
   try {
     switch (tipRequest.tip.type) {
-      case "gov1":
-        await tipGov1({ state, api, tipRequest, botTipAccount });
+      case "treasury":
+        await tipTreasury({ state, api, tipRequest, botTipAccount });
         break;
       case "opengov":
         await tipOpenGov({ state, api, tipRequest, botTipAccount });

@@ -35,7 +35,7 @@ export type TipRequest = {
   pullRequestNumber: number;
   pullRequestRepo: string;
   tip: {
-    type: "gov1" | "opengov";
+    type: "treasury" | "opengov";
     size: TipSize;
   };
 };

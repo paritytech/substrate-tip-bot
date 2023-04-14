@@ -4,7 +4,7 @@ import assert from "assert";
 
 import { State, TipRequest } from "./types";
 
-export async function tipGov1(opts: {
+export async function tipTreasury(opts: {
   state: State;
   api: ApiPromise;
   tipRequest: TipRequest;
@@ -17,7 +17,7 @@ export async function tipGov1(opts: {
     botTipAccount,
   } = opts;
   const { contributor, pullRequestNumber, pullRequestRepo, tip } = tipRequest;
-  assert(tip.type === "gov1");
+  assert(tip.type === "treasury");
 
   const reason = `TO: ${contributor.githubUsername} FOR: ${pullRequestRepo}#${pullRequestNumber} (${tip.size})`;
   /* TODO before submitting, check tip does not already exist via a storage query.

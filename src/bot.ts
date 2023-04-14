@@ -64,7 +64,7 @@ const onIssueComment = async (
     contributor: { githubUsername: contributorLogin, account: contributorAccount },
     pullRequestNumber,
     pullRequestRepo,
-    tip: { size: tipSize, type: botMention === "/tip2" ? "opengov" : "gov1" },
+    tip: { size: tipSize, type: botMention === "/tip2" ? "opengov" : "treasury" },
   });
 
   // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.

@@ -1,6 +1,6 @@
 /*
 These are semi-automatic tests that will send out
-different sizes of tips (both gov1 and opengov),
+different sizes of tips - both gov1 (treasury) and opengov,
 but do not have meaningful assertions.
 
 They rely on manually inspecting the produced tips in the browser UI.
@@ -42,7 +42,7 @@ const getTipRequest = (tip: TipRequest["tip"]): TipRequest => {
   };
 };
 
-const govTypes = ["gov1", "opengov"] as const;
+const govTypes = ["treasury", "opengov"] as const;
 const tipSizes = ["small", "medium", "large"] as const;
 
 describe("tip", () => {
