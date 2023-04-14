@@ -26,10 +26,10 @@ export async function tipOpenGov(opts: {
 
   const track = tipSizeToOpenGovTrack(tipRequest.tip.size);
 
-  const xt = api.tx.treasury.spend(track.value, contributor.account.address);
-  const encodedProposal = (xt as SubmittableExtrinsic)?.method.toHex() || "";
+  const tx = api.tx.treasury.spend(track.value, contributor.account.address);
+  const encodedProposal = (tx as SubmittableExtrinsic)?.method.toHex() || "";
   const encodedHash = blake2AsHex(encodedProposal);
-  const proposalLength = xt.length - 1;
+  const proposalLength = tx.length - 1;
 
   const preimage_unsub = await api.tx.preimage
     .notePreimage(encodedProposal)
