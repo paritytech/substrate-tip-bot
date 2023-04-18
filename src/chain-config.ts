@@ -1,8 +1,6 @@
-import { WsProvider } from "@polkadot/api";
-
 import { ChainConfig, TipRequest } from "./types";
 
-type Constants = Pick<ChainConfig, "decimals" | "smallTipperMaximum" | "bigTipperMaximum">;
+type Constants = Omit<ChainConfig, "providerEndpoint" | "tipUrl">;
 const kusamaConstants: Constants = {
   decimals: 12,
 
@@ -19,6 +17,12 @@ const kusamaConstants: Constants = {
    * https://github.com/paritytech/polkadot/blob/e164da65873f11bf8c583e81f6d82c21b005cfe4/runtime/kusama/constants/src/lib.rs#L31
    */
   bigTipperMaximum: 33.33,
+
+  /**
+   * These are arbitrary values.
+   * We can change them, and/or allow the user to input values by hand.
+   */
+  namedTips: { small: 2, medium: 5, large: 8 },
 };
 
 const polkadotConstants: Constants = {
@@ -37,6 +41,12 @@ const polkadotConstants: Constants = {
    * https://github.com/paritytech/polkadot/blob/e164da65873f11bf8c583e81f6d82c21b005cfe4/runtime/polkadot/constants/src/lib.rs#L32
    */
   bigTipperMaximum: 1000,
+
+  /**
+   * These are arbitrary values.
+   * We can change them, and/or allow the user to input values by hand.
+   */
+  namedTips: { small: 20, medium: 80, large: 150 },
 };
 
 export function getChainConfig(tipRequest: TipRequest): ChainConfig {

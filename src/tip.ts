@@ -10,7 +10,7 @@ import { State, TipRequest, TipResult } from "./types";
 export async function tipUser(state: State, tipRequest: TipRequest): Promise<TipResult> {
   const { bot, botTipAccount } = state;
   const { providerEndpoint, tipUrl } = getChainConfig(tipRequest);
-  const provider = new WsProvider(providerEndpoint)
+  const provider = new WsProvider(providerEndpoint);
 
   const api = await ApiPromise.create({ provider });
   await api.isReady;
@@ -45,7 +45,7 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
     return { success: false, tipUrl };
   } finally {
     await api.disconnect();
-    await provider.disconnect()
+    await provider.disconnect();
   }
 
   return { success: true, tipUrl };

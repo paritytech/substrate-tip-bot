@@ -1,9 +1,16 @@
+import { BN } from "@polkadot/util";
 import assert from "assert";
 
-import { OPENGOV_LARGE_TIP_VALUE, OPENGOV_MEDIUM_TIP_VALUE, OPENGOV_SMALL_TIP_VALUE } from "./constants";
+import { getChainConfig } from "./chain-config";
 import { ContributorAccount, OpenGovTrack, TipNetwork, TipRequest, TipSize } from "./types";
 
 const validTipSizes: { [key: string]: TipSize } = { small: "small", medium: "medium", large: "large" } as const;
+const validNetworks: { [key: string]: TipNetwork } = {
+  polkadot: "polkadot",
+  kusama: "kusama",
+  localkusama: "localkusama",
+  localpolkadot: "localpolkadot",
+} as const;
 
 export function getTipSize(tipSizeInput: string | undefined): TipSize {
   if (!tipSizeInput || !(tipSizeInput in validTipSizes)) {
@@ -13,12 +20,19 @@ export function getTipSize(tipSizeInput: string | undefined): TipSize {
   return validTipSizes[tipSizeInput];
 }
 
-export function tipSizeToOpenGovTrack(tipSize: TipSize): { track: OpenGovTrack; value: number } {
-  if (tipSize === "small") return { track: "SmallTipper", value: OPENGOV_SMALL_TIP_VALUE };
-  if (tipSize === "medium") return { track: "BigTipper", value: OPENGOV_MEDIUM_TIP_VALUE };
-  if (tipSize === "large") return { track: "BigTipper", value: OPENGOV_LARGE_TIP_VALUE };
-
-  throw new Error(`Invalid tip size. Please specify one of ${Object.keys(validTipSizes).join(", ")}.`);
+export function tipSizeToOpenGovTrack(tipRequest: TipRequest): { track: OpenGovTrack; value: BN } {
+  const chainConfig = getChainConfig(tipRequest);
+  const tipValue = chainConfig.namedTips[tipRequest.tip.size];
+  const tipValueWithDecimals = new BN(tipValue).mul(new BN(10).pow(new BN(chainConfig.decimals)));
+  if (tipValue < chainConfig.smallTipperMaximum) {
+    return { track: "SmallTipper", value: tipValueWithDecimals };
+  }
+  if (tipValue < chainConfig.bigTipperMaximum) {
+    return { track: "BigTipper", value: tipValueWithDecimals };
+  }
+  throw new Error(
+    `The requested tip value of '${tipValue}' exceeds the BigTipper track maximum of '${chainConfig.bigTipperMaximum}'.`,
+  );
 }
 
 export function parseContributorAccount(pullRequestBody: string | null): ContributorAccount {
@@ -38,13 +52,6 @@ export function parseContributorAccount(pullRequestBody: string | null): Contrib
   const [matched, networkInput, address] = matches;
   assert(networkInput, `networkInput could not be parsed from "${matched}"`);
   assert(address, `address could not be parsed from "${matched}"`);
-
-  const validNetworks: { [key: string]: TipNetwork } = {
-    polkadot: "polkadot",
-    kusama: "kusama",
-    localkusama: "localkusama",
-    localpolkadot: "localpolkadot",
-  };
 
   const network =
     networkInput.toLowerCase() in validNetworks

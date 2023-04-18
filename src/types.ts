@@ -1,4 +1,3 @@
-import { WsProvider } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Probot } from "probot";
 
@@ -13,6 +12,7 @@ export type ChainConfig = {
   decimals: number;
   smallTipperMaximum: number;
   bigTipperMaximum: number;
+  namedTips: Record<TipSize, number>;
 };
 
 export type ContributorAccount = {

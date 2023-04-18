@@ -23,11 +23,11 @@ export async function tipOpenGov(opts: {
   const { contributor } = tipRequest;
   assert(tipRequest.tip.type === "opengov");
 
-  const track = tipSizeToOpenGovTrack(tipRequest.tip.size);
+  const track = tipSizeToOpenGovTrack(tipRequest);
 
   const proposalTx = api.tx.utility.batch([
     api.tx.system.remark(formatReason(tipRequest)),
-    api.tx.treasury.spend(track.value, contributor.account.address),
+    api.tx.treasury.spend(track.value.toString(), contributor.account.address),
   ]);
   const encodedProposal = proposalTx.method.toHex();
   const proposalHash = blake2AsHex(encodedProposal);
