@@ -1,9 +1,7 @@
-import { Keyring, WsProvider } from "@polkadot/api";
-import { cryptoWaitReady } from "@polkadot/util-crypto";
 import assert from "assert";
 
 import { OPENGOV_LARGE_TIP_VALUE, OPENGOV_MEDIUM_TIP_VALUE, OPENGOV_SMALL_TIP_VALUE } from "./constants";
-import { ContributorAccount, OpenGovTrack, State, TipMetadata, TipNetwork, TipRequest, TipSize } from "./types";
+import { ContributorAccount, OpenGovTrack, TipNetwork, TipRequest, TipSize } from "./types";
 
 const validTipSizes: { [key: string]: TipSize } = { small: "small", medium: "medium", large: "large" } as const;
 
@@ -64,46 +62,3 @@ export const formatReason = (tipRequest: TipRequest): string => {
   const { contributor, pullRequestNumber, pullRequestRepo, tip } = tipRequest;
   return `TO: ${contributor.githubUsername} FOR: ${pullRequestRepo}#${pullRequestNumber} (${tip.size})`;
 };
-
-export async function getContributorMetadata(state: State, tipRequest: TipRequest): Promise<TipMetadata> {
-  await cryptoWaitReady();
-  const { seedOfTipperAccount } = state;
-  const keyring = new Keyring({ type: "sr25519" });
-  const botTipAccount = keyring.addFromUri(seedOfTipperAccount);
-  const {
-    contributor,
-    tip: { type },
-  } = tipRequest;
-  const tipUrlPath = type === "opengov" ? "referenda" : "treasury/tips";
-
-  switch (contributor.account.network) {
-    case "localtest": {
-      return {
-        provider: new WsProvider("ws://127.0.0.1:9944"),
-        botTipAccount,
-        tipUrl: `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/${tipUrlPath}`,
-      };
-    }
-    case "polkadot": {
-      return {
-        provider: new WsProvider("wss://rpc.polkadot.io"),
-        botTipAccount,
-        tipUrl: "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frpc.polkadot.io#/${tipUrlPath}",
-      };
-    }
-    case "kusama": {
-      return {
-        provider: new WsProvider(`wss://${contributor.account.network}-rpc.polkadot.io`),
-        botTipAccount,
-        tipUrl: `https://polkadot.js.org/apps/?rpc=wss%3A%2F%${contributor.account.network}-rpc.polkadot.io#/${tipUrlPath}`,
-      };
-    }
-    default: {
-      const exhaustivenessCheck: never = contributor.account.network;
-      throw new Error(
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        `Network is not handled properly in tipUser: ${exhaustivenessCheck}`,
-      );
-    }
-  }
-}

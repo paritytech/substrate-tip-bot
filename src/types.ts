@@ -7,9 +7,8 @@ export type TipNetwork = "localtest" | "kusama" | "polkadot";
 export type TipSize = "small" | "medium" | "large";
 export type OpenGovTrack = "SmallTipper" | "BigTipper";
 
-export type TipMetadata = {
+export type ChainConfig = {
   provider: WsProvider;
-  botTipAccount: KeyringPair;
   tipUrl: string;
 };
 
@@ -26,7 +25,7 @@ export type Contributor = {
 export type State = {
   allowedGitHubOrg: string;
   allowedGitHubTeam: string;
-  seedOfTipperAccount: string;
+  botTipAccount: KeyringPair;
   bot: Probot;
 };
 

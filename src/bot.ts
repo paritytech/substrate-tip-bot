@@ -1,7 +1,9 @@
 import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
+import { Keyring } from "@polkadot/api";
+import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { github } from "opstooling-integrations";
 import { displayError, envVar } from "opstooling-js";
-import { Probot, run } from "probot";
+import { ApplicationFunction, Probot, run } from "probot";
 
 import { tipUser } from "./tip";
 import { ContributorAccount, State, TipSize } from "./types";
@@ -73,12 +75,16 @@ const onIssueComment = async (
     : "Could not submit tip :( Notify someone at Parity.";
 };
 
-const main = (bot: Probot) => {
+const main = async (bot: Probot) => {
+  bot.log.info("Loading tip bot...");
+
+  await cryptoWaitReady();
+  const keyring = new Keyring({ type: "sr25519" });
   const state: State = {
     bot,
     allowedGitHubOrg: envVar("APPROVERS_GH_ORG"),
     allowedGitHubTeam: envVar("APPROVERS_GH_TEAM"),
-    seedOfTipperAccount: envVar("ACCOUNT_SEED"),
+    botTipAccount: keyring.addFromUri(envVar("ACCOUNT_SEED")),
   };
 
   bot.log.info("Tip bot was loaded!");
@@ -128,4 +134,6 @@ process.env.GITHUB_APP_ID = process.env.APP_ID;
 process.env.GITHUB_AUTH_TYPE = "app";
 process.env.GITHUB_PRIVATE_KEY = process.env.PRIVATE_KEY;
 
-void run(main);
+/* Probot types do not accept async function type,
+   but it seems that the actual code handles it properly. */
+void run(main as ApplicationFunction);
