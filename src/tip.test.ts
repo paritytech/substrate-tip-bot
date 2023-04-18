@@ -11,11 +11,12 @@ they execute the tipping functions directly.
  */
 
 import "@polkadot/api-augment";
-import { ApiPromise } from "@polkadot/api";
+import { ApiPromise, Keyring } from "@polkadot/api";
 import { createTestKeyring } from "@polkadot/keyring";
 import { HttpProvider } from "@polkadot/rpc-provider";
-import { randomAsU8a } from "@polkadot/util-crypto";
+import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
 import assert from "assert";
+import { envVar } from "opstooling-js";
 
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
@@ -25,18 +26,12 @@ const randomAddress = () => createTestKeyring().addFromSeed(randomAsU8a(32)).add
 const logMock: any = console.log.bind(console); // eslint-disable-line @typescript-eslint/no-explicit-any
 logMock.error = console.error.bind(console);
 
-const state: State = {
-  allowedGitHubOrg: "test",
-  allowedGitHubTeam: "test",
-  seedOfTipperAccount: "//Bob",
-  bot: { log: logMock } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-};
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
 const getTipRequest = (tip: TipRequest["tip"]): TipRequest => {
   return {
     tip,
-    contributor: { githubUsername: "test", account: { address: randomAddress(), network: "localtest" } },
+    contributor: { githubUsername: "test", account: { address: randomAddress(), network: "localkusama" } },
     pullRequestRepo: "test",
     pullRequestNumber: 1,
   };
@@ -46,6 +41,8 @@ const govTypes = ["treasury", "opengov"] as const;
 const tipSizes = ["small", "medium", "large"] as const;
 
 describe("tip", () => {
+  let state: State;
+
   const polkadotApi = new ApiPromise({
     provider: new HttpProvider("http://localhost:9933"),
     types: { Address: "AccountId", LookupSource: "AccountId" },
@@ -57,8 +54,16 @@ describe("tip", () => {
   };
 
   beforeAll(async () => {
+    await cryptoWaitReady();
+    const keyring = new Keyring({ type: "sr25519" });
     await polkadotApi.isReady;
     assert((await getUserBalance(tipperAccount)).gtn(0));
+    state = {
+      allowedGitHubOrg: "test",
+      allowedGitHubTeam: "test",
+      botTipAccount: keyring.addFromUri(envVar("ACCOUNT_SEED")),
+      bot: { log: logMock } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+    };
   });
 
   for (const govType of govTypes) {

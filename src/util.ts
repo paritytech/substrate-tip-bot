@@ -42,7 +42,8 @@ export function parseContributorAccount(pullRequestBody: string | null): Contrib
   const validNetworks: { [key: string]: TipNetwork } = {
     polkadot: "polkadot",
     kusama: "kusama",
-    localtest: "localtest",
+    localkusama: "localkusama",
+    localpolkadot: "localpolkadot",
   };
 
   const network =

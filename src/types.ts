@@ -2,7 +2,7 @@ import { WsProvider } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Probot } from "probot";
 
-export type TipNetwork = "localtest" | "kusama" | "polkadot";
+export type TipNetwork = "localkusama" | "localpolkadot" | "kusama" | "polkadot";
 
 export type TipSize = "small" | "medium" | "large";
 export type OpenGovTrack = "SmallTipper" | "BigTipper";
@@ -10,6 +10,9 @@ export type OpenGovTrack = "SmallTipper" | "BigTipper";
 export type ChainConfig = {
   provider: WsProvider;
   tipUrl: string;
+  decimals: number;
+  smallTipperMaximum: number;
+  bigTipperMaximum: number;
 };
 
 export type ContributorAccount = {
