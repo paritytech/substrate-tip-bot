@@ -1,13 +1,12 @@
 import "@polkadot/api-augment";
 import "@polkadot/types-augment";
 import { ApiPromise } from "@polkadot/api";
-import type { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import assert from "assert";
 
 import { State, TipRequest } from "./types";
-import { tipSizeToOpenGovTrack } from "./util";
+import { formatReason, tipSizeToOpenGovTrack } from "./util";
 
 export async function tipOpenGov(opts: {
   state: State;
@@ -26,10 +25,12 @@ export async function tipOpenGov(opts: {
 
   const track = tipSizeToOpenGovTrack(tipRequest.tip.size);
 
-  const tx = api.tx.treasury.spend(track.value, contributor.account.address);
-  const encodedProposal = (tx as SubmittableExtrinsic)?.method.toHex() || "";
-  const encodedHash = blake2AsHex(encodedProposal);
-  const proposalLength = tx.length - 1;
+  const proposalTx = api.tx.utility.batch([
+    api.tx.system.remark(formatReason(tipRequest)),
+    api.tx.treasury.spend(track.value, contributor.account.address),
+  ]);
+  const encodedProposal = proposalTx.method.toHex();
+  const proposalHash = blake2AsHex(encodedProposal);
 
   const preimage_unsub = await api.tx.preimage
     .notePreimage(encodedProposal)
@@ -46,7 +47,7 @@ export async function tipOpenGov(opts: {
     .submit(
       // TODO: There should be a way to set those types properly.
       { Origins: track.track } as any, // eslint-disable-line
-      { Lookup: { hash: encodedHash, length: proposalLength } },
+      { Lookup: { hash: proposalHash, length: proposalTx.length - 1 } },
       { after: 10 } as any, // eslint-disable-line
     )
     .signAndSend(botTipAccount, { nonce: -1 }, (result) => {
