@@ -3,6 +3,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import assert from "assert";
 
 import { State, TipRequest } from "./types";
+import { formatReason } from "./util";
 
 export async function tipTreasury(opts: {
   state: State;
@@ -16,14 +17,13 @@ export async function tipTreasury(opts: {
     tipRequest,
     botTipAccount,
   } = opts;
-  const { contributor, pullRequestNumber, pullRequestRepo, tip } = tipRequest;
+  const { contributor, tip } = tipRequest;
   assert(tip.type === "treasury");
 
-  const reason = `TO: ${contributor.githubUsername} FOR: ${pullRequestRepo}#${pullRequestNumber} (${tip.size})`;
   /* TODO before submitting, check tip does not already exist via a storage query.
          TODO potentially prevent duplicates by also checking for reasons with the other sizes. */
   const unsub = await api.tx.tips
-    .reportAwesome(reason, contributor.account.address)
+    .reportAwesome(formatReason(tipRequest), contributor.account.address)
     .signAndSend(botTipAccount, { nonce: -1 }, (result: SubmittableResult) => {
       bot.log(`Current status is ${result.status.toString()}`);
       if (result.status.isInBlock) {

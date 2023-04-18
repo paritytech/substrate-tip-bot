@@ -60,6 +60,11 @@ export function parseContributorAccount(pullRequestBody: string | null): Contrib
   return { network, address };
 }
 
+export const formatReason = (tipRequest: TipRequest): string => {
+  const { contributor, pullRequestNumber, pullRequestRepo, tip } = tipRequest;
+  return `TO: ${contributor.githubUsername} FOR: ${pullRequestRepo}#${pullRequestNumber} (${tip.size})`;
+};
+
 export async function getContributorMetadata(state: State, tipRequest: TipRequest): Promise<TipMetadata> {
   await cryptoWaitReady();
   const { seedOfTipperAccount } = state;
