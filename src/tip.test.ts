@@ -16,7 +16,6 @@ import { createTestKeyring } from "@polkadot/keyring";
 import { HttpProvider } from "@polkadot/rpc-provider";
 import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
 import assert from "assert";
-import { envVar } from "opstooling-js";
 
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
@@ -61,7 +60,7 @@ describe("tip", () => {
     state = {
       allowedGitHubOrg: "test",
       allowedGitHubTeam: "test",
-      botTipAccount: keyring.addFromUri(envVar("ACCOUNT_SEED")),
+      botTipAccount: keyring.addFromUri("//Bob"),
       bot: { log: logMock } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     };
   });
