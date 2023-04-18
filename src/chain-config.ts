@@ -49,28 +49,28 @@ export function getChainConfig(tipRequest: TipRequest): ChainConfig {
   switch (contributor.account.network) {
     case "localkusama": {
       return {
-        provider: new WsProvider("ws://127.0.0.1:9944"),
+        providerEndpoint: "ws://127.0.0.1:9944",
         tipUrl: `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/${tipUrlPath}`,
         ...kusamaConstants,
       };
     }
     case "localpolkadot": {
       return {
-        provider: new WsProvider("ws://127.0.0.1:9944"),
+        providerEndpoint: "ws://127.0.0.1:9944",
         tipUrl: `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/${tipUrlPath}`,
         ...polkadotConstants,
       };
     }
     case "polkadot": {
       return {
-        provider: new WsProvider("wss://rpc.polkadot.io"),
+        providerEndpoint: "wss://rpc.polkadot.io",
         tipUrl: "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frpc.polkadot.io#/${tipUrlPath}",
         ...polkadotConstants,
       };
     }
     case "kusama": {
       return {
-        provider: new WsProvider(`wss://${contributor.account.network}-rpc.polkadot.io`),
+        providerEndpoint: `wss://${contributor.account.network}-rpc.polkadot.io`,
         tipUrl: `https://polkadot.js.org/apps/?rpc=wss%3A%2F%${contributor.account.network}-rpc.polkadot.io#/${tipUrlPath}`,
         ...kusamaConstants,
       };

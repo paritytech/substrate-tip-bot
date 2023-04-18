@@ -8,7 +8,7 @@ export type TipSize = "small" | "medium" | "large";
 export type OpenGovTrack = "SmallTipper" | "BigTipper";
 
 export type ChainConfig = {
-  provider: WsProvider;
+  providerEndpoint: string;
   tipUrl: string;
   decimals: number;
   smallTipperMaximum: number;

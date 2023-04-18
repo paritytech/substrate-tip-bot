@@ -1,4 +1,4 @@
-import { ApiPromise } from "@polkadot/api";
+import { ApiPromise, WsProvider } from "@polkadot/api";
 
 import { getChainConfig } from "./chain-config";
 import { tipOpenGov } from "./tip-opengov";
@@ -9,7 +9,8 @@ import { State, TipRequest, TipResult } from "./types";
    TODO Unit tests */
 export async function tipUser(state: State, tipRequest: TipRequest): Promise<TipResult> {
   const { bot, botTipAccount } = state;
-  const { provider, tipUrl } = getChainConfig(tipRequest);
+  const { providerEndpoint, tipUrl } = getChainConfig(tipRequest);
+  const provider = new WsProvider(providerEndpoint)
 
   const api = await ApiPromise.create({ provider });
   await api.isReady;
@@ -44,6 +45,7 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
     return { success: false, tipUrl };
   } finally {
     await api.disconnect();
+    await provider.disconnect()
   }
 
   return { success: true, tipUrl };
