@@ -5,7 +5,8 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import assert from "assert";
 
-import { State, TipRequest } from "./types";
+import { getChainConfig } from "./chain-config";
+import { State, TipRequest, TipResult } from "./types";
 import { formatReason, tipSizeToOpenGovTrack } from "./util";
 
 export async function tipOpenGov(opts: {
@@ -13,7 +14,7 @@ export async function tipOpenGov(opts: {
   api: ApiPromise;
   tipRequest: TipRequest;
   botTipAccount: KeyringPair;
-}): Promise<void> {
+}): Promise<TipResult> {
   const {
     state: { bot },
     api,
@@ -24,6 +25,9 @@ export async function tipOpenGov(opts: {
   assert(tipRequest.tip.type === "opengov");
 
   const track = tipSizeToOpenGovTrack(tipRequest);
+  if ("error" in track) {
+    return { success: false, errorMessage: track.error };
+  }
 
   const proposalTx = api.tx.utility.batch([
     api.tx.system.remark(formatReason(tipRequest)),
@@ -58,4 +62,6 @@ export async function tipOpenGov(opts: {
         referenda_unsub();
       }
     });
+
+  return { success: true, tipUrl: getChainConfig(tipRequest).tipUrl };
 }

@@ -71,10 +71,13 @@ describe("tip", () => {
         test(`tips a user (${tipSize})`, async () => {
           const tipRequest = getTipRequest({ type: govType, size: tipSize });
 
-          const { success, tipUrl } = await tipUser(state, tipRequest);
+          const result = await tipUser(state, tipRequest);
 
-          expect(success).toBeTruthy();
-          console.log(`Assert the results manually: ${tipUrl}`);
+          expect(result.success).toBeTruthy();
+          const tipUrl = result.success ? result.tipUrl : undefined;
+          expect(tipUrl).toBeDefined();
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          console.log(`Assert the results manually: ${tipUrl!.toString()}`);
         });
       }
     });

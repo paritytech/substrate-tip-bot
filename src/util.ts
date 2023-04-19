@@ -29,7 +29,7 @@ export function getTipSize(tipSizeInput: string | undefined): TipSize | BN {
   return validTipSizes[tipSizeInput];
 }
 
-export function tipSizeToOpenGovTrack(tipRequest: TipRequest): { track: OpenGovTrack; value: BN } {
+export function tipSizeToOpenGovTrack(tipRequest: TipRequest): { track: OpenGovTrack; value: BN } | { error: string } {
   const chainConfig = getChainConfig(tipRequest);
   const decimalPower = new BN(10).pow(new BN(chainConfig.decimals));
   const tipSize = tipRequest.tip.size;
@@ -41,11 +41,11 @@ export function tipSizeToOpenGovTrack(tipRequest: TipRequest): { track: OpenGovT
   if (tipValue.ltn(chainConfig.bigTipperMaximum)) {
     return { track: "BigTipper", value: tipValueWithDecimals };
   }
-  throw new Error(
-    `The requested tip value of '${formatTipSize(tipRequest)}' exceeds the BigTipper track maximum of '${
+  return {
+    error: `The requested tip value of '${formatTipSize(tipRequest)}' exceeds the BigTipper track maximum of '${
       chainConfig.bigTipperMaximum
-    }'.`,
-  );
+    } ${chainConfig.currencySymbol}'.`,
+  };
 }
 
 export function parseContributorAccount(pullRequestBody: string | null): ContributorAccount {

@@ -9,8 +9,7 @@ import { State, TipRequest, TipResult } from "./types";
    TODO Unit tests */
 export async function tipUser(state: State, tipRequest: TipRequest): Promise<TipResult> {
   const { bot, botTipAccount } = state;
-  const { providerEndpoint, tipUrl } = getChainConfig(tipRequest);
-  const provider = new WsProvider(providerEndpoint);
+  const provider = new WsProvider(getChainConfig(tipRequest).providerEndpoint);
 
   const api = await ApiPromise.create({ provider });
   await api.isReady;
@@ -26,12 +25,14 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
 
   try {
     switch (tipRequest.tip.type) {
-      case "treasury":
-        await tipTreasury({ state, api, tipRequest, botTipAccount });
+      case "treasury": {
+        return await tipTreasury({ state, api, tipRequest, botTipAccount });
         break;
-      case "opengov":
-        await tipOpenGov({ state, api, tipRequest, botTipAccount });
+      }
+      case "opengov": {
+        return await tipOpenGov({ state, api, tipRequest, botTipAccount });
         break;
+      }
       default: {
         const exhaustivenessCheck: never = tipRequest.tip.type;
         throw new Error(
@@ -42,11 +43,9 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
     }
   } catch (e) {
     bot.log.error(e.message);
-    return { success: false, tipUrl };
+    return { success: false };
   } finally {
     await api.disconnect();
     await provider.disconnect();
   }
-
-  return { success: true, tipUrl };
 }

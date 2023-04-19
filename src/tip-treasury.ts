@@ -2,7 +2,8 @@ import { ApiPromise, SubmittableResult } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import assert from "assert";
 
-import { State, TipRequest } from "./types";
+import { getChainConfig } from "./chain-config";
+import { State, TipRequest, TipResult } from "./types";
 import { formatReason } from "./util";
 
 export async function tipTreasury(opts: {
@@ -10,7 +11,7 @@ export async function tipTreasury(opts: {
   api: ApiPromise;
   tipRequest: TipRequest;
   botTipAccount: KeyringPair;
-}): Promise<void> {
+}): Promise<TipResult> {
   const {
     state: { bot },
     api,
@@ -33,4 +34,6 @@ export async function tipTreasury(opts: {
         unsub();
       }
     });
+
+  return { success: true, tipUrl: getChainConfig(tipRequest).tipUrl };
 }

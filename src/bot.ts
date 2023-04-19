@@ -81,7 +81,7 @@ const onIssueComment = async (
       } on ${contributorAccount.network}). \n\n ${
         tipResult.tipUrl
       } ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`
-    : "Could not submit tip :( Notify someone at Parity.";
+    : tipResult.errorMessage ?? "Could not submit tip :( Notify someone at Parity.";
 };
 
 const main = async (bot: Probot) => {
