@@ -1,13 +1,14 @@
 import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
 import { Keyring } from "@polkadot/api";
+import { BN } from "@polkadot/util";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { github } from "opstooling-integrations";
 import { displayError, envVar } from "opstooling-js";
 import { ApplicationFunction, Probot, run } from "probot";
 
 import { tipUser } from "./tip";
-import { ContributorAccount, State, TipSize } from "./types";
-import { getTipSize, parseContributorAccount } from "./util";
+import { ContributorAccount, State, TipRequest, TipSize } from "./types";
+import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
 const onIssueComment = async (
   state: State,
@@ -51,27 +52,35 @@ const onIssueComment = async (
     return error.message;
   }
 
-  let tipSize: TipSize;
+  let tipSize: TipSize | BN;
   try {
     tipSize = getTipSize(tipSizeInput);
   } catch (error) {
     return error.message;
   }
 
-  bot.log(
-    `Valid command!\n${tipRequester} wants to tip ${contributorLogin} (${contributorAccount.address} on ${contributorAccount.network}) a ${tipSize} tip for pull request ${pullRequestUrl}.`,
-  );
-
-  const tipResult = await tipUser(state, {
+  const tipRequest: TipRequest = {
     contributor: { githubUsername: contributorLogin, account: contributorAccount },
     pullRequestNumber,
     pullRequestRepo,
-    tip: { size: tipSize, type: botMention === "/tip2" ? "opengov" : "treasury" },
-  });
+    tip: { size: tipSize, type: botMention === "/testtip2" ? "opengov" : "treasury" },
+  };
+
+  bot.log(
+    `Valid command!\n${tipRequester} wants to tip ${contributorLogin} (${contributorAccount.address} on ${
+      contributorAccount.network
+    }) a ${formatTipSize(tipRequest)} tip for pull request ${pullRequestUrl}.`,
+  );
+
+  const tipResult = await tipUser(state, tipRequest);
 
   // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
   return tipResult.success
-    ? `A ${tipSize} tip was successfully submitted for ${contributorLogin} (${contributorAccount.address} on ${contributorAccount.network}). \n\n ${tipResult.tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`
+    ? `A ${formatTipSize(tipRequest)} tip was successfully submitted for ${contributorLogin} (${
+        contributorAccount.address
+      } on ${contributorAccount.network}). \n\n ${
+        tipResult.tipUrl
+      } ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`
     : "Could not submit tip :( Notify someone at Parity.";
 };
 

@@ -1,4 +1,5 @@
 import { KeyringPair } from "@polkadot/keyring/types";
+import { BN } from "@polkadot/util";
 import { Probot } from "probot";
 
 export type TipNetwork = "localkusama" | "localpolkadot" | "kusama" | "polkadot";
@@ -10,6 +11,7 @@ export type ChainConfig = {
   providerEndpoint: string;
   tipUrl: string;
   decimals: number;
+  currencySymbol: string;
   smallTipperMaximum: number;
   bigTipperMaximum: number;
   namedTips: Record<TipSize, number>;
@@ -38,7 +40,7 @@ export type TipRequest = {
   pullRequestRepo: string;
   tip: {
     type: "treasury" | "opengov";
-    size: TipSize;
+    size: TipSize | BN;
   };
 };
 

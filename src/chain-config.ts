@@ -3,6 +3,7 @@ import { ChainConfig, TipRequest } from "./types";
 type Constants = Omit<ChainConfig, "providerEndpoint" | "tipUrl">;
 const kusamaConstants: Constants = {
   decimals: 12,
+  currencySymbol: "KSM",
 
   /**
    * Source of the calculation:
@@ -27,6 +28,7 @@ const kusamaConstants: Constants = {
 
 const polkadotConstants: Constants = {
   decimals: 10,
+  currencySymbol: "DOT",
 
   /**
    * Source of the calculation:

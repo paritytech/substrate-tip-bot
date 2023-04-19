@@ -12,7 +12,16 @@ const validNetworks: { [key: string]: TipNetwork } = {
   localpolkadot: "localpolkadot",
 } as const;
 
-export function getTipSize(tipSizeInput: string | undefined): TipSize {
+export function getTipSize(tipSizeInput: string | undefined): TipSize | BN {
+  if (tipSizeInput === undefined || tipSizeInput.length === 0) {
+    throw new Error("Tip size not specified");
+  }
+
+  try {
+    // See if the input specifies an explicit numeric tip value.
+    return new BN(tipSizeInput);
+  } catch {}
+
   if (!tipSizeInput || !(tipSizeInput in validTipSizes)) {
     throw new Error(`Invalid tip size. Please specify one of ${Object.keys(validTipSizes).join(", ")}.`);
   }
@@ -22,16 +31,20 @@ export function getTipSize(tipSizeInput: string | undefined): TipSize {
 
 export function tipSizeToOpenGovTrack(tipRequest: TipRequest): { track: OpenGovTrack; value: BN } {
   const chainConfig = getChainConfig(tipRequest);
-  const tipValue = chainConfig.namedTips[tipRequest.tip.size];
-  const tipValueWithDecimals = new BN(tipValue).mul(new BN(10).pow(new BN(chainConfig.decimals)));
-  if (tipValue < chainConfig.smallTipperMaximum) {
+  const decimalPower = new BN(10).pow(new BN(chainConfig.decimals));
+  const tipSize = tipRequest.tip.size;
+  const tipValue = BN.isBN(tipSize) ? tipSize : new BN(chainConfig.namedTips[tipSize]);
+  const tipValueWithDecimals = tipValue.mul(decimalPower);
+  if (tipValue.ltn(chainConfig.smallTipperMaximum)) {
     return { track: "SmallTipper", value: tipValueWithDecimals };
   }
-  if (tipValue < chainConfig.bigTipperMaximum) {
+  if (tipValue.ltn(chainConfig.bigTipperMaximum)) {
     return { track: "BigTipper", value: tipValueWithDecimals };
   }
   throw new Error(
-    `The requested tip value of '${tipValue}' exceeds the BigTipper track maximum of '${chainConfig.bigTipperMaximum}'.`,
+    `The requested tip value of '${formatTipSize(tipRequest)}' exceeds the BigTipper track maximum of '${
+      chainConfig.bigTipperMaximum
+    }'.`,
   );
 }
 
@@ -67,6 +80,20 @@ export function parseContributorAccount(pullRequestBody: string | null): Contrib
 }
 
 export const formatReason = (tipRequest: TipRequest): string => {
-  const { contributor, pullRequestNumber, pullRequestRepo, tip } = tipRequest;
-  return `TO: ${contributor.githubUsername} FOR: ${pullRequestRepo}#${pullRequestNumber} (${tip.size})`;
+  const { contributor, pullRequestNumber, pullRequestRepo } = tipRequest;
+  return `TO: ${contributor.githubUsername} FOR: ${pullRequestRepo}#${pullRequestNumber} (${formatTipSize(
+    tipRequest,
+  )})`;
+};
+
+/**
+ * @returns For example "medium" or "13 KSM".
+ */
+export const formatTipSize = (tipRequest: TipRequest): string => {
+  const tipSize = tipRequest.tip.size;
+  const chainConfig = getChainConfig(tipRequest);
+  if (BN.isBN(tipSize)) {
+    return `${tipSize.toString()} ${chainConfig.currencySymbol}`;
+  }
+  return tipSize;
 };
