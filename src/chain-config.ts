@@ -20,8 +20,7 @@ const kusamaConstants: Constants = {
   bigTipperMaximum: 33.33,
 
   /**
-   * These are arbitrary values.
-   * We can change them, and/or allow the user to input values by hand.
+   * These are arbitrary values, can be changed at any time.
    */
   namedTips: { small: 2, medium: 5, large: 8 },
 };
@@ -45,8 +44,7 @@ const polkadotConstants: Constants = {
   bigTipperMaximum: 1000,
 
   /**
-   * These are arbitrary values.
-   * We can change them, and/or allow the user to input values by hand.
+   * These are arbitrary values, can be changed at any time.
    */
   namedTips: { small: 20, medium: 80, large: 150 },
 };
