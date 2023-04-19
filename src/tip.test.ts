@@ -81,24 +81,26 @@ describe("tip", () => {
           console.log(`Assert the results manually: ${tipUrl!.toString()}`);
         });
       }
-    });
 
-    test(`huge tip in ${govType}`, async () => {
-      const tipRequest = getTipRequest({ type: govType, size: new BN("999") });
+      test(`huge tip in ${govType}`, async () => {
+        const tipRequest = getTipRequest({ type: govType, size: new BN("999") });
 
-      const result = await tipUser(state, tipRequest);
+        const result = await tipUser(state, tipRequest);
 
-      if (govType === 'treasury') {
-        // Currently we don't impose hard constraints on the tip value,
-        // as there are no 'tracks' with maximum values like in opengov.
-        // The values in treasure tips have no direct programmatic effect,
-        // they are just a textual suggestions for the tippers.
-        expect(result.success).toBeTruthy();
-      } else {
-        expect(result.success).toBeFalsy();
-        const errorMessage = result.success === false ? result.errorMessage : undefined
-        expect(errorMessage).toEqual("The requested tip value of '999 KSM' exceeds the BigTipper track maximum of '33.33 KSM'.")
-      }
+        if (govType === "treasury") {
+          /* Currently we don't impose hard constraints on the tip value,
+             as there are no 'tracks' with maximum values like in opengov.
+             The values in treasure tips have no direct programmatic effect,
+             they are just a textual suggestions for the tippers. */
+          expect(result.success).toBeTruthy();
+        } else {
+          expect(result.success).toBeFalsy();
+          const errorMessage = result.success === false ? result.errorMessage : undefined;
+          expect(errorMessage).toEqual(
+            "The requested tip value of '999 KSM' exceeds the BigTipper track maximum of '33.33 KSM'.",
+          );
+        }
+      });
     });
   }
 });
