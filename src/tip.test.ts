@@ -14,6 +14,7 @@ import "@polkadot/api-augment";
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { createTestKeyring } from "@polkadot/keyring";
 import { HttpProvider } from "@polkadot/rpc-provider";
+import { BN } from "@polkadot/util";
 import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
 import assert from "assert";
 
@@ -37,7 +38,7 @@ const getTipRequest = (tip: TipRequest["tip"]): TipRequest => {
 };
 
 const govTypes = ["treasury", "opengov"] as const;
-const tipSizes = ["small", "medium", "large"] as const;
+const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", new BN("7"), new BN("30")];
 
 describe("tip", () => {
   let state: State;
@@ -68,7 +69,7 @@ describe("tip", () => {
   for (const govType of govTypes) {
     describe(govType, () => {
       for (const tipSize of tipSizes) {
-        test(`tips a user (${tipSize})`, async () => {
+        test(`tips a user (${tipSize.toString()})`, async () => {
           const tipRequest = getTipRequest({ type: govType, size: tipSize });
 
           const result = await tipUser(state, tipRequest);
