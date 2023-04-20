@@ -6,7 +6,7 @@ import { github } from "opstooling-integrations";
 import { displayError, envVar } from "opstooling-js";
 import { ApplicationFunction, Probot, run } from "probot";
 
-import { addMetrics } from "./metrics";
+import { addMetricsRoute, recordTip } from "./metrics";
 import { tipUser } from "./tip";
 import { ContributorAccount, State, TipRequest, TipSize } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
@@ -74,6 +74,7 @@ const onIssueComment = async (
   );
 
   const tipResult = await tipUser(state, tipRequest);
+  recordTip({tipRequest, tipResult})
 
   // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
   return tipResult.success
@@ -91,7 +92,7 @@ type AsyncApplicationFunction = (
 const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
   const router = getRouter?.("/tip-bot");
   if (router) {
-    addMetrics(router);
+    addMetricsRoute(router);
   } else {
     bot.log.warn("No router received from the probot library, metrics were not added.");
   }
