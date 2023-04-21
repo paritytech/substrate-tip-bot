@@ -18,7 +18,8 @@ variables:
   CI_REGISTRY:                     "docker.io/paritytech"
   GIT_STRATEGY:                    fetch
   CI_IMAGE:                        "node:16.10"
-  BUILDAH_IMAGE:                   "quay.io/buildah/stable:v1.27"
+  BUILDAH_IMAGE:                   "quay.io/buildah/stable:v1.29"
+  BUILDAH_COMMAND:                 "buildah --storage-driver overlay2"
   DOCKERHUB_REPO:                  "paritytech"
   IMAGE_NAME:                      docker.io/$DOCKERHUB_REPO/substrate-tip-bot
   DOCKER_TAG:                      "${CI_COMMIT_SHORT_SHA}"
@@ -60,7 +61,7 @@ variables:
   script:
     - test "$Docker_Hub_User_Parity" -a "$Docker_Hub_Pass_Parity" ||
       ( echo "no docker credentials provided"; exit 1 )
-    - buildah bud
+    - $BUILDAH_COMMAND build
       --format=docker
       --build-arg VCS_REF="${CI_COMMIT_SHA}"
       --build-arg BUILD_DATE="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
@@ -71,9 +72,9 @@ variables:
       --file "$DOCKERFILE" .
     - echo "$Docker_Hub_Pass_Parity" |
       buildah login --username "$Docker_Hub_User_Parity" --password-stdin docker.io
-    - buildah info
-    - buildah push --format=v2s2 "$IMAGE_NAME:${DOCKER_TAG}"
-    - buildah push --format=v2s2 "$IMAGE_NAME:latest"
+    - $BUILDAH_COMMAND info
+    - $BUILDAH_COMMAND push --format=v2s2 "$IMAGE_NAME:${DOCKER_TAG}"
+    - $BUILDAH_COMMAND push --format=v2s2 "$IMAGE_NAME:latest"
   after_script:
     - buildah logout --all
 
@@ -82,7 +83,7 @@ variables:
 .build-only-docker-image:          &build-only-docker-image
   image:                           $BUILDAH_IMAGE
   script:
-    - buildah bud
+    - $BUILDAH_COMMAND build
       --format=docker
       --build-arg VCS_REF="${CI_COMMIT_SHA}"
       --build-arg BUILD_DATE="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
