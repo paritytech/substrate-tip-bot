@@ -6,6 +6,7 @@ import { github } from "opstooling-integrations";
 import { displayError, envVar } from "opstooling-js";
 import { ApplicationFunction, Probot, run } from "probot";
 
+import { addMetricsRoute, recordTip } from "./metrics";
 import { tipUser } from "./tip";
 import { ContributorAccount, State, TipRequest, TipSize } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
@@ -73,6 +74,7 @@ const onIssueComment = async (
   );
 
   const tipResult = await tipUser(state, tipRequest);
+  recordTip({ tipRequest, tipResult });
 
   // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
   return tipResult.success
@@ -84,8 +86,18 @@ const onIssueComment = async (
     : tipResult.errorMessage ?? "Could not submit tip :( Notify someone at Parity.";
 };
 
-const main = async (bot: Probot) => {
+type AsyncApplicationFunction = (
+  ...params: Parameters<ApplicationFunction>
+) => Promise<ReturnType<ApplicationFunction>>;
+
+const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
   bot.log.info("Loading tip bot...");
+  const router = getRouter?.("/tip-bot");
+  if (router) {
+    addMetricsRoute(router);
+  } else {
+    bot.log.warn("No router received from the probot library, metrics were not added.");
+  }
 
   await cryptoWaitReady();
   const keyring = new Keyring({ type: "sr25519" });
