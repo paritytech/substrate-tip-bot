@@ -1,15 +1,20 @@
-import { WsProvider } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
+import { BN } from "@polkadot/util";
 import { Probot } from "probot";
 
-export type TipNetwork = "localtest" | "kusama" | "polkadot";
+export type TipNetwork = "localkusama" | "localpolkadot" | "kusama" | "polkadot";
 
 export type TipSize = "small" | "medium" | "large";
+export type OpenGovTrack = "SmallTipper" | "BigTipper";
 
-export type TipMetadata = {
-  provider: WsProvider;
-  botTipAccount: KeyringPair;
+export type ChainConfig = {
+  providerEndpoint: string;
   tipUrl: string;
+  decimals: number;
+  currencySymbol: string;
+  smallTipperMaximum: number;
+  bigTipperMaximum: number;
+  namedTips: Record<TipSize, number>;
 };
 
 export type ContributorAccount = {
@@ -25,6 +30,18 @@ export type Contributor = {
 export type State = {
   allowedGitHubOrg: string;
   allowedGitHubTeam: string;
-  seedOfTipperAccount: string;
+  botTipAccount: KeyringPair;
   bot: Probot;
 };
+
+export type TipRequest = {
+  contributor: Contributor;
+  pullRequestNumber: number;
+  pullRequestRepo: string;
+  tip: {
+    type: "treasury" | "opengov";
+    size: TipSize | BN;
+  };
+};
+
+export type TipResult = { success: true; tipUrl: string } | { success: false; errorMessage?: string | undefined };

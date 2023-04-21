@@ -3,7 +3,7 @@
     "baseUrl": ".",
     "noEmit": true,
     "outDir": "build",
-    "sourceMap": false,
+    "sourceMap": true,
     "declaration": false,
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
@@ -17,7 +17,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "useUnknownInCatchVariables": false,
-    "types": ["node"],
+    "types": ["node", "jest"],
     "typeRoots": ["./node_modules/@types", "./src"]
   },
   "include": ["src"]

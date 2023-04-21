@@ -45,6 +45,7 @@ $ cp .env.example .env
   - Among all dependencies, main steps are (from repo): 
     - Compile `cargo b -r`
     - Run `./target/release/polkadot --dev`
+  - Alternatively, run a docker container: `docker run -p 9933:9933 -p 9944:9944 parity/polkadot --dev`
 - [Create 2 accounts: for "bot" & for "contributor"](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/accounts) 
   - Save the seeds & passwords somewhere
   - Set `ACCOUNT_SEED` as bot's seed in `.env` file  
@@ -59,6 +60,19 @@ $ cp .env.example .env
 and [installing app](https://gitlab.parity.io/groups/parity/opstooling/-/wikis/Bots/Development/Installing-the-GitHub-App)
 guidance
 - `WEBHOOK_PROXY_URL` you can generate via https://smee.io/new
+
+### Integration tests
+
+There are semi-automatic integration tests that execute the tip functions against a locally running Polkadot node.
+Note that the node needs to have the OpenGov features - Kusama development chain can be used for that (`--chain=kusama-dev`).
+
+With that, run the tests:
+
+```bash
+yarn test
+```
+
+The tests require manual inspection - follow the tip URLs printed in the output.
 
 #### Github app permissions
 

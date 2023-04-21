@@ -1,17 +1,21 @@
 import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
+import { Keyring } from "@polkadot/api";
+import { BN } from "@polkadot/util";
+import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { github } from "opstooling-integrations";
 import { displayError, envVar } from "opstooling-js";
-import { Probot, run } from "probot";
+import { ApplicationFunction, Probot, run } from "probot";
 
-import { getTipSize, parseContributorAccount, tipUser } from "./tip";
-import { ContributorAccount, State } from "./types";
+import { tipUser } from "./tip";
+import { ContributorAccount, State, TipRequest, TipSize } from "./types";
+import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
 const onIssueComment = async (
   state: State,
   event: IssueCommentCreatedEvent,
   tipRequester: string,
   octokitInstance: github.GitHubInstance,
-) => {
+): Promise<string | Error | undefined> => {
   const { allowedGitHubOrg, allowedGitHubTeam, bot } = state;
 
   const commentText = event.comment.body;
@@ -48,36 +52,48 @@ const onIssueComment = async (
     return error.message;
   }
 
-  let tipSize: string;
+  let tipSize: TipSize | BN;
   try {
     tipSize = getTipSize(tipSizeInput);
   } catch (error) {
     return error.message;
   }
 
-  bot.log(
-    `Valid command!\n${tipRequester} wants to tip ${contributorLogin} (${contributorAccount.address} on ${contributorAccount.network}) a ${tipSize} tip for pull request ${pullRequestUrl}.`,
-  );
-
-  const tipResult = await tipUser(state, {
+  const tipRequest: TipRequest = {
     contributor: { githubUsername: contributorLogin, account: contributorAccount },
     pullRequestNumber,
     pullRequestRepo,
-    tipSize,
-  });
+    tip: { size: tipSize, type: botMention === "/tip2" ? "opengov" : "treasury" },
+  };
+
+  bot.log(
+    `Valid command!\n${tipRequester} wants to tip ${contributorLogin} (${contributorAccount.address} on ${
+      contributorAccount.network
+    }) a ${formatTipSize(tipRequest)} tip for pull request ${pullRequestUrl}.`,
+  );
+
+  const tipResult = await tipUser(state, tipRequest);
 
   // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
   return tipResult.success
-    ? `A ${tipSize} tip was successfully submitted for ${contributorLogin} (${contributorAccount.address} on ${contributorAccount.network}). \n\n ${tipResult.tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`
-    : "Could not submit tip :( Notify someone at Parity.";
+    ? `A ${formatTipSize(tipRequest)} tip was successfully submitted for ${contributorLogin} (${
+        contributorAccount.address
+      } on ${contributorAccount.network}). \n\n ${
+        tipResult.tipUrl
+      } ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`
+    : tipResult.errorMessage ?? "Could not submit tip :( Notify someone at Parity.";
 };
 
-const main = (bot: Probot) => {
+const main = async (bot: Probot) => {
+  bot.log.info("Loading tip bot...");
+
+  await cryptoWaitReady();
+  const keyring = new Keyring({ type: "sr25519" });
   const state: State = {
     bot,
     allowedGitHubOrg: envVar("APPROVERS_GH_ORG"),
     allowedGitHubTeam: envVar("APPROVERS_GH_TEAM"),
-    seedOfTipperAccount: envVar("ACCOUNT_SEED"),
+    botTipAccount: keyring.addFromUri(envVar("ACCOUNT_SEED")),
   };
 
   bot.log.info("Tip bot was loaded!");
@@ -127,4 +143,6 @@ process.env.GITHUB_APP_ID = process.env.APP_ID;
 process.env.GITHUB_AUTH_TYPE = "app";
 process.env.GITHUB_PRIVATE_KEY = process.env.PRIVATE_KEY;
 
-void run(main);
+/* Probot types do not accept async function type,
+   but it seems that the actual code handles it properly. */
+void run(main as ApplicationFunction);
