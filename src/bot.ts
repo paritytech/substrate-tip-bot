@@ -74,7 +74,7 @@ const onIssueComment = async (
   );
 
   const tipResult = await tipUser(state, tipRequest);
-  recordTip({tipRequest, tipResult})
+  recordTip({ tipRequest, tipResult });
 
   // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
   return tipResult.success
@@ -89,6 +89,7 @@ const onIssueComment = async (
 type AsyncApplicationFunction = (
   ...params: Parameters<ApplicationFunction>
 ) => Promise<ReturnType<ApplicationFunction>>;
+
 const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
   const router = getRouter?.("/tip-bot");
   if (router) {

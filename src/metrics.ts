@@ -1,27 +1,28 @@
 import type { Router } from "express";
-import promClient, { LabelValues } from "prom-client";
-import { TipNetwork, TipRequest, TipResult } from "./types";
+import promClient from "prom-client";
 
-const prefix = "tip_bot_"
+import { TipRequest, TipResult } from "./types";
 
-promClient.register.setDefaultLabels({team: "opstooling"})
+const prefix = "tip_bot_";
+
+promClient.register.setDefaultLabels({ team: "opstooling" });
 promClient.collectDefaultMetrics({ prefix });
 
-const labelNames = ["network", "governance", "result"] as const
+const labelNames = ["network", "governance", "result"] as const;
 export const tipCounter = new promClient.Counter({
   name: `${prefix}tips_handled_total`,
   help: "Amount of all tips successfully proposed on-chain.",
   labelNames,
 });
 
-export const recordTip = (opts: {tipRequest: TipRequest, tipResult: TipResult}) => {
-  const {tipRequest, tipResult} = opts;
+export const recordTip = (opts: { tipRequest: TipRequest; tipResult: TipResult }): void => {
+  const { tipRequest, tipResult } = opts;
   tipCounter.inc({
     network: tipRequest.contributor.account.network,
     governance: tipRequest.tip.type,
-    result: tipResult.success ? "ok" : "fail"
-  })
-}
+    result: tipResult.success ? "ok" : "fail",
+  });
+};
 
 export const addMetricsRoute = (router: Router): void => {
   router.get("/metrics", (req, res) => {
@@ -39,6 +40,6 @@ export const addMetricsRoute = (router: Router): void => {
   });
 
   router.get("/health", (req, res) => {
-    res.send("OK")
-  })
+    res.send("OK");
+  });
 };
