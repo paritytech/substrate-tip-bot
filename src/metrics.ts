@@ -37,4 +37,8 @@ export const addMetricsRoute = (router: Router): void => {
         res.send(error.message);
       });
   });
+
+  router.get("/health", (req, res) => {
+    res.send("OK")
+  })
 };

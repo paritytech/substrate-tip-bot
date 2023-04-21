@@ -22,14 +22,22 @@ common:
       kubernetes.io/ingress.class: traefik-external
       traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
       traefik.ingress.kubernetes.io/router.tls: "true"
-  # Enable after endpoint is created
-  # livenessProbe:
-  #   httpGet:
-  #     path: /health
-  #     port: 8000
-  #     scheme: HTTP
-  # readinessProbe:
-  #   httpGet:
-  #     path: /health
-  #     port: 8000
-  #     scheme: HTTP
+  livenessProbe:
+   httpGet:
+     path: /tip-bot/health
+     port: http
+  readinessProbe:
+   httpGet:
+     path: /tip-bot/health
+     port: http
+  serviceMonitor:
+    enabled: true
+    endpoints:
+      - port: http
+        path: /tip-bot/metrics
+        interval: 1m
+        scheme: http
+        scrapeTimeout: 30s
+        honorLabels: true
+    targetLabels:
+      - team
