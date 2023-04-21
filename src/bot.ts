@@ -91,6 +91,7 @@ type AsyncApplicationFunction = (
 ) => Promise<ReturnType<ApplicationFunction>>;
 
 const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
+  bot.log.info("Loading tip bot...");
   const router = getRouter?.("/tip-bot");
   if (router) {
     addMetricsRoute(router);
