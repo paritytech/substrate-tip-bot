@@ -55,33 +55,40 @@ export function getChainConfig(tipRequest: TipRequest): ChainConfig {
     tip: { type },
   } = tipRequest;
   const tipUrlPath = type === "opengov" ? "referenda" : "treasury/tips";
+  const getTipUrl = (providerEndpoint: string): string => {
+    return `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(providerEndpoint)}#/${tipUrlPath}`
+  }
 
   switch (contributor.account.network) {
     case "localkusama": {
+      const providerEndpoint = "ws://127.0.0.1:9944";
       return {
-        providerEndpoint: "ws://127.0.0.1:9944",
-        tipUrl: `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/${tipUrlPath}`,
+        providerEndpoint,
+        tipUrl: getTipUrl(providerEndpoint),
         ...kusamaConstants,
       };
     }
     case "localpolkadot": {
+      const providerEndpoint = "ws://127.0.0.1:9944";
       return {
-        providerEndpoint: "ws://127.0.0.1:9944",
-        tipUrl: `https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/${tipUrlPath}`,
+        providerEndpoint,
+        tipUrl: getTipUrl(providerEndpoint),
         ...polkadotConstants,
       };
     }
     case "polkadot": {
+      const providerEndpoint = "wss://rpc.polkadot.io";
       return {
-        providerEndpoint: "wss://rpc.polkadot.io",
-        tipUrl: "https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Frpc.polkadot.io#/${tipUrlPath}",
+        providerEndpoint,
+        tipUrl: getTipUrl(providerEndpoint),
         ...polkadotConstants,
       };
     }
     case "kusama": {
+      const providerEndpoint = `wss://${contributor.account.network}-rpc.polkadot.io`;
       return {
-        providerEndpoint: `wss://${contributor.account.network}-rpc.polkadot.io`,
-        tipUrl: `https://polkadot.js.org/apps/?rpc=wss%3A%2F%${contributor.account.network}-rpc.polkadot.io#/${tipUrlPath}`,
+        providerEndpoint,
+        tipUrl: getTipUrl(providerEndpoint),
         ...kusamaConstants,
       };
     }
