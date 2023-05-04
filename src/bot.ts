@@ -160,7 +160,7 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
 
   try {
     bot.log.info("Loading bot balances across all networks...");
-    await updateAllBalances(state.botTipAccount.address);
+    await updateAllBalances(state.botTipAccount.address, bot.log);
     bot.log.info("Updated bot balances across all networks!");
   } catch (e) {
     bot.log.error(e.message);
