@@ -5,7 +5,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import assert from "assert";
 
-import { getChainConfig } from "./chain-config";
+import { getTipUrl } from "./chain-config";
 import { State, TipRequest, TipResult } from "./types";
 import { formatReason, tipSizeToOpenGovTrack } from "./util";
 
@@ -63,5 +63,5 @@ export async function tipOpenGov(opts: {
       }
     });
 
-  return { success: true, tipUrl: getChainConfig(tipRequest).tipUrl };
+  return { success: true, tipUrl: getTipUrl(tipRequest) };
 }

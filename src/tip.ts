@@ -9,7 +9,7 @@ import { State, TipRequest, TipResult } from "./types";
    TODO Unit tests */
 export async function tipUser(state: State, tipRequest: TipRequest): Promise<TipResult> {
   const { bot, botTipAccount } = state;
-  const provider = new WsProvider(getChainConfig(tipRequest).providerEndpoint);
+  const provider = new WsProvider(getChainConfig(tipRequest.contributor.account.network).providerEndpoint);
 
   const api = await ApiPromise.create({ provider });
   await api.isReady;

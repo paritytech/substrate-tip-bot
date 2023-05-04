@@ -2,7 +2,7 @@ import { ApiPromise, SubmittableResult } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import assert from "assert";
 
-import { getChainConfig } from "./chain-config";
+import { getTipUrl } from "./chain-config";
 import { State, TipRequest, TipResult } from "./types";
 import { formatReason } from "./util";
 
@@ -35,5 +35,5 @@ export async function tipTreasury(opts: {
       }
     });
 
-  return { success: true, tipUrl: getChainConfig(tipRequest).tipUrl };
+  return { success: true, tipUrl: getTipUrl(tipRequest) };
 }

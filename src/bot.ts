@@ -6,6 +6,7 @@ import { github } from "opstooling-integrations";
 import { displayError, envVar } from "opstooling-js";
 import { ApplicationFunction, Probot, run } from "probot";
 
+import { updateAllBalances, updateBalance } from "./balance";
 import { addMetricsRoute, recordTip } from "./metrics";
 import { tipUser } from "./tip";
 import { ContributorAccount, State, TipRequest, TipSize } from "./types";
@@ -74,7 +75,19 @@ const onIssueComment = async (
   );
 
   const tipResult = await tipUser(state, tipRequest);
-  recordTip({ tipRequest, tipResult });
+
+  // The user doesn't need to wait until we update metrics and balances, so launching it separately.
+  void (async () => {
+    try {
+      recordTip({ tipRequest, tipResult });
+      await updateBalance({
+        network: tipRequest.contributor.account.network,
+        tipBotAddress: state.botTipAccount.address,
+      });
+    } catch (e) {
+      bot.log.error(e.message);
+    }
+  })();
 
   // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
   return tipResult.success
@@ -144,6 +157,14 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
 
     void onIssueComment(state, context.payload, tipRequester, octokitInstance).then(respondOnResult, respondOnResult);
   });
+
+  try {
+    bot.log.info("Loading bot balances across all networks...");
+    await updateAllBalances(state.botTipAccount.address);
+    bot.log.info("Updated bot balances across all networks!");
+  } catch (e) {
+    bot.log.error(e.message);
+  }
 };
 
 if (process.env.PRIVATE_KEY_BASE64 && !process.env.PRIVATE_KEY) {

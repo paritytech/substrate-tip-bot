@@ -1,6 +1,6 @@
-import { ChainConfig, TipRequest } from "./types";
+import { ChainConfig, TipNetwork, TipRequest } from "./types";
 
-type Constants = Omit<ChainConfig, "providerEndpoint" | "tipUrl">;
+type Constants = Omit<ChainConfig, "providerEndpoint">;
 const kusamaConstants: Constants = {
   decimals: 12,
   currencySymbol: "KSM",
@@ -49,38 +49,40 @@ const polkadotConstants: Constants = {
   namedTips: { small: 20, medium: 80, large: 150 },
 };
 
-export function getChainConfig(tipRequest: TipRequest): ChainConfig {
-  const {
-    contributor,
-    tip: { type },
-  } = tipRequest;
-  const tipUrlPath = type === "opengov" ? "referenda" : "treasury/tips";
-  const getTipUrl = (providerEndpoint: string): string =>
-    `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(providerEndpoint)}#/${tipUrlPath}`;
-
-  switch (contributor.account.network) {
+export function getChainConfig(network: TipNetwork): ChainConfig {
+  switch (network) {
     case "localkusama": {
       const providerEndpoint = "ws://127.0.0.1:9944";
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint), ...kusamaConstants };
+      return { providerEndpoint, ...kusamaConstants };
     }
     case "localpolkadot": {
       const providerEndpoint = "ws://127.0.0.1:9944";
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint), ...polkadotConstants };
+      return { providerEndpoint, ...polkadotConstants };
     }
     case "polkadot": {
       const providerEndpoint = "wss://rpc.polkadot.io";
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint), ...polkadotConstants };
+      return { providerEndpoint, ...polkadotConstants };
     }
     case "kusama": {
-      const providerEndpoint = `wss://${contributor.account.network}-rpc.polkadot.io`;
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint), ...kusamaConstants };
+      const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
+      return { providerEndpoint, ...kusamaConstants };
     }
     default: {
-      const exhaustivenessCheck: never = contributor.account.network;
+      const exhaustivenessCheck: never = network;
       throw new Error(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `Network is not handled properly in tipUser: ${exhaustivenessCheck}`,
       );
     }
   }
+}
+
+export function getTipUrl(tipRequest: TipRequest): string {
+  const {
+    contributor,
+    tip: { type },
+  } = tipRequest;
+  const tipUrlPath = type === "opengov" ? "referenda" : "treasury/tips";
+  const config = getChainConfig(contributor.account.network);
+  return `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(config.providerEndpoint)}#/${tipUrlPath}`;
 }

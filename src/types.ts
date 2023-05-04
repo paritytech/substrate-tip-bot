@@ -9,7 +9,6 @@ export type OpenGovTrack = "SmallTipper" | "BigTipper";
 
 export type ChainConfig = {
   providerEndpoint: string;
-  tipUrl: string;
   decimals: number;
   currencySymbol: string;
   smallTipperMaximum: number;
