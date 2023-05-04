@@ -1,19 +1,19 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { BN } from "@polkadot/util";
+import type { Probot } from "probot";
 
 import { getChainConfig } from "./chain-config";
 import { balanceGauge } from "./metrics";
 import { TipNetwork } from "./types";
-import type { Probot } from "probot";
 
 export const updateAllBalances = async (tipBotAddress: string, log: Probot["log"]): Promise<void> => {
   const networks: TipNetwork[] = ["localpolkadot", "localkusama", "kusama", "polkadot"];
   for (const network of networks) {
-    log.info(`Checking tip bot balance on ${network}`)
+    log.info(`Checking tip bot balance on ${network}`);
     try {
       await updateBalance({ network, tipBotAddress });
-    } catch(e) {
-      log.info(`Failed to check balance on ${network}`, e.message)
+    } catch (e) {
+      log.info(`Failed to check balance on ${network}`, e.message);
     }
   }
 };
