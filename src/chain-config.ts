@@ -1,6 +1,6 @@
 import { ChainConfig, TipNetwork } from "./types";
 
-type Constants = Omit<ChainConfig, "providerEndpoint" | "tipUrl">;
+type Constants = Omit<ChainConfig, "providerEndpoint">;
 const kusamaConstants: Constants = {
   decimals: 12,
   currencySymbol: "KSM",
