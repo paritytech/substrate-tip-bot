@@ -11,9 +11,8 @@ they execute the tipping functions directly.
  */
 
 import "@polkadot/api-augment";
-import { ApiPromise, Keyring } from "@polkadot/api";
+import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
 import { createTestKeyring } from "@polkadot/keyring";
-import { HttpProvider } from "@polkadot/rpc-provider";
 import { BN } from "@polkadot/util";
 import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
 import assert from "assert";
@@ -44,16 +43,19 @@ const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", new B
 describe("tip", () => {
   let state: State;
 
-  const kusamsaApi = new ApiPromise({
-    provider: new HttpProvider(getChainConfig("localkusama").providerEndpoint),
+  const kusamaApi = new ApiPromise({
+    provider: new WsProvider(getChainConfig("localkusama").providerEndpoint),
     types: { Address: "AccountId", LookupSource: "AccountId" },
-    throwOnConnect: true,
   });
 
   const polkadotApi = new ApiPromise({
-    provider: new HttpProvider(getChainConfig("localpolkadot").providerEndpoint),
+    provider: new WsProvider(getChainConfig("localpolkadot").providerEndpoint),
     types: { Address: "AccountId", LookupSource: "AccountId" },
-    throwOnConnect: true,
+  });
+
+  afterAll(async () => {
+    await kusamaApi.disconnect();
+    await polkadotApi.disconnect();
   });
 
   const getUserBalance = async (api: ApiPromise, userAddress: string) => {
@@ -64,9 +66,18 @@ describe("tip", () => {
   beforeAll(async () => {
     await cryptoWaitReady();
     const keyring = new Keyring({ type: "sr25519" });
-    await kusamsaApi.isReady;
-    await polkadotApi.isReady;
-    assert((await getUserBalance(kusamsaApi, tipperAccount)).gtn(0));
+    try {
+      await kusamaApi.isReadyOrError;
+      await polkadotApi.isReadyOrError;
+    } catch (e) {
+      console.log(
+        `For these integrations tests, we're expecting local Kusama on ${
+          getChainConfig("localkusama").providerEndpoint
+        } and local Polkadot on ${getChainConfig("localpolkadot").providerEndpoint}. Please refer to the Readme.`,
+      );
+    }
+
+    assert((await getUserBalance(kusamaApi, tipperAccount)).gtn(0));
     assert((await getUserBalance(polkadotApi, tipperAccount)).gtn(0));
     state = {
       allowedGitHubOrg: "test",
