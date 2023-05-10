@@ -33,22 +33,25 @@ variables:
     - if: $CI_PIPELINE_SOURCE == "web"
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_COMMIT_REF_NAME == "master"
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
     - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
 
 .test-refs:                        &test-refs
   rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
     - if: $CI_COMMIT_REF_NAME =~ /^[0-9]+$/                         # PRs
 
 # Deploy on production goes only manually
 .deploy-prod-refs:                 &deploy-prod-refs
   rules:
-    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/             # i.e. v1.0, v2.1rc1
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
     - if: $CI_COMMIT_REF_NAME == "master"                           # on commits to main branch
       when: manual
 
 # Publish docker image and deploy it on staging
 .publish-deploy-stg-refs:          &publish-deploy-stg-refs
   rules:
+    - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+.*$/              # i.e. v1.0, v2.1rc1
     - if: $CI_COMMIT_REF_NAME == "master"                           # on commits to main branch
 
 .kubernetes-env:                   &kubernetes-env
