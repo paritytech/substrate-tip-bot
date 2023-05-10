@@ -1,4 +1,4 @@
-import { ChainConfig, TipNetwork, TipType } from "./types";
+import { ChainConfig, TipNetwork } from "./types";
 
 type Constants = Omit<ChainConfig, "providerEndpoint" | "tipUrl">;
 const kusamaConstants: Constants = {
@@ -52,31 +52,22 @@ const polkadotConstants: Constants = {
 };
 
 export function getChainConfig(network: TipNetwork): ChainConfig {
-  const getTipUrl = (providerEndpoint: string, type: TipType): string => {
-    const tipUrlPath = type === "opengov" ? "referenda" : "treasury/tips";
-    return `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(providerEndpoint)}#/${tipUrlPath}`;
-  };
-
   switch (network) {
     case "localkusama": {
       const providerEndpoint = "ws://127.0.0.1:9901";
-      const constants = kusamaConstants;
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint, constants.tipType), ...constants };
+      return { providerEndpoint, ...kusamaConstants };
     }
     case "localpolkadot": {
       const providerEndpoint = "ws://127.0.0.1:9900";
-      const constants = polkadotConstants;
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint, constants.tipType), ...constants };
+      return { providerEndpoint, ...polkadotConstants };
     }
     case "polkadot": {
       const providerEndpoint = "wss://rpc.polkadot.io";
-      const constants = polkadotConstants;
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint, constants.tipType), ...constants };
+      return { providerEndpoint, ...polkadotConstants };
     }
     case "kusama": {
       const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
-      const constants = kusamaConstants;
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint, constants.tipType), ...constants };
+      return { providerEndpoint, ...kusamaConstants };
     }
     default: {
       const exhaustivenessCheck: never = network;
@@ -86,4 +77,10 @@ export function getChainConfig(network: TipNetwork): ChainConfig {
       );
     }
   }
+}
+
+export function getTipUrl(network: TipNetwork): string {
+  const config = getChainConfig(network);
+  const tipUrlPath = config.tipType === "opengov" ? "referenda" : "treasury/tips";
+  return `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(config.providerEndpoint)}#/${tipUrlPath}`;
 }

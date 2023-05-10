@@ -10,8 +10,6 @@ export type OpenGovTrack = "SmallTipper" | "BigTipper";
 
 export type ChainConfig = {
   providerEndpoint: string;
-  tipUrl: string;
-
   /**
    * This is dependent on which pallets the chain has.
    * The preferred type is OpenGov,
