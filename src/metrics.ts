@@ -8,7 +8,7 @@ const prefix = "tip_bot_";
 promClient.register.setDefaultLabels({ team: "opstooling" });
 promClient.collectDefaultMetrics({ prefix });
 
-const labelNames = ["network", "governance", "result"] as const;
+const labelNames = ["network", "result"] as const;
 export const tipCounter = new promClient.Counter({
   name: `${prefix}tips_handled_total`,
   help: "Amount of all tips successfully proposed on-chain.",
@@ -17,11 +17,7 @@ export const tipCounter = new promClient.Counter({
 
 export const recordTip = (opts: { tipRequest: TipRequest; tipResult: TipResult }): void => {
   const { tipRequest, tipResult } = opts;
-  tipCounter.inc({
-    network: tipRequest.contributor.account.network,
-    governance: tipRequest.tip.type,
-    result: tipResult.success ? "ok" : "fail",
-  });
+  tipCounter.inc({ network: tipRequest.contributor.account.network, result: tipResult.success ? "ok" : "fail" });
 };
 
 export const addMetricsRoute = (router: Router): void => {

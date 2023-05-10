@@ -18,8 +18,9 @@ export async function tipTreasury(opts: {
     tipRequest,
     botTipAccount,
   } = opts;
-  const { contributor, tip } = tipRequest;
-  assert(tip.type === "treasury");
+  const { contributor } = tipRequest;
+  const chainConfig = getChainConfig(contributor.account.network);
+  assert(chainConfig.tipType === "treasury");
 
   /* TODO before submitting, check tip does not already exist via a storage query.
          TODO potentially prevent duplicates by also checking for reasons with the other sizes. */
@@ -35,5 +36,5 @@ export async function tipTreasury(opts: {
       }
     });
 
-  return { success: true, tipUrl: getChainConfig(tipRequest).tipUrl };
+  return { success: true, tipUrl: chainConfig.tipUrl };
 }

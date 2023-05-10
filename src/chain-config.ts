@@ -1,9 +1,10 @@
-import { ChainConfig, TipRequest } from "./types";
+import { ChainConfig, TipNetwork, TipType } from "./types";
 
 type Constants = Omit<ChainConfig, "providerEndpoint" | "tipUrl">;
 const kusamaConstants: Constants = {
   decimals: 12,
   currencySymbol: "KSM",
+  tipType: "opengov",
 
   /**
    * Source of the calculation:
@@ -28,6 +29,7 @@ const kusamaConstants: Constants = {
 const polkadotConstants: Constants = {
   decimals: 10,
   currencySymbol: "DOT",
+  tipType: "treasury",
 
   /**
    * Source of the calculation:
@@ -49,34 +51,35 @@ const polkadotConstants: Constants = {
   namedTips: { small: 20, medium: 80, large: 150 },
 };
 
-export function getChainConfig(tipRequest: TipRequest): ChainConfig {
-  const {
-    contributor,
-    tip: { type },
-  } = tipRequest;
-  const tipUrlPath = type === "opengov" ? "referenda" : "treasury/tips";
-  const getTipUrl = (providerEndpoint: string): string =>
-    `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(providerEndpoint)}#/${tipUrlPath}`;
+export function getChainConfig(network: TipNetwork): ChainConfig {
+  const getTipUrl = (providerEndpoint: string, type: TipType): string => {
+    const tipUrlPath = type === "opengov" ? "referenda" : "treasury/tips";
+    return `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(providerEndpoint)}#/${tipUrlPath}`;
+  };
 
-  switch (contributor.account.network) {
+  switch (network) {
     case "localkusama": {
-      const providerEndpoint = "ws://127.0.0.1:9944";
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint), ...kusamaConstants };
+      const providerEndpoint = "ws://127.0.0.1:9901";
+      const constants = kusamaConstants;
+      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint, constants.tipType), ...constants };
     }
     case "localpolkadot": {
-      const providerEndpoint = "ws://127.0.0.1:9944";
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint), ...polkadotConstants };
+      const providerEndpoint = "ws://127.0.0.1:9900";
+      const constants = polkadotConstants;
+      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint, constants.tipType), ...constants };
     }
     case "polkadot": {
       const providerEndpoint = "wss://rpc.polkadot.io";
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint), ...polkadotConstants };
+      const constants = polkadotConstants;
+      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint, constants.tipType), ...constants };
     }
     case "kusama": {
-      const providerEndpoint = `wss://${contributor.account.network}-rpc.polkadot.io`;
-      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint), ...kusamaConstants };
+      const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
+      const constants = kusamaConstants;
+      return { providerEndpoint, tipUrl: getTipUrl(providerEndpoint, constants.tipType), ...constants };
     }
     default: {
-      const exhaustivenessCheck: never = contributor.account.network;
+      const exhaustivenessCheck: never = network;
       throw new Error(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `Network is not handled properly in tipUser: ${exhaustivenessCheck}`,

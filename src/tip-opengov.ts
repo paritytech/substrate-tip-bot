@@ -22,7 +22,8 @@ export async function tipOpenGov(opts: {
     botTipAccount,
   } = opts;
   const { contributor } = tipRequest;
-  assert(tipRequest.tip.type === "opengov");
+  const chainConfig = getChainConfig(contributor.account.network);
+  assert(chainConfig.tipType === "opengov");
 
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
@@ -63,5 +64,5 @@ export async function tipOpenGov(opts: {
       }
     });
 
-  return { success: true, tipUrl: getChainConfig(tipRequest).tipUrl };
+  return { success: true, tipUrl: chainConfig.tipUrl };
 }

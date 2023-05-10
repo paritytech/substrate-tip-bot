@@ -9,7 +9,8 @@ import { State, TipRequest, TipResult } from "./types";
    TODO Unit tests */
 export async function tipUser(state: State, tipRequest: TipRequest): Promise<TipResult> {
   const { bot, botTipAccount } = state;
-  const provider = new WsProvider(getChainConfig(tipRequest).providerEndpoint);
+  const chainConfig = getChainConfig(tipRequest.contributor.account.network);
+  const provider = new WsProvider(chainConfig.providerEndpoint);
 
   const api = await ApiPromise.create({ provider });
   await api.isReady;
@@ -24,7 +25,7 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
   bot.log(`You are connected to chain ${chain.toString()} using ${nodeName.toString()} v${nodeVersion.toString()}`);
 
   try {
-    switch (tipRequest.tip.type) {
+    switch (chainConfig.tipType) {
       case "treasury": {
         return await tipTreasury({ state, api, tipRequest, botTipAccount });
         break;
@@ -34,7 +35,7 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
         break;
       }
       default: {
-        const exhaustivenessCheck: never = tipRequest.tip.type;
+        const exhaustivenessCheck: never = chainConfig.tipType;
         throw new Error(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `Invalid tip type: "${exhaustivenessCheck}"`,
