@@ -109,8 +109,9 @@ describe("tip", () => {
         const result = await tipUser(state, tipRequest);
 
         if (network === "localpolkadot") {
-          /* Currently we don't impose hard constraints on the tip value,
-             as there are no 'tracks' in trasury tips with maximum values like in opengov.
+          /* Polkadot doesn't have OpenGov (yet).
+             Currently, we don't impose hard constraints on the tip value,
+             as there are no 'tracks' in treasury tips with maximum values like in opengov.
              The values in treasure tips have no direct programmatic effect,
              they are just a textual suggestions for the tippers. */
           expect(result.success).toBeTruthy();
