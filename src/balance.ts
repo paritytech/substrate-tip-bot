@@ -6,8 +6,14 @@ import { getChainConfig } from "./chain-config";
 import { balanceGauge } from "./metrics";
 import { TipNetwork } from "./types";
 
+/**
+ * The function will update the balances of the tip bot on all networks.
+ * It will skip the local, development networks.
+ * This is intended to be executed upon startup of the bot.
+ * After that, the balances (including local ones) will be updated after a tip is executed.
+ */
 export const updateAllBalances = async (tipBotAddress: string, log: Probot["log"]): Promise<void> => {
-  const networks: TipNetwork[] = ["localpolkadot", "localkusama", "kusama", "polkadot"];
+  const networks: TipNetwork[] = ["kusama", "polkadot"];
   for (const network of networks) {
     log.info(`Checking tip bot balance on ${network}`);
     try {
