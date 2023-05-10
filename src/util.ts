@@ -30,7 +30,7 @@ export function getTipSize(tipSizeInput: string | undefined): TipSize | BN {
 }
 
 export function tipSizeToOpenGovTrack(tipRequest: TipRequest): { track: OpenGovTrack; value: BN } | { error: string } {
-  const chainConfig = getChainConfig(tipRequest);
+  const chainConfig = getChainConfig(tipRequest.contributor.account.network);
   const decimalPower = new BN(10).pow(new BN(chainConfig.decimals));
   const tipSize = tipRequest.tip.size;
   const tipValue = BN.isBN(tipSize) ? tipSize : new BN(chainConfig.namedTips[tipSize]);
@@ -91,7 +91,7 @@ export const formatReason = (tipRequest: TipRequest): string => {
  */
 export const formatTipSize = (tipRequest: TipRequest): string => {
   const tipSize = tipRequest.tip.size;
-  const chainConfig = getChainConfig(tipRequest);
+  const chainConfig = getChainConfig(tipRequest.contributor.account.network);
   if (BN.isBN(tipSize)) {
     return `${tipSize.toString()} ${chainConfig.currencySymbol}`;
   }
