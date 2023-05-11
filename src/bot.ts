@@ -190,7 +190,7 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
       await github.createComment(
         {
           ...respondParams,
-          body: `@${tipRequester} Could not submit tip :( Notify someone [here](https://github.com/paritytech/substrate-tip-bot/issues/new)`,
+          body: `@${tipRequester} Could not submit tip :( Notify someone [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
         },
         { octokitInstance },
       );
