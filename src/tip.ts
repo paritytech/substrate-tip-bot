@@ -12,8 +12,8 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
   const chainConfig = getChainConfig(tipRequest.contributor.account.network);
   const provider = new WsProvider(chainConfig.providerEndpoint);
 
-  const api = await ApiPromise.create({ provider });
-  await api.isReady;
+  const api = await ApiPromise.create({ provider, throwOnConnect: true });
+  await api.isReadyOrError;
 
   // Get general information about the node we are connected to
   const [chain, nodeName, nodeVersion] = await Promise.all([
