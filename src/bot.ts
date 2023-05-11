@@ -3,7 +3,7 @@ import { Keyring } from "@polkadot/api";
 import { BN } from "@polkadot/util";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { github } from "opstooling-integrations";
-import { displayError, envVar } from "opstooling-js";
+import { envVar } from "opstooling-js";
 import { ApplicationFunction, Probot, run } from "probot";
 
 import { updateAllBalances, updateBalance } from "./balance";
@@ -12,12 +12,17 @@ import { tipUser } from "./tip";
 import { ContributorAccount, State, TipRequest, TipSize } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
+type OnIssueCommentResult =
+  | { type: "skip" }
+  | { type: "success"; message: string }
+  | { type: "error"; errorMessage: string };
+
 const onIssueComment = async (
   state: State,
   event: IssueCommentCreatedEvent,
   tipRequester: string,
   octokitInstance: github.GitHubInstance,
-): Promise<string | Error | undefined> => {
+): Promise<OnIssueCommentResult> => {
   const { allowedGitHubOrg, allowedGitHubTeam, bot } = state;
 
   const commentText = event.comment.body;
@@ -31,11 +36,11 @@ const onIssueComment = async (
 
   // The bot only triggers on creation of a new comment on a pull request.
   if (!event.issue.pull_request || event.action !== "created" || !botMention?.startsWith("/tip")) {
-    return;
+    return { type: "skip" };
   }
 
   if (tipRequester === contributorLogin) {
-    return "Contributor and tipper cannot be the same person!";
+    return { type: "error", errorMessage: `@${tipRequester} Contributor and tipper cannot be the same person!` };
   }
 
   if (
@@ -44,21 +49,24 @@ const onIssueComment = async (
       { octokitInstance },
     ))
   ) {
-    return `You are not allowed to request a tip. Only members of ${allowedGitHubOrg}/${allowedGitHubTeam} are allowed.`;
+    return {
+      type: "error",
+      errorMessage: `@${tipRequester} You are not allowed to request a tip. Only members of ${allowedGitHubOrg}/${allowedGitHubTeam} are allowed.`,
+    };
   }
 
   let contributorAccount: ContributorAccount;
   try {
     contributorAccount = parseContributorAccount(pullRequestBody);
-  } catch (error) {
-    return error.message;
+  } catch (error: unknown) {
+    return { type: "error", errorMessage: `@${contributorLogin} ${(error as Error).message}` };
   }
 
   let tipSize: TipSize | BN;
   try {
     tipSize = getTipSize(tipSizeInput);
-  } catch (error) {
-    return error.message;
+  } catch (error: unknown) {
+    return { type: "error", errorMessage: `@${tipRequester} ${(error as Error).message}` };
   }
 
   const tipRequest: TipRequest = {
@@ -90,13 +98,23 @@ const onIssueComment = async (
   })();
 
   // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
-  return tipResult.success
-    ? `A ${formatTipSize(tipRequest)} tip was successfully submitted for ${contributorLogin} (${
-        contributorAccount.address
-      } on ${contributorAccount.network}). \n\n ${
-        tipResult.tipUrl
-      } ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`
-    : tipResult.errorMessage ?? "Could not submit tip :( Notify someone at Parity.";
+  if (tipResult.success) {
+    return {
+      type: "success",
+      message: `@${tipRequester} A ${formatTipSize(
+        tipRequest,
+      )} tip was successfully submitted for @${contributorLogin} (${contributorAccount.address} on ${
+        contributorAccount.network
+      }). \n\n ${tipResult.tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`,
+    };
+  } else {
+    return {
+      type: "error",
+      errorMessage:
+        tipResult.errorMessage ??
+        `@${tipRequester} Could not submit tip :( Notify someone [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
+    };
+  }
 };
 
 type AsyncApplicationFunction = (
@@ -139,23 +157,49 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
       privateKey: envVar("GITHUB_PRIVATE_KEY"),
     });
 
-    const respondOnResult = async (result: string | Error | undefined) => {
-      if (result === undefined) {
-        return;
-      }
+    const respondParams = {
+      owner: context.payload.repository.owner.login,
+      repo: context.payload.repository.name,
+      issue_number: context.payload.issue.number,
+    };
 
+    const respondOnResult = async (result: OnIssueCommentResult) => {
+      let body: string;
+      switch (result.type) {
+        case "skip":
+          return;
+        case "error":
+          body = result.errorMessage;
+          break;
+        case "success":
+          body = result.message;
+          break;
+        default: {
+          const exhaustivenessCheck: never = result;
+          throw new Error(
+            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+            `Result type is not handled properly in respondOnResult: ${JSON.stringify(exhaustivenessCheck)}`,
+          );
+        }
+      }
+      await github.createComment({ ...respondParams, body }, { octokitInstance });
+    };
+
+    const respondOnUnknownError = async (e: Error) => {
+      bot.log.error(e.message);
       await github.createComment(
         {
-          owner: context.payload.repository.owner.login,
-          repo: context.payload.repository.name,
-          issue_number: context.payload.issue.number,
-          body: `@${tipRequester} ${result instanceof Error ? `ERROR: ${displayError(result)}` : result}`,
+          ...respondParams,
+          body: `@${tipRequester} Could not submit tip :( Notify someone [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
         },
         { octokitInstance },
       );
     };
 
-    void onIssueComment(state, context.payload, tipRequester, octokitInstance).then(respondOnResult, respondOnResult);
+    void onIssueComment(state, context.payload, tipRequester, octokitInstance).then(
+      respondOnResult,
+      respondOnUnknownError,
+    );
   });
 
   try {
