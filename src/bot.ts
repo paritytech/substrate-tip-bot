@@ -172,7 +172,7 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
           body = result.errorMessage;
           break;
         case "success":
-          body = `${result.message}`;
+          body = result.message;
           break;
         default: {
           const exhaustivenessCheck: never = result;
