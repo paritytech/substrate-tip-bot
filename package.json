@@ -1,6 +1,6 @@
 {
   "name": "@substrate/substrate-tip-bot",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "private": true,
   "description": "A GitHub bot to submit tips on behalf of the network.",
   "author": "Parity Technologies <admin@parity.io> (https://parity.io)",
