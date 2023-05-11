@@ -2,7 +2,7 @@ import { ApiPromise, SubmittableResult } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import assert from "assert";
 
-import { getTipUrl } from "./chain-config";
+import { getChainConfig, getTipUrl } from "./chain-config";
 import { State, TipRequest, TipResult } from "./types";
 import { formatReason } from "./util";
 
@@ -18,8 +18,9 @@ export async function tipTreasury(opts: {
     tipRequest,
     botTipAccount,
   } = opts;
-  const { contributor, tip } = tipRequest;
-  assert(tip.type === "treasury");
+  const { contributor } = tipRequest;
+  const chainConfig = getChainConfig(contributor.account.network);
+  assert(chainConfig.tipType === "treasury");
 
   /* TODO before submitting, check tip does not already exist via a storage query.
          TODO potentially prevent duplicates by also checking for reasons with the other sizes. */
@@ -35,5 +36,5 @@ export async function tipTreasury(opts: {
       }
     });
 
-  return { success: true, tipUrl: getTipUrl(tipRequest) };
+  return { success: true, tipUrl: getTipUrl(contributor.account.network) };
 }

@@ -1,9 +1,10 @@
-import { ChainConfig, TipNetwork, TipRequest } from "./types";
+import { ChainConfig, TipNetwork } from "./types";
 
 type Constants = Omit<ChainConfig, "providerEndpoint">;
 const kusamaConstants: Constants = {
   decimals: 12,
   currencySymbol: "KSM",
+  tipType: "opengov",
 
   /**
    * Source of the calculation:
@@ -28,6 +29,7 @@ const kusamaConstants: Constants = {
 const polkadotConstants: Constants = {
   decimals: 10,
   currencySymbol: "DOT",
+  tipType: "treasury",
 
   /**
    * Source of the calculation:
@@ -52,11 +54,11 @@ const polkadotConstants: Constants = {
 export function getChainConfig(network: TipNetwork): ChainConfig {
   switch (network) {
     case "localkusama": {
-      const providerEndpoint = "ws://127.0.0.1:9944";
+      const providerEndpoint = "ws://127.0.0.1:9901";
       return { providerEndpoint, ...kusamaConstants };
     }
     case "localpolkadot": {
-      const providerEndpoint = "ws://127.0.0.1:9944";
+      const providerEndpoint = "ws://127.0.0.1:9900";
       return { providerEndpoint, ...polkadotConstants };
     }
     case "polkadot": {
@@ -77,12 +79,8 @@ export function getChainConfig(network: TipNetwork): ChainConfig {
   }
 }
 
-export function getTipUrl(tipRequest: TipRequest): string {
-  const {
-    contributor,
-    tip: { type },
-  } = tipRequest;
-  const tipUrlPath = type === "opengov" ? "referenda" : "treasury/tips";
-  const config = getChainConfig(contributor.account.network);
+export function getTipUrl(network: TipNetwork): string {
+  const config = getChainConfig(network);
+  const tipUrlPath = config.tipType === "opengov" ? "referenda" : "treasury/tips";
   return `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(config.providerEndpoint)}#/${tipUrlPath}`;
 }

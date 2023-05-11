@@ -65,7 +65,7 @@ const onIssueComment = async (
     contributor: { githubUsername: contributorLogin, account: contributorAccount },
     pullRequestNumber,
     pullRequestRepo,
-    tip: { size: tipSize, type: botMention === "/tip2" ? "opengov" : "treasury" },
+    tip: { size: tipSize },
   };
 
   bot.log(

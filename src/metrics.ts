@@ -16,11 +16,7 @@ export const tipCounter = new promClient.Counter({
 
 export const recordTip = (opts: { tipRequest: TipRequest; tipResult: TipResult }): void => {
   const { tipRequest, tipResult } = opts;
-  tipCounter.inc({
-    network: tipRequest.contributor.account.network,
-    governance: tipRequest.tip.type,
-    result: tipResult.success ? "ok" : "fail",
-  });
+  tipCounter.inc({ network: tipRequest.contributor.account.network, result: tipResult.success ? "ok" : "fail" });
 };
 
 export const balanceGauge = new promClient.Gauge({

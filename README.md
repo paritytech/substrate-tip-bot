@@ -63,7 +63,13 @@ guidance
 
 ### Integration tests
 
-There are semi-automatic integration tests that execute the tip functions against a locally running Polkadot node.
+There are semi-automatic integration tests that execute the tip functions against a locally running Polkadot and Kusama nodes.
+
+| Network        | Snippet |
+|----------------| --- |
+| Local Kusama   | `docker run --rm -p 9901:9901 parity/polkadot:v0.9.39 --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --ws-external --force-kusama` |
+| Local Polkadot | `docker run --rm -p 9900:9900 parity/polkadot:v0.9.39 --chain=dev --tmp --alice --execution Native --ws-port 9900 --ws-external` |
+
 Note that the node needs to have the OpenGov features - Kusama development chain can be used for that (`--chain=kusama-dev`).
 
 With that, run the tests:

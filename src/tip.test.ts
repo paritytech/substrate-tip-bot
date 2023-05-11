@@ -11,13 +11,13 @@ they execute the tipping functions directly.
  */
 
 import "@polkadot/api-augment";
-import { ApiPromise, Keyring } from "@polkadot/api";
+import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
 import { createTestKeyring } from "@polkadot/keyring";
-import { HttpProvider } from "@polkadot/rpc-provider";
 import { BN } from "@polkadot/util";
 import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
 import assert from "assert";
 
+import { getChainConfig } from "./chain-config";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
 
@@ -28,36 +28,57 @@ logMock.error = console.error.bind(console);
 
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
-const getTipRequest = (tip: TipRequest["tip"]): TipRequest => {
+const getTipRequest = (tip: TipRequest["tip"], network: "localkusama" | "localpolkadot"): TipRequest => {
   return {
     tip,
-    contributor: { githubUsername: "test", account: { address: randomAddress(), network: "localkusama" } },
+    contributor: { githubUsername: "test", account: { address: randomAddress(), network } },
     pullRequestRepo: "test",
     pullRequestNumber: 1,
   };
 };
 
-const govTypes = ["treasury", "opengov"] as const;
+const networks = ["localkusama", "localpolkadot"] as const;
 const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", new BN("7"), new BN("30")];
 
 describe("tip", () => {
   let state: State;
 
-  const polkadotApi = new ApiPromise({
-    provider: new HttpProvider("http://localhost:9933"),
+  const kusamaApi = new ApiPromise({
+    provider: new WsProvider(getChainConfig("localkusama").providerEndpoint),
     types: { Address: "AccountId", LookupSource: "AccountId" },
   });
 
-  const getUserBalance = async (userAddress: string) => {
-    const { data } = await polkadotApi.query.system.account(userAddress);
+  const polkadotApi = new ApiPromise({
+    provider: new WsProvider(getChainConfig("localpolkadot").providerEndpoint),
+    types: { Address: "AccountId", LookupSource: "AccountId" },
+  });
+
+  afterAll(async () => {
+    await kusamaApi.disconnect();
+    await polkadotApi.disconnect();
+  });
+
+  const getUserBalance = async (api: ApiPromise, userAddress: string) => {
+    const { data } = await api.query.system.account(userAddress);
     return data.free.toBn();
   };
 
   beforeAll(async () => {
     await cryptoWaitReady();
     const keyring = new Keyring({ type: "sr25519" });
-    await polkadotApi.isReady;
-    assert((await getUserBalance(tipperAccount)).gtn(0));
+    try {
+      await kusamaApi.isReadyOrError;
+      await polkadotApi.isReadyOrError;
+    } catch (e) {
+      console.log(
+        `For these integrations tests, we're expecting local Kusama on ${
+          getChainConfig("localkusama").providerEndpoint
+        } and local Polkadot on ${getChainConfig("localpolkadot").providerEndpoint}. Please refer to the Readme.`,
+      );
+    }
+
+    assert((await getUserBalance(kusamaApi, tipperAccount)).gtn(0));
+    assert((await getUserBalance(polkadotApi, tipperAccount)).gtn(0));
     state = {
       allowedGitHubOrg: "test",
       allowedGitHubTeam: "test",
@@ -66,11 +87,11 @@ describe("tip", () => {
     };
   });
 
-  for (const govType of govTypes) {
-    describe(govType, () => {
+  for (const network of networks) {
+    describe(network, () => {
       for (const tipSize of tipSizes) {
         test(`tips a user (${tipSize.toString()})`, async () => {
-          const tipRequest = getTipRequest({ type: govType, size: tipSize });
+          const tipRequest = getTipRequest({ size: tipSize }, network);
 
           const result = await tipUser(state, tipRequest);
 
@@ -82,14 +103,15 @@ describe("tip", () => {
         });
       }
 
-      test(`huge tip in ${govType}`, async () => {
-        const tipRequest = getTipRequest({ type: govType, size: new BN("999") });
+      test(`huge tip in ${network}`, async () => {
+        const tipRequest = getTipRequest({ size: new BN("999") }, network);
 
         const result = await tipUser(state, tipRequest);
 
-        if (govType === "treasury") {
-          /* Currently we don't impose hard constraints on the tip value,
-             as there are no 'tracks' with maximum values like in opengov.
+        if (network === "localpolkadot") {
+          /* Polkadot doesn't have OpenGov (yet).
+             Currently, we don't impose hard constraints on the tip value,
+             as there are no 'tracks' in treasury tips with maximum values like in opengov.
              The values in treasure tips have no direct programmatic effect,
              they are just a textual suggestions for the tippers. */
           expect(result.success).toBeTruthy();

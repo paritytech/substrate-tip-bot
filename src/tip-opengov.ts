@@ -5,7 +5,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import assert from "assert";
 
-import { getTipUrl } from "./chain-config";
+import { getChainConfig, getTipUrl } from "./chain-config";
 import { State, TipRequest, TipResult } from "./types";
 import { formatReason, tipSizeToOpenGovTrack } from "./util";
 
@@ -22,7 +22,8 @@ export async function tipOpenGov(opts: {
     botTipAccount,
   } = opts;
   const { contributor } = tipRequest;
-  assert(tipRequest.tip.type === "opengov");
+  const chainConfig = getChainConfig(contributor.account.network);
+  assert(chainConfig.tipType === "opengov");
 
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
@@ -63,5 +64,5 @@ export async function tipOpenGov(opts: {
       }
     });
 
-  return { success: true, tipUrl: getTipUrl(tipRequest) };
+  return { success: true, tipUrl: getTipUrl(contributor.account.network) };
 }

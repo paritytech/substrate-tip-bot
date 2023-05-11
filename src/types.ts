@@ -4,11 +4,18 @@ import { Probot } from "probot";
 
 export type TipNetwork = "localkusama" | "localpolkadot" | "kusama" | "polkadot";
 
+export type TipType = "treasury" | "opengov";
 export type TipSize = "small" | "medium" | "large";
 export type OpenGovTrack = "SmallTipper" | "BigTipper";
 
 export type ChainConfig = {
   providerEndpoint: string;
+  /**
+   * This is dependent on which pallets the chain has.
+   * The preferred type is OpenGov,
+   * but some chains (Polkadot) do not support it (yet).
+   */
+  tipType: TipType;
   decimals: number;
   currencySymbol: string;
   smallTipperMaximum: number;
@@ -38,7 +45,6 @@ export type TipRequest = {
   pullRequestNumber: number;
   pullRequestRepo: string;
   tip: {
-    type: "treasury" | "opengov";
     size: TipSize | BN;
   };
 };
