@@ -26,10 +26,14 @@ common:
    httpGet:
      path: /tip-bot/health
      port: http
+   initialDelaySeconds: 60
+   periodSeconds: 5
   readinessProbe:
    httpGet:
      path: /tip-bot/health
      port: http
+   initialDelaySeconds: 60
+   periodSeconds: 5
   serviceMonitor:
     enabled: true
     endpoints:
