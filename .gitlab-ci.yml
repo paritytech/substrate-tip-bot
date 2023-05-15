@@ -25,7 +25,7 @@ variables:
   DOCKER_TAG:                      "${CI_COMMIT_SHORT_SHA}"
   VAULT_ADDR:                      "https://vault.parity-mgmt-vault.parity.io"
   VAULT_AUTH_PATH:                 "gitlab-parity-io-jwt"
-  VAULT_AUTH_ROLE:                 "cicd_gitlab_parity_${CI_PROJECT_NAME}"
+  VAULT_AUTH_ROLE:                 "gitlab_${CI_PROJECT_NAME}"
   HELM_SECRETS_DRIVER:             vals
 
 .common-refs:                      &common-refs
