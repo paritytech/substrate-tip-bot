@@ -39,9 +39,6 @@ export async function tipOpenGov(opts: {
   ]);
   const encodedProposal = proposalTx.method.toHex();
   const proposalHash = blake2AsHex(encodedProposal);
-  const encodedLength = Math.ceil((encodedProposal.length - 2) / 2);
-
-  console.log(`encodedLength: ${encodedLength}`);
 
   return await new Promise(async (resolve, reject) => {
     // create a preimage from opengov with the encodedProposal above
