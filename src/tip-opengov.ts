@@ -39,6 +39,7 @@ export async function tipOpenGov(opts: {
   ]);
   const encodedProposal = proposalTx.method.toHex();
   const proposalHash = blake2AsHex(encodedProposal);
+  const encodedLength = Math.ceil((encodedProposal.length - 2) / 2);
 
   return await new Promise(async (resolve, reject) => {
     // create a preimage from opengov with the encodedProposal above
@@ -57,7 +58,7 @@ export async function tipOpenGov(opts: {
               .submit(
                 // TODO: There should be a way to set those types properly.
                 { Origins: track.track } as never,
-                { Lookup: { hash: proposalHash, length: proposalTx.length - 1 } },
+                { Lookup: { hash: proposalHash, len: encodedLength } },
                 { after: 10 } as never,
               )
               .signAndSend(botTipAccount, { nonce: -1 }, async (refResult) => {
