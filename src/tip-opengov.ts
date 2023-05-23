@@ -90,8 +90,7 @@ async function signAndSendCallback(
       result.status.isDropped ||
       result.status.isInvalid ||
       result.status.isUsurped ||
-      result.status.isRetracted ||
-      result.status.isBroadcast
+      result.status.isRetracted
     ) {
       const msg = `Tip for ${contributor.address} ${type} status is 👎: ${result.status.type}`;
       bot.log(msg, result.status);
