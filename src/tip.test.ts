@@ -42,15 +42,19 @@ const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", new B
 
 describe("tip", () => {
   let state: State;
+  let kusamaApi: ApiPromise;
+  let polkadotApi: ApiPromise;
 
-  const kusamaApi = new ApiPromise({
-    provider: new WsProvider(getChainConfig("localkusama").providerEndpoint),
-    types: { Address: "AccountId", LookupSource: "AccountId" },
-  });
+  beforeAll(() => {
+    kusamaApi = new ApiPromise({
+      provider: new WsProvider(getChainConfig("localkusama").providerEndpoint),
+      types: { Address: "AccountId", LookupSource: "AccountId" },
+    });
 
-  const polkadotApi = new ApiPromise({
-    provider: new WsProvider(getChainConfig("localpolkadot").providerEndpoint),
-    types: { Address: "AccountId", LookupSource: "AccountId" },
+    polkadotApi = new ApiPromise({
+      provider: new WsProvider(getChainConfig("localpolkadot").providerEndpoint),
+      types: { Address: "AccountId", LookupSource: "AccountId" },
+    });
   });
 
   afterAll(async () => {
