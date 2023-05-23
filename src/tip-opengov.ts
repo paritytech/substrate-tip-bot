@@ -2,11 +2,13 @@ import "@polkadot/api-augment";
 import "@polkadot/types-augment";
 import { ApiPromise } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
+import { ISubmittableResult } from "@polkadot/types/types";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import assert from "assert";
+import { Probot } from "probot";
 
 import { getChainConfig, getTipUrl } from "./chain-config";
-import { State, TipRequest, TipResult } from "./types";
+import { ContributorAccount, State, TipRequest, TipResult } from "./types";
 import { formatReason, tipSizeToOpenGovTrack } from "./util";
 
 export async function tipOpenGov(opts: {
@@ -29,40 +31,73 @@ export async function tipOpenGov(opts: {
   if ("error" in track) {
     return { success: false, errorMessage: track.error };
   }
+  const contributorAddress = contributor.account.address;
 
   const proposalTx = api.tx.utility.batch([
     api.tx.system.remark(formatReason(tipRequest)),
-    api.tx.treasury.spend(track.value.toString(), contributor.account.address),
+    api.tx.treasury.spend(track.value.toString(), contributorAddress),
   ]);
   const encodedProposal = proposalTx.method.toHex();
   const proposalHash = blake2AsHex(encodedProposal);
+  const encodedLength = Math.ceil((encodedProposal.length - 2) / 2);
 
-  const preimage_unsub = await api.tx.preimage
-    .notePreimage(encodedProposal)
-    .signAndSend(botTipAccount, { nonce: -1 }, (result) => {
-      if (result.status.isInBlock) {
-        bot.log(`Preimage Upload included at blockHash ${result.status.asInBlock.toString()}`);
-      } else if (result.status.isFinalized) {
-        bot.log(`Preimage Upload finalized at blockHash ${result.status.asFinalized.toString()}`);
-        preimage_unsub();
-      }
-    });
+  return await new Promise(async (resolve, reject) => {
+    // create a preimage from opengov with the encodedProposal above
+    const preimageUnsubscribe = await api.tx.preimage
+      .notePreimage(encodedProposal)
+      .signAndSend(botTipAccount, { nonce: -1 }, async (result) => {
+        await signAndSendCallback(bot, contributor.account, "preimage", preimageUnsubscribe, result)
+          .then(async () => {
+            const readPreimage = await api.query.preimage.statusFor(proposalHash);
 
-  const referenda_unsub = await api.tx.referenda
-    .submit(
-      // TODO: There should be a way to set those types properly.
-      { Origins: track.track } as any, // eslint-disable-line
-      { Lookup: { hash: proposalHash, length: proposalTx.length - 1 } },
-      { after: 10 } as any, // eslint-disable-line
-    )
-    .signAndSend(botTipAccount, { nonce: -1 }, (result) => {
-      if (result.status.isInBlock) {
-        bot.log(`Tip referendum included at blockHash ${result.status.asInBlock.toString()}`);
-      } else if (result.status.isFinalized) {
-        bot.log(`Tip referendum finalized at blockHash ${result.status.asFinalized.toString()}`);
-        referenda_unsub();
-      }
-    });
+            if (readPreimage.isEmpty) {
+              reject(new Error(`Preimage for ${proposalHash} was not found, check if the bot has enough funds.`));
+            }
 
-  return { success: true, tipUrl: getTipUrl(contributor.account.network) };
+            const proposalUnsubscribe = await api.tx.referenda
+              .submit(
+                // TODO: There should be a way to set those types properly.
+                { Origins: track.track } as never,
+                { Lookup: { hash: proposalHash, len: encodedLength } },
+                { after: 10 } as never,
+              )
+              .signAndSend(botTipAccount, { nonce: -1 }, async (refResult) => {
+                await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
+                  .then(resolve)
+                  .catch(reject);
+              });
+          })
+          .catch(reject);
+      });
+  });
+}
+
+async function signAndSendCallback(
+  bot: Probot,
+  contributor: ContributorAccount,
+  type: "preimage" | "referendum",
+  unsubscribe: () => void,
+  result: ISubmittableResult,
+): Promise<TipResult> {
+  return await new Promise((resolve, reject) => {
+    if (result.status.isInBlock) {
+      bot.log(`${type} for ${contributor.address} included at blockHash ${result.status.asInBlock.toString()}`);
+    } else if (result.status.isFinalized) {
+      bot.log(`Tip for ${contributor.address} ${type} finalized at blockHash ${result.status.asFinalized.toString()}`);
+      unsubscribe();
+      resolve({ success: true, tipUrl: getTipUrl(contributor.network) });
+    } else if (
+      result.status.isDropped ||
+      result.status.isInvalid ||
+      result.status.isUsurped ||
+      result.status.isRetracted ||
+      result.status.isBroadcast
+    ) {
+      const msg = `Tip for ${contributor.address} ${type} status is 👎: ${result.status.type}`;
+      bot.log(msg, result.status);
+      reject({ success: false, errorMessage: msg });
+    } else {
+      bot.log(`Tip for ${contributor.address} ${type} status: ${result.status.type}`, result.status);
+    }
+  });
 }

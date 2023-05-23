@@ -49,4 +49,4 @@ export type TipRequest = {
   };
 };
 
-export type TipResult = { success: true; tipUrl: string } | { success: false; errorMessage?: string | undefined };
+export type TipResult = { success: true; tipUrl: string } | { success: false; errorMessage?: string };
