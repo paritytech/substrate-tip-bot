@@ -97,11 +97,8 @@ export const formatTipSize = (tipRequest: TipRequest): string => {
     return `${tipSize.toString()} ${chainConfig.currencySymbol}`;
   }
   if (chainConfig.tipType === "opengov") {
-    const value = tipSizeToOpenGovTrack(tipRequest)
-    if ('value' in value) {
-      // e.g. "medium (80 KSM)"
-      return `${tipSize} (${value.value.toString()} ${chainConfig.currencySymbol})`;
-    }
+    const value = chainConfig.namedTips[tipSize];
+    return `${tipSize} (${value.toString()} ${chainConfig.currencySymbol})`;
   }
   // e.g. "medium"
   return tipSize;
