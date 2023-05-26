@@ -39,6 +39,14 @@ const onIssueComment = async (
     return { type: "skip" };
   }
 
+  await octokitInstance.rest.reactions.createForIssueComment({
+    owner: event.repository.owner.login,
+    repo: event.repository.name,
+    issue_number: event.issue.number,
+    comment_id: event.comment.id,
+    content: "eyes",
+  });
+
   if (tipRequester === contributorLogin) {
     return { type: "error", errorMessage: `@${tipRequester} Contributor and tipper cannot be the same person!` };
   }
@@ -183,6 +191,11 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
         }
       }
       await github.createComment({ ...respondParams, body }, { octokitInstance });
+      await context.octokit.rest.reactions.createForIssueComment({
+        ...respondParams,
+        comment_id: context.payload.comment.id,
+        content: result.type === "success" ? "rocket" : "confused",
+      });
     };
 
     const respondOnUnknownError = async (e: Error) => {
@@ -194,6 +207,11 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
         },
         { octokitInstance },
       );
+      await context.octokit.rest.reactions.createForIssueComment({
+        ...respondParams,
+        comment_id: context.payload.comment.id,
+        content: "confused",
+      });
     };
 
     void onIssueComment(state, context.payload, tipRequester, octokitInstance).then(
