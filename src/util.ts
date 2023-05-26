@@ -87,13 +87,22 @@ export const formatReason = (tipRequest: TipRequest): string => {
 };
 
 /**
- * @returns For example "medium" or "13 KSM".
+ * @returns For example "medium", "medium (80 KSM)", or "13 KSM".
  */
 export const formatTipSize = (tipRequest: TipRequest): string => {
   const tipSize = tipRequest.tip.size;
   const chainConfig = getChainConfig(tipRequest.contributor.account.network);
   if (BN.isBN(tipSize)) {
+    // e.g. "13 KSM"
     return `${tipSize.toString()} ${chainConfig.currencySymbol}`;
   }
+  if (chainConfig.tipType === "opengov") {
+    const value = tipSizeToOpenGovTrack(tipRequest)
+    if ('value' in value) {
+      // e.g. "medium (80 KSM)"
+      return `${tipSize} (${value.value.toString()} ${chainConfig.currencySymbol})`;
+    }
+  }
+  // e.g. "medium"
   return tipSize;
 };
