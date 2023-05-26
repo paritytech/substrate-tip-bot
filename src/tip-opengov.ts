@@ -37,15 +37,20 @@ export async function tipOpenGov(opts: {
     api.tx.system.remark(formatReason(tipRequest)),
     api.tx.treasury.spend(track.value.toString(), contributorAddress),
   ]);
+  const nonce = (await api.rpc.system.accountNextIndex(botTipAccount.address)).toNumber();
   const encodedProposal = proposalTx.method.toHex();
   const proposalHash = blake2AsHex(encodedProposal);
   const encodedLength = Math.ceil((encodedProposal.length - 2) / 2);
+
+  bot.log(
+    `Tip proposal for ${contributor.account.address} hash: ${proposalHash}, encoded length: ${encodedLength}, nonce: ${nonce}`,
+  );
 
   return await new Promise(async (resolve, reject) => {
     // create a preimage from opengov with the encodedProposal above
     const preimageUnsubscribe = await api.tx.preimage
       .notePreimage(encodedProposal)
-      .signAndSend(botTipAccount, { nonce: -1 }, async (result) => {
+      .signAndSend(botTipAccount, async (result) => {
         await signAndSendCallback(bot, contributor.account, "preimage", preimageUnsubscribe, result)
           .then(async () => {
             const readPreimage = await api.query.preimage.statusFor(proposalHash);
@@ -61,7 +66,7 @@ export async function tipOpenGov(opts: {
                 { Lookup: { hash: proposalHash, len: encodedLength } },
                 { after: 10 } as never,
               )
-              .signAndSend(botTipAccount, { nonce: -1 }, async (refResult) => {
+              .signAndSend(botTipAccount, async (refResult) => {
                 await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
                   .then(resolve)
                   .catch(reject);
@@ -90,9 +95,12 @@ async function signAndSendCallback(
       result.status.isDropped ||
       result.status.isInvalid ||
       result.status.isUsurped ||
-      result.status.isRetracted ||
-      result.status.isBroadcast
+      result.status.isRetracted
     ) {
+      bot.log(`status to string`, result.status.toString());
+      bot.log(`result.toHuman`, result.toHuman());
+      bot.log(`result`, result);
+
       const msg = `Tip for ${contributor.address} ${type} status is 👎: ${result.status.type}`;
       bot.log(msg, result.status);
       reject({ success: false, errorMessage: msg });
