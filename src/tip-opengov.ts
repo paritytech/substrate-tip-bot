@@ -9,7 +9,7 @@ import { Probot } from "probot";
 
 import { getChainConfig, getTipUrl } from "./chain-config";
 import { ContributorAccount, State, TipRequest, TipResult } from "./types";
-import { formatReason, tipSizeToOpenGovTrack } from "./util";
+import { tipSizeToOpenGovTrack } from "./util";
 
 export async function tipOpenGov(opts: {
   state: State;
