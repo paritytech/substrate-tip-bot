@@ -33,10 +33,7 @@ export async function tipOpenGov(opts: {
   }
   const contributorAddress = contributor.account.address;
 
-  const proposalTx = api.tx.utility.batch([
-    api.tx.system.remark(formatReason(tipRequest)),
-    api.tx.treasury.spend(track.value.toString(), contributorAddress),
-  ]);
+  const proposalTx = api.tx.treasury.spend(track.value.toString(), contributorAddress);
   const nonce = (await api.rpc.system.accountNextIndex(botTipAccount.address)).toNumber();
   const encodedProposal = proposalTx.method.toHex();
   const proposalHash = blake2AsHex(encodedProposal);
