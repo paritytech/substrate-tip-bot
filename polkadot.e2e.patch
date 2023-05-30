@@ -1,0 +1,50 @@
+diff --git a/runtime/kusama/src/governance/mod.rs b/runtime/kusama/src/governance/mod.rs
+index c8a7b360ed..78bd7fbe67 100644
+--- a/runtime/kusama/src/governance/mod.rs
++++ b/runtime/kusama/src/governance/mod.rs
+@@ -35,7 +35,7 @@ mod fellowship;
+ pub use fellowship::{FellowshipCollectiveInstance, FellowshipReferendaInstance};
+ 
+ parameter_types! {
+-	pub const VoteLockingPeriod: BlockNumber = 7 * DAYS;
++	pub const VoteLockingPeriod: BlockNumber = 1 * MINUTES;
+ }
+ 
+ impl pallet_conviction_voting::Config for Runtime {
+@@ -52,7 +52,7 @@ impl pallet_conviction_voting::Config for Runtime {
+ parameter_types! {
+ 	pub const AlarmInterval: BlockNumber = 1;
+ 	pub const SubmissionDeposit: Balance = 1 * QUID;
+-	pub const UndecidingTimeout: BlockNumber = 14 * DAYS;
++	pub const UndecidingTimeout: BlockNumber = 20 * MINUTES;
+ }
+ 
+ parameter_types! {
+diff --git a/runtime/kusama/src/governance/tracks.rs b/runtime/kusama/src/governance/tracks.rs
+index 08a87a677c..2f556e9602 100644
+--- a/runtime/kusama/src/governance/tracks.rs
++++ b/runtime/kusama/src/governance/tracks.rs
+@@ -213,8 +213,8 @@ const TRACKS_DATA: [(u16, pallet_referenda::TrackInfo<Balance, BlockNumber>); 15
+ 			max_deciding: 200,
+ 			decision_deposit: 1 * QUID,
+ 			prepare_period: 1 * MINUTES,
+-			decision_period: 7 * DAYS,
+-			confirm_period: 10 * MINUTES,
++			decision_period: 1 * MINUTES,
++			confirm_period: 1 * MINUTES,
+ 			min_enactment_period: 1 * MINUTES,
+ 			min_approval: APP_SMALL_TIPPER,
+ 			min_support: SUP_SMALL_TIPPER,
+diff --git a/runtime/kusama/src/lib.rs b/runtime/kusama/src/lib.rs
+index 35dc79a4b5..07acab5014 100644
+--- a/runtime/kusama/src/lib.rs
++++ b/runtime/kusama/src/lib.rs
+@@ -606,7 +606,7 @@ parameter_types! {
+ 	pub const ProposalBond: Permill = Permill::from_percent(5);
+ 	pub const ProposalBondMinimum: Balance = 2000 * CENTS;
+ 	pub const ProposalBondMaximum: Balance = 1 * GRAND;
+-	pub const SpendPeriod: BlockNumber = 6 * DAYS;
++	pub const SpendPeriod: BlockNumber = 1 * MINUTES;
+ 	pub const Burn: Permill = Permill::from_perthousand(2);
+ 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+ 
