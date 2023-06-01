@@ -1,53 +1,76 @@
 import "@polkadot/api-augment";
 import { Keyring } from "@polkadot/api";
 import type { KeyringPair } from "@polkadot/keyring/types";
-import { cryptoWaitReady } from "@polkadot/util-crypto";
-import fetch from "node-fetch";
-import { stringToU8a } from "@polkadot/util";
-
-const ENDPOINT = "https://test.polkassembly.io/api/v1/";
-// const ENDPOINT = "https://api.polkassembly.io/api/v1/";
+import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
+import { Polkassembly } from "./polkassembly";
 
 describe("Polkassembly API integration", () => {
   let keyringPair: KeyringPair;
+  let polkassembly: Polkassembly;
 
   beforeAll(async () => {
     await cryptoWaitReady();
+  });
+
+  beforeEach(async () => {
     const keyring = new Keyring({ type: "sr25519" });
-    keyringPair = keyring.addFromUri("//Bob");
+    // A random account for every test.
+    keyringPair = keyring.addFromSeed(randomAsU8a(32));
+    polkassembly = new Polkassembly("https://test.polkassembly.io/api/v1/", keyringPair)
   });
 
   test("We are not logged in initially", async () => {
-
+    expect(polkassembly.loggedIn).toBeFalsy()
   });
 
-  test("Can log in using the seed phrase", async () => {
-    const requestBody = {address: keyringPair.address}
-    const result = await fetch(
-      `${ENDPOINT}/auth/actions/addressLoginStart`,
-      { headers: {"Content-Type": "application/json"},method: "POST", body: JSON.stringify(requestBody) }
-    );
-    expect(result.status).toEqual(200)
-    const responseBody = await result.json()
-    expect('signMessage' in responseBody)
-    const signMessage = (responseBody.signMessage as string).substr(7, (responseBody.signMessage as string).length - 14)
-    console.log({
-      orig: responseBody.signMessage,
-      signMessage
-    })
-    const messageInUint8Array = stringToU8a(responseBody.signMessage);
-    const signedMessage = keyringPair.sign(messageInUint8Array);
-    const signature = '0x' + Buffer.from(signedMessage).toString('hex');
+  test("We cannot log in without signing up first", async () => {
+    await expect(() => polkassembly.login()).rejects.toThrowError("Please sign up prior to logging in with a web3 address")
+  })
 
-    console.log({signMessage: responseBody.signMessage, messageInUint8Array, signedMessage, signature})
+  test("Can sign up", async () => {
+    await polkassembly.signup()
+    expect(polkassembly.loggedIn).toBeTruthy()
+  })
 
-    const result2 = await fetch(
-      `${ENDPOINT}/auth/actions/addressLogin`,
-      { headers: {"Content-Type": "application/json"},method: "POST", body: JSON.stringify({address: keyringPair.address, signature, wallet: "polkadot-js"}) }
-    );
-    console.log(result2)
-    expect(result2.status).toEqual(200)
-    const responseBody2 = await result2.json()
-    expect('token' in responseBody2)
+  test("Can log in and logout, having signed up", async () => {
+    await polkassembly.signup()
+    expect(polkassembly.loggedIn).toBeTruthy()
+
+    await polkassembly.logout()
+    expect(polkassembly.loggedIn).toBeFalsy()
+
+    await polkassembly.login()
+    expect(polkassembly.loggedIn).toBeTruthy()
   });
+
+  test("Cannot sign up on different networks with the same address", async () => {
+    await polkassembly.signup()
+    expect(polkassembly.loggedIn).toBeTruthy()
+
+    await polkassembly.logout()
+    expect(polkassembly.loggedIn).toBeFalsy()
+
+    await expect(() => polkassembly.signup()).rejects.toThrowError("There is already an account associated with this address, you cannot sign-up with this address")
+    expect(polkassembly.loggedIn).toBeFalsy()
+  })
+
+  test("Login-or-signup handles it all", async () => {
+    expect(polkassembly.loggedIn).toBeFalsy()
+
+    // Will sign up.
+    await polkassembly.loginOrSignup()
+    expect(polkassembly.loggedIn).toBeTruthy()
+
+    // Won't throw an error when trying again.
+    await polkassembly.loginOrSignup()
+    expect(polkassembly.loggedIn).toBeTruthy()
+
+    // Can log out.
+    await polkassembly.logout()
+    expect(polkassembly.loggedIn).toBeFalsy()
+
+    // Can log back in.
+    await polkassembly.loginOrSignup()
+    expect(polkassembly.loggedIn).toBeTruthy()
+  })
 });
