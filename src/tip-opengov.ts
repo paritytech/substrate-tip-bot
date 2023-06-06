@@ -15,13 +15,11 @@ export async function tipOpenGov(opts: {
   state: State;
   api: ApiPromise;
   tipRequest: TipRequest;
-  botTipAccount: KeyringPair;
 }): Promise<TipResult> {
   const {
-    state: { bot },
+    state: { bot, botTipAccount },
     api,
     tipRequest,
-    botTipAccount,
   } = opts;
   const { contributor } = tipRequest;
   const chainConfig = getChainConfig(contributor.account.network);
