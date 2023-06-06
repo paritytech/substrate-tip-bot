@@ -1,22 +1,17 @@
 import "@polkadot/api-augment";
 import "@polkadot/types-augment";
 import { ApiPromise } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
 import { ISubmittableResult } from "@polkadot/types/types";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import assert from "assert";
+import { until } from "opstooling-js";
 import { Probot } from "probot";
 
 import { getChainConfig, getTipUrl } from "./chain-config";
 import { ContributorAccount, State, TipRequest, TipResult } from "./types";
 import { formatReason, tipSizeToOpenGovTrack } from "./util";
-import { until } from "opstooling-js";
 
-export async function tipOpenGov(opts: {
-  state: State;
-  api: ApiPromise;
-  tipRequest: TipRequest;
-}): Promise<TipResult> {
+export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
   const {
     state: { bot, botTipAccount, polkassembly },
     api,
@@ -76,23 +71,27 @@ export async function tipOpenGov(opts: {
   if (result.success && polkassembly) {
     void (async () => {
       const condition = async (): Promise<boolean> => {
-        const lastReferendum = await polkassembly.getLastReferendumNumber(track.track.trackNo)
-        return (lastReferendum !== undefined && lastReferendum >= referendumId.toNumber());
-      }
+        const lastReferendum = await polkassembly.getLastReferendumNumber(track.track.trackNo);
+        return lastReferendum !== undefined && lastReferendum >= referendumId.toNumber();
+      };
       try {
-        await until(condition, 30_000)
+        bot.log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
+        await until(condition, 30_000);
         await polkassembly.editPost(tipRequest.contributor.account.network, {
           postId: referendumId.toNumber(),
           proposalType: "referendums_v2",
           content: formatReason(tipRequest),
-          title: track.track.trackName
-        })
-        bot.log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`)
-      } catch(e) {
-        bot.log.error("Failed to update the Polkasssembly metadata", {referendumId: referendumId.toNumber(), tipRequest: JSON.stringify(tipRequest)})
-        bot.log.error(e.message)
+          title: track.track.trackName,
+        });
+        bot.log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
+      } catch (e) {
+        bot.log.error("Failed to update the Polkasssembly metadata", {
+          referendumId: referendumId.toNumber(),
+          tipRequest: JSON.stringify(tipRequest),
+        });
+        bot.log.error(e.message);
       }
-    })()
+    })();
   }
 
   return result;

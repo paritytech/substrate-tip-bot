@@ -12,15 +12,14 @@ they execute the tipping functions directly.
 
 import "@polkadot/api-augment";
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
-import { createTestKeyring } from "@polkadot/keyring";
 import { BN } from "@polkadot/util";
-import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
+import { cryptoWaitReady } from "@polkadot/util-crypto";
 import assert from "assert";
 
 import { getChainConfig } from "./chain-config";
+import { logMock, randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
-import { logMock, randomAddress } from "./testUtil";
 
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
