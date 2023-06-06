@@ -82,4 +82,10 @@ describe("Polkassembly with a test endpoint", () => {
     await polkassembly.loginOrSignup();
     expect(polkassembly.loggedIn).toBeTruthy();
   });
+
+  test("Can retrieve a last referendum number on a track", async () => {
+    const result = await polkassembly.getLastReferendumNumber(0);
+    expect(typeof result).toEqual("number");
+    expect(result).toBeGreaterThan(0);
+  });
 });
