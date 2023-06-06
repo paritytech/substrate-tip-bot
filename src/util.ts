@@ -2,7 +2,15 @@ import { BN } from "@polkadot/util";
 import assert from "assert";
 
 import { getChainConfig } from "./chain-config";
-import { ContributorAccount, OpenGovTrack, TipNetwork, TipRequest, TipSize } from "./types";
+import {
+  BigTipperTrack,
+  ContributorAccount,
+  OpenGovTrack,
+  SmallTipperTrack,
+  TipNetwork,
+  TipRequest,
+  TipSize,
+} from "./types";
 
 const validTipSizes: { [key: string]: TipSize } = { small: "small", medium: "medium", large: "large" } as const;
 const validNetworks: { [key: string]: TipNetwork } = {
@@ -36,10 +44,10 @@ export function tipSizeToOpenGovTrack(tipRequest: TipRequest): { track: OpenGovT
   const tipValue = BN.isBN(tipSize) ? tipSize : new BN(chainConfig.namedTips[tipSize]);
   const tipValueWithDecimals = tipValue.mul(decimalPower);
   if (tipValue.ltn(chainConfig.smallTipperMaximum)) {
-    return { track: "SmallTipper", value: tipValueWithDecimals };
+    return { track: SmallTipperTrack, value: tipValueWithDecimals };
   }
   if (tipValue.ltn(chainConfig.bigTipperMaximum)) {
-    return { track: "BigTipper", value: tipValueWithDecimals };
+    return { track: BigTipperTrack, value: tipValueWithDecimals };
   }
   return {
     error: `The requested tip value of '${formatTipSize(tipRequest)}' exceeds the BigTipper track maximum of '${

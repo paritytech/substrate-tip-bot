@@ -6,7 +6,9 @@ export type TipNetwork = "localkusama" | "localpolkadot" | "kusama" | "polkadot"
 
 export type TipType = "treasury" | "opengov";
 export type TipSize = "small" | "medium" | "large";
-export type OpenGovTrack = "SmallTipper" | "BigTipper";
+export type OpenGovTrack = { trackNo: number; trackName: string };
+export const SmallTipperTrack: OpenGovTrack = { trackNo: 30, trackName: "SmallTipper" };
+export const BigTipperTrack: OpenGovTrack = { trackNo: 31, trackName: "BigTipper" };
 
 export type ChainConfig = {
   providerEndpoint: string;

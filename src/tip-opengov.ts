@@ -59,7 +59,7 @@ export async function tipOpenGov(opts: {
             const proposalUnsubscribe = await api.tx.referenda
               .submit(
                 // TODO: There should be a way to set those types properly.
-                { Origins: track.track } as never,
+                { Origins: track.track.trackName } as never,
                 { Lookup: { hash: proposalHash, len: encodedLength } },
                 { after: 10 } as never,
               )
