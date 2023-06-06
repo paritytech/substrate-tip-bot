@@ -38,6 +38,10 @@ export function getTipSize(tipSizeInput: string | undefined): TipSize | BN {
 }
 
 export function tipSizeToOpenGovTrack(tipRequest: TipRequest): { track: OpenGovTrack; value: BN } | { error: string } {
+  if ((tipRequest.contributor.account.network as string) === "moonbase") {
+    // Only used in tests, at the moment.
+    return { track: { trackName: "Root", trackNo: 0 }, value: new BN(3) };
+  }
   const chainConfig = getChainConfig(tipRequest.contributor.account.network);
   const decimalPower = new BN(10).pow(new BN(chainConfig.decimals));
   const tipSize = tipRequest.tip.size;

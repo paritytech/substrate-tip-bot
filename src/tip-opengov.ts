@@ -38,7 +38,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   );
 
   const referendumId = await api.query.referenda.referendumCount(); // The next free referendum index.
-  const result = await new Promise<TipResult>(async (resolve, reject) => {
+  const tipResult = await new Promise<TipResult>(async (resolve, reject) => {
     // create a preimage from opengov with the encodedProposal above
     const preimageUnsubscribe = await api.tx.preimage
       .notePreimage(encodedProposal)
@@ -68,7 +68,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
       });
   });
 
-  if (result.success && polkassembly) {
+  if (tipResult.success && polkassembly) {
     void (async () => {
       const condition = async (): Promise<boolean> => {
         const lastReferendum = await polkassembly.getLastReferendumNumber(track.track.trackNo);
@@ -77,6 +77,8 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
       try {
         bot.log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
         await until(condition, 30_000);
+        polkassembly.logout();
+        await polkassembly.loginOrSignup();
         await polkassembly.editPost(tipRequest.contributor.account.network, {
           postId: referendumId.toNumber(),
           proposalType: "referendums_v2",
@@ -94,7 +96,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
     })();
   }
 
-  return result;
+  return tipResult;
 }
 
 async function signAndSendCallback(

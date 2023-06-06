@@ -92,7 +92,6 @@ describe("E2E opengov tip", () => {
     await new Promise((res) => setTimeout(res, 5 * 60_000));
 
     // At the end, the balance of the contributor should increase.
-    console.log('balance', (await getUserBalance(tipRequest.contributor.account.address)).toString())
     expect((await getUserBalance(tipRequest.contributor.account.address)).eq(new BN("2000000000000"))).toBeTruthy();
   });
 });
