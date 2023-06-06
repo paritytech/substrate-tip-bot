@@ -20,11 +20,7 @@ import assert from "assert";
 import { getChainConfig } from "./chain-config";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
-
-const randomAddress = () => createTestKeyring().addFromSeed(randomAsU8a(32)).address;
-
-const logMock: any = console.log.bind(console); // eslint-disable-line @typescript-eslint/no-explicit-any
-logMock.error = console.error.bind(console);
+import { logMock, randomAddress } from "./testUtil";
 
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
