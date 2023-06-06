@@ -1,6 +1,7 @@
 import { KeyringPair } from "@polkadot/keyring/types";
 import { BN } from "@polkadot/util";
 import { Probot } from "probot";
+import { Polkassembly } from "./polkassembly/polkassembly";
 
 export type TipNetwork = "localkusama" | "localpolkadot" | "kusama" | "polkadot";
 
@@ -40,6 +41,7 @@ export type State = {
   allowedGitHubTeam: string;
   botTipAccount: KeyringPair;
   bot: Probot;
+  polkassembly?: Polkassembly | undefined
 };
 
 export type TipRequest = {
