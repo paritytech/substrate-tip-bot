@@ -9,7 +9,8 @@ import { Probot } from "probot";
 
 import { getChainConfig, getTipUrl } from "./chain-config";
 import { ContributorAccount, State, TipRequest, TipResult } from "./types";
-import { tipSizeToOpenGovTrack } from "./util";
+import { formatReason, tipSizeToOpenGovTrack } from "./util";
+import { until } from "opstooling-js";
 
 export async function tipOpenGov(opts: {
   state: State;
@@ -17,7 +18,7 @@ export async function tipOpenGov(opts: {
   tipRequest: TipRequest;
 }): Promise<TipResult> {
   const {
-    state: { bot, botTipAccount },
+    state: { bot, botTipAccount, polkassembly },
     api,
     tipRequest,
   } = opts;
@@ -41,7 +42,8 @@ export async function tipOpenGov(opts: {
     `Tip proposal for ${contributor.account.address} hash: ${proposalHash}, encoded length: ${encodedLength}, nonce: ${nonce}`,
   );
 
-  return await new Promise(async (resolve, reject) => {
+  const referendumId = await api.query.referenda.referendumCount(); // The next free referendum index.
+  const result = await new Promise<TipResult>(async (resolve, reject) => {
     // create a preimage from opengov with the encodedProposal above
     const preimageUnsubscribe = await api.tx.preimage
       .notePreimage(encodedProposal)
@@ -70,6 +72,30 @@ export async function tipOpenGov(opts: {
           .catch(reject);
       });
   });
+
+  if (result.success && polkassembly) {
+    void (async () => {
+      const condition = async (): Promise<boolean> => {
+        const lastReferendum = await polkassembly.getLastReferendumNumber(track.track.trackNo)
+        return (lastReferendum !== undefined && lastReferendum >= referendumId.toNumber());
+      }
+      try {
+        await until(condition, 30_000)
+        await polkassembly.editPost(tipRequest.contributor.account.network, {
+          postId: referendumId.toNumber(),
+          proposalType: "referendums_v2",
+          content: formatReason(tipRequest),
+          title: track.track.trackName
+        })
+        bot.log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`)
+      } catch(e) {
+        bot.log.error("Failed to update the Polkasssembly metadata", {referendumId: referendumId.toNumber(), tipRequest: JSON.stringify(tipRequest)})
+        bot.log.error(e.message)
+      }
+    })()
+  }
+
+  return result;
 }
 
 async function signAndSendCallback(
