@@ -140,6 +140,29 @@ $ docker run \
     substrate-tip-bot
 ```
 
+## End-to-end tests
+
+For the E2E tests, we need a modified Kusama node in a way that speeds up the referenda and treasury.
+
+### Preparing and running Kusama
+
+```bash
+git clone https://github.com/paritytech/polkadot.git
+cd polkadot
+git checkout v0.9.42
+git apply ../polkadot.e2e.patch
+cargo build --release --locked --features=fast-runtime -p polkadot
+./target/release/polkadot --ws-external --rpc-external --no-prometheus --no-telemetry --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --force-kusama
+```
+
+### Running the E2E tests
+
+```bash
+yarn test:e2e
+```
+
+Go make a cup of tea, the tests take ~4 minutes (waiting for the various on-chain stages to pass).
+
 ## Contributing
 
 If you have suggestions for how substrate-tip-bot could be improved, or want to report a bug, open

@@ -19,7 +19,8 @@
     "fix": "yarn fix:eslint '{*,**/*}.{js,ts}' && yarn fix:prettier '{*,**/*}.json'",
     "start": "nodemon",
     "build": "rimraf dist; babel src/ --extensions '.ts,.js' --out-dir dist/",
-    "test": "NODE_OPTIONS='--experimental-vm-modules --es-module-specifier-resolution=node' jest"
+    "test": "NODE_OPTIONS='--experimental-vm-modules --es-module-specifier-resolution=node' jest",
+    "test:e2e": "NODE_OPTIONS='--experimental-vm-modules --es-module-specifier-resolution=node' jest -c jest.e2e.config.js"
   },
   "dependencies": {
     "@polkadot/api": "^10.7.1",
