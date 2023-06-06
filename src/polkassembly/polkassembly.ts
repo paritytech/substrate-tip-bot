@@ -71,7 +71,7 @@ export class Polkassembly {
       body: JSON.stringify({
         address: this.address,
         signature: await this.signMessage(loginStartBody.signMessage),
-        wallet: "polkadot-js",
+        wallet: this.signer.type === "polkadot" ? "polkadot-js" : "metamask",
       }),
     });
     if (!loginResponse.ok) {
@@ -98,22 +98,6 @@ export class Polkassembly {
     }
   }
 
-  public async createPost(
-    network: string,
-    opts: {
-      title: string;
-      content: string;
-      proposalType: "referendums_v2";
-    },
-  ): Promise<void> {
-    await this.startAndConfirm({
-      network,
-      startAction: "createPostStart",
-      confirmAction: "createPostConfirm",
-      confirmActionBody: opts,
-    });
-  }
-
   public async editPost(
     network: string,
     opts: {
@@ -132,8 +116,6 @@ export class Polkassembly {
       body: JSON.stringify(opts),
     });
     if (!response.ok) {
-      console.log(response.statusText);
-      process.exit(1);
       throw new Error(await response.text());
     }
     const body: unknown = await response.json();
@@ -152,60 +134,12 @@ export class Polkassembly {
     return body.posts[0]?.post_id;
   }
 
-  /**
-   * The API has a pattern of "starting" an action,
-   * getting a message to sign,
-   * and then "confirming" the action with a signature.
-   */
-  private async startAndConfirm(opts: {
-    startAction: string;
-    confirmAction: string;
-    confirmActionBody: Record<string, unknown>;
-    network: string;
-  }): Promise<unknown> {
-    const { startAction, confirmAction, confirmActionBody, network } = opts;
-    const startResponse = await fetch(`${this.endpoint}/auth/actions/${startAction}`, {
-      headers,
-      method: "POST",
-      body: JSON.stringify({ address: this.address }),
-    });
-    if (!startResponse.ok) {
-      throw new Error(await startResponse.text());
-    }
-    const startBody = (await startResponse.json()) as { signMessage: string };
-
-    const confirmResponse = await fetch(`${this.endpoint}/auth/actions/${confirmAction}`, {
-      headers: { ...headers, "x-network": network },
-      method: "POST",
-      body: JSON.stringify({
-        ...confirmActionBody,
-        address: this.address,
-        signature: await this.signMessage(startBody.signMessage),
-      }),
-    });
-    if (!confirmResponse.ok) {
-      console.log(confirmResponse.status);
-      console.log(confirmResponse.statusText);
-      console.log(await confirmResponse.text());
-      throw new Error(await confirmResponse.text());
-    }
-    return await confirmResponse.json();
-  }
-
-  // public async getRecentR
-
   public async signMessage(message: string): Promise<string> {
     const messageInUint8Array = stringToU8a(message);
     if (this.signer.type === "ethereum") {
       return await this.signer.wallet.signMessage(message);
-      /* console.log({
-           signed,
-           len: signed.length,
-           sig: ethers.utils.splitSignature(flatSig);
-         }) */
     }
     const signedMessage = this.signer.keyringPair.sign(messageInUint8Array);
-    console.log({ signedMessage, str: signedMessage.toString(), len: signedMessage.length });
     return "0x" + Buffer.from(signedMessage).toString("hex");
   }
 }
