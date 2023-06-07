@@ -10,7 +10,7 @@ export class Polkassembly {
 
   constructor(
     private endpoint: string,
-    private signer: { type: "polkadot"; keyringPair: KeyringPair } | { type: "ethereum"; wallet: Wallet }, // For example, to be used with Moonbase Alpha.
+    private signer: { type: "polkadot"; keyringPair: KeyringPair } | { type: "ethereum"; wallet: Wallet }, // Ethereum type is used for EVM chains.
   ) {}
 
   public get loggedIn(): boolean {
