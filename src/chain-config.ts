@@ -52,10 +52,6 @@ const polkadotConstants: Constants = {
 };
 
 export function getChainConfig(network: TipNetwork): ChainConfig {
-  if ((network as string) === "moonbase") {
-    // Only used in tests, at the moment.
-    return { tipType: "opengov" } as ChainConfig; // eslint-disable-line @typescript-eslint/consistent-type-assertions
-  }
   switch (network) {
     case "localkusama": {
       const providerEndpoint = "ws://127.0.0.1:9901";

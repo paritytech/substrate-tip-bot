@@ -118,8 +118,6 @@ export class Polkassembly {
     if (!response.ok) {
       throw new Error(await response.text());
     }
-    const body: unknown = await response.json();
-    console.log(JSON.stringify(body, undefined, 2));
   }
 
   async getLastReferendumNumber(trackNo: number): Promise<number | undefined> {
