@@ -16,11 +16,13 @@ import { Polkassembly } from "./polkassembly";
  *
  * The tests are mostly manual because the code doesn't support sending
  * Ethereum-signed blockchain transactions (only Ethereum-signed Polkassembly API calls).
+ * Also, Moonbase Alpha doesn't have the tipper tracks.
  *
  * To run:
  * 1. Create a Moonbase Alpha account
  * 2. Fund it (upwards of 20 DEV are needed)
- * 3. Manually (in polkadot.js.org/apps) create a preimage and a referendum
+ * 3. Manually (in polkadot.js.org/apps) create a preimage and a referendum.
+ * Use any tack, for example Root. Tipper tracks are not available.
  * 4. Un-skip the test, and edit the variables below.
  */
 describe("Polkassembly with production API and Moonbase Alpha testnet", () => {
