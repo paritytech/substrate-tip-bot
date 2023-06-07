@@ -71,7 +71,10 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   if (tipResult.success && polkassembly) {
     void (async () => {
       const condition = async (): Promise<boolean> => {
-        const lastReferendum = await polkassembly.getLastReferendumNumber(track.track.trackNo);
+        const lastReferendum = await polkassembly.getLastReferendumNumber(
+          contributor.account.network,
+          track.track.trackNo,
+        );
         return lastReferendum !== undefined && lastReferendum >= referendumId.toNumber();
       };
       try {

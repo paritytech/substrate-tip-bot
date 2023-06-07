@@ -84,7 +84,7 @@ describe("Polkassembly with a test endpoint", () => {
   });
 
   test("Can retrieve a last referendum number on a track", async () => {
-    const result = await polkassembly.getLastReferendumNumber(0);
+    const result = await polkassembly.getLastReferendumNumber("moonbase", 0);
     expect(typeof result).toEqual("number");
     expect(result).toBeGreaterThan(0);
   });

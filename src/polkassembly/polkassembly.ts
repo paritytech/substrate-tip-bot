@@ -120,10 +120,10 @@ export class Polkassembly {
     }
   }
 
-  async getLastReferendumNumber(trackNo: number): Promise<number | undefined> {
+  async getLastReferendumNumber(network: string, trackNo: number): Promise<number | undefined> {
     const response = await fetch(
       `${this.endpoint}/listing/on-chain-posts?proposalType=referendums_v2&trackNo=${trackNo}&sortBy=newest`,
-      { headers: { ...headers, "x-network": "moonbase" }, method: "POST", body: JSON.stringify({}) },
+      { headers: { ...headers, "x-network": network }, method: "POST", body: JSON.stringify({}) },
     );
     if (!response.ok) {
       throw new Error(await response.text());
