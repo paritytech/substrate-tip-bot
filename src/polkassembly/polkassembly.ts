@@ -93,8 +93,9 @@ export class Polkassembly {
       await this.login();
     } catch (e) {
       if ((e as Error).message.includes("Please sign up")) {
+        await this.signup();
       }
-      await this.signup();
+      throw e;
     }
   }
 
