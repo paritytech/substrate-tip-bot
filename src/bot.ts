@@ -8,6 +8,7 @@ import { ApplicationFunction, Probot, run } from "probot";
 
 import { updateAllBalances, updateBalance } from "./balance";
 import { addMetricsRoute, recordTip } from "./metrics";
+import { Polkassembly } from "./polkassembly/polkassembly";
 import { tipUser } from "./tip";
 import { ContributorAccount, State, TipRequest, TipSize } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
@@ -140,11 +141,13 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
 
   await cryptoWaitReady();
   const keyring = new Keyring({ type: "sr25519" });
+  const botTipAccount = keyring.addFromUri(envVar("ACCOUNT_SEED"));
   const state: State = {
     bot,
     allowedGitHubOrg: envVar("APPROVERS_GH_ORG"),
     allowedGitHubTeam: envVar("APPROVERS_GH_TEAM"),
-    botTipAccount: keyring.addFromUri(envVar("ACCOUNT_SEED")),
+    botTipAccount,
+    polkassembly: new Polkassembly(envVar("POLKASSEMBLY_ENDPOINT"), { type: "polkadot", keyringPair: botTipAccount }),
   };
 
   bot.log.info("Tip bot was loaded!");

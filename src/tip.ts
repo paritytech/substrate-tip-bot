@@ -8,7 +8,7 @@ import { State, TipRequest, TipResult } from "./types";
 /* TODO add some kind of timeout then return an error
    TODO Unit tests */
 export async function tipUser(state: State, tipRequest: TipRequest): Promise<TipResult> {
-  const { bot, botTipAccount } = state;
+  const { bot } = state;
   const chainConfig = getChainConfig(tipRequest.contributor.account.network);
   const provider = new WsProvider(chainConfig.providerEndpoint);
 
@@ -27,11 +27,11 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
   try {
     switch (chainConfig.tipType) {
       case "treasury": {
-        return await tipTreasury({ state, api, tipRequest, botTipAccount });
+        return await tipTreasury({ state, api, tipRequest });
         break;
       }
       case "opengov": {
-        return await tipOpenGov({ state, api, tipRequest, botTipAccount });
+        return await tipOpenGov({ state, api, tipRequest });
         break;
       }
       default: {

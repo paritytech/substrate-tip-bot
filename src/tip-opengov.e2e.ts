@@ -88,10 +88,10 @@ describe("E2E opengov tip", () => {
       .vote(referendumId, { Standard: { balance: new BN(1_000_000), vote: { aye: true, conviction: 1 } } })
       .signAndSend(alice, { nonce: -1 });
 
-    // Going to sleep for 4 minutes, waiting for the referendum voting, enactment, and treasury spend period.
-    await new Promise((res) => setTimeout(res, 4 * 60_000));
+    // Going to sleep for 5 minutes, waiting for the referendum voting, enactment, and treasury spend period.
+    await new Promise((res) => setTimeout(res, 5 * 60_000));
 
     // At the end, the balance of the contributor should increase.
-    expect((await getUserBalance(tipRequest.contributor.account.address)).eqn(2 * 10 ** 12)).toBeTruthy();
+    expect((await getUserBalance(tipRequest.contributor.account.address)).eq(new BN("2000000000000"))).toBeTruthy();
   });
 });

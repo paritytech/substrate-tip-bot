@@ -1,27 +1,21 @@
 import "@polkadot/api-augment";
 import "@polkadot/types-augment";
 import { ApiPromise } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
 import { ISubmittableResult } from "@polkadot/types/types";
 import { blake2AsHex } from "@polkadot/util-crypto";
 import assert from "assert";
+import { until } from "opstooling-js";
 import { Probot } from "probot";
 
 import { getChainConfig, getTipUrl } from "./chain-config";
 import { ContributorAccount, State, TipRequest, TipResult } from "./types";
-import { tipSizeToOpenGovTrack } from "./util";
+import { formatReason, tipSizeToOpenGovTrack } from "./util";
 
-export async function tipOpenGov(opts: {
-  state: State;
-  api: ApiPromise;
-  tipRequest: TipRequest;
-  botTipAccount: KeyringPair;
-}): Promise<TipResult> {
+export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
   const {
-    state: { bot },
+    state: { bot, botTipAccount, polkassembly },
     api,
     tipRequest,
-    botTipAccount,
   } = opts;
   const { contributor } = tipRequest;
   const chainConfig = getChainConfig(contributor.account.network);
@@ -43,7 +37,8 @@ export async function tipOpenGov(opts: {
     `Tip proposal for ${contributor.account.address} hash: ${proposalHash}, encoded length: ${encodedLength}, nonce: ${nonce}`,
   );
 
-  return await new Promise(async (resolve, reject) => {
+  const referendumId = await api.query.referenda.referendumCount(); // The next free referendum index.
+  const tipResult = await new Promise<TipResult>(async (resolve, reject) => {
     // create a preimage from opengov with the encodedProposal above
     const preimageUnsubscribe = await api.tx.preimage
       .notePreimage(encodedProposal)
@@ -59,7 +54,7 @@ export async function tipOpenGov(opts: {
             const proposalUnsubscribe = await api.tx.referenda
               .submit(
                 // TODO: There should be a way to set those types properly.
-                { Origins: track.track } as never,
+                { Origins: track.track.trackName } as never,
                 { Lookup: { hash: proposalHash, len: encodedLength } },
                 { after: 10 } as never,
               )
@@ -72,6 +67,39 @@ export async function tipOpenGov(opts: {
           .catch(reject);
       });
   });
+
+  if (tipResult.success && polkassembly) {
+    void (async () => {
+      const condition = async (): Promise<boolean> => {
+        const lastReferendum = await polkassembly.getLastReferendumNumber(
+          contributor.account.network,
+          track.track.trackNo,
+        );
+        return lastReferendum !== undefined && lastReferendum >= referendumId.toNumber();
+      };
+      try {
+        bot.log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
+        await until(condition, 30_000);
+        polkassembly.logout();
+        await polkassembly.loginOrSignup();
+        await polkassembly.editPost(tipRequest.contributor.account.network, {
+          postId: referendumId.toNumber(),
+          proposalType: "referendums_v2",
+          content: formatReason(tipRequest),
+          title: track.track.trackName,
+        });
+        bot.log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
+      } catch (e) {
+        bot.log.error("Failed to update the Polkasssembly metadata", {
+          referendumId: referendumId.toNumber(),
+          tipRequest: JSON.stringify(tipRequest),
+        });
+        bot.log.error(e.message);
+      }
+    })();
+  }
+
+  return tipResult;
 }
 
 async function signAndSendCallback(

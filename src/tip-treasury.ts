@@ -1,22 +1,15 @@
 import { ApiPromise, SubmittableResult } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
 import assert from "assert";
 
 import { getChainConfig, getTipUrl } from "./chain-config";
 import { State, TipRequest, TipResult } from "./types";
 import { formatReason } from "./util";
 
-export async function tipTreasury(opts: {
-  state: State;
-  api: ApiPromise;
-  tipRequest: TipRequest;
-  botTipAccount: KeyringPair;
-}): Promise<TipResult> {
+export async function tipTreasury(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
   const {
-    state: { bot },
+    state: { bot, botTipAccount },
     api,
     tipRequest,
-    botTipAccount,
   } = opts;
   const { contributor } = tipRequest;
   const chainConfig = getChainConfig(contributor.account.network);
