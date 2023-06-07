@@ -1,5 +1,3 @@
-/* eslint-disable no-restricted-imports */
-
 import "@polkadot/api-augment";
 import { Wallet } from "ethers";
 
