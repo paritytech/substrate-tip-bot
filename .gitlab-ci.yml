@@ -100,8 +100,29 @@ check-linting:
   <<:                              *common-refs
   <<:                              *kubernetes-env
   script:
-    - yarn --network-concurrency 1 --immutable
+    - yarn --network-concurrency 1 --frozen-lockfile
     - yarn lint
+
+test-unit:
+  stage:                           test
+  <<:                              *common-refs
+  <<:                              *kubernetes-env
+  script:
+    - yarn --network-concurrency 1 --frozen-lockfile
+    - yarn test
+
+test-integration:
+  stage:                           test
+  <<:                              *common-refs
+  <<:                              *kubernetes-env
+  before_script:
+    - docker run --detach --name test_integration_kusama --rm -p 9901:9901 parity/polkadot:v0.9.39 --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --ws-external --force-kusama
+    - docker run --detach --name test_integration_polkadot --rm -p 9900:9900 parity/polkadot:v0.9.39 --chain=dev --tmp --alice --execution Native --ws-port 9900 --ws-external
+  script:
+    - yarn --network-concurrency 1 --frozen-lockfile
+    - yarn test:integration
+  after_script:
+    - docker stop test_integration_kusama test_integration_polkadot
 
 build-docker-bot:
   stage:                           build

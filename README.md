@@ -90,7 +90,7 @@ Notes:
 With that, run the tests:
 
 ```bash
-yarn test
+yarn test:integration
 ```
 
 The tests require manual inspection - follow the tip URLs printed in the output.
