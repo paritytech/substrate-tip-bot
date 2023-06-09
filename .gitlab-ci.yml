@@ -100,8 +100,16 @@ check-linting:
   <<:                              *common-refs
   <<:                              *kubernetes-env
   script:
-    - yarn --network-concurrency 1 --immutable
+    - yarn --network-concurrency 1 --frozen-lockfile
     - yarn lint
+
+test-unit:
+  stage:                           test
+  <<:                              *common-refs
+  <<:                              *kubernetes-env
+  script:
+    - yarn --network-concurrency 1 --frozen-lockfile
+    - yarn test
 
 build-docker-bot:
   stage:                           build
