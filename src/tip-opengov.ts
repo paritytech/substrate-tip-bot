@@ -116,12 +116,7 @@ async function signAndSendCallback(
       bot.log(`Tip for ${contributor.address} ${type} finalized at blockHash ${result.status.asFinalized.toString()}`);
       unsubscribe();
       resolve({ success: true, tipUrl: getTipUrl(contributor.network) });
-    } else if (
-      result.status.isDropped ||
-      result.status.isInvalid ||
-      result.status.isUsurped ||
-      result.status.isRetracted
-    ) {
+    } else if (result.isError) {
       bot.log(`status to string`, result.status.toString());
       bot.log(`result.toHuman`, result.toHuman());
       bot.log(`result`, result);
