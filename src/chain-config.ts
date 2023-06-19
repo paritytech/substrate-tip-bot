@@ -4,7 +4,6 @@ type Constants = Omit<ChainConfig, "providerEndpoint">;
 const kusamaConstants: Constants = {
   decimals: 12,
   currencySymbol: "KSM",
-  tipType: "opengov",
 
   /**
    * Source of the calculation:
@@ -29,7 +28,6 @@ const kusamaConstants: Constants = {
 const polkadotConstants: Constants = {
   decimals: 10,
   currencySymbol: "DOT",
-  tipType: "treasury",
 
   /**
    * Source of the calculation:
@@ -81,6 +79,5 @@ export function getChainConfig(network: TipNetwork): ChainConfig {
 
 export function getTipUrl(network: TipNetwork): string {
   const config = getChainConfig(network);
-  const tipUrlPath = config.tipType === "opengov" ? "referenda" : "treasury/tips";
-  return `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(config.providerEndpoint)}#/${tipUrlPath}`;
+  return `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(config.providerEndpoint)}#/referenda`;
 }
