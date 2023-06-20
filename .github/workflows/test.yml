@@ -43,13 +43,16 @@ jobs:
         with:
           path: |
             polkadot/target/release
-          key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}
+          key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}-mock
       - name: Build Polkadot
         if: steps.polkadot-cache-restore.outputs.cache-hit != 'true'
-        run: /generate-primes.sh -d prime-numbers
+        run: |
+          echo "I am building Polkadot!...."
+          mkdir -p polkadot/target/release
+          echo "xyz" > polkadot/target/release/out.txt
       - name: Save Polkadot build cache
         uses: actions/cache/save@v3
         with:
           path: |
             polkadot/target/release
-          key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}
+          key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}-mock
