@@ -109,7 +109,10 @@ describe("tip", () => {
 
         expect(result.success).toBeFalsy();
         const errorMessage = !result.success ? result.errorMessage : undefined;
-        const expectedError = network === "localpolkadot" ? "The requested tip value of '1001 DOT' exceeds the BigTipper track maximum of '1000 DOT'." : "The requested tip value of '1001 KSM' exceeds the BigTipper track maximum of '33.33 KSM'."
+        const expectedError =
+          network === "localpolkadot"
+            ? "The requested tip value of '1001 DOT' exceeds the BigTipper track maximum of '1000 DOT'."
+            : "The requested tip value of '1001 KSM' exceeds the BigTipper track maximum of '33.33 KSM'.";
         expect(errorMessage).toEqual(expectedError);
       });
     });
