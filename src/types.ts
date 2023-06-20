@@ -6,7 +6,6 @@ import { Polkassembly } from "./polkassembly/polkassembly";
 
 export type TipNetwork = "localkusama" | "localpolkadot" | "kusama" | "polkadot";
 
-export type TipType = "treasury" | "opengov";
 export type TipSize = "small" | "medium" | "large";
 export type OpenGovTrack = { trackNo: number; trackName: string };
 export const SmallTipperTrack: OpenGovTrack = { trackNo: 30, trackName: "SmallTipper" };
@@ -14,12 +13,6 @@ export const BigTipperTrack: OpenGovTrack = { trackNo: 31, trackName: "BigTipper
 
 export type ChainConfig = {
   providerEndpoint: string;
-  /**
-   * This is dependent on which pallets the chain has.
-   * The preferred type is OpenGov,
-   * but some chains (Polkadot) do not support it (yet).
-   */
-  tipType: TipType;
   decimals: number;
   currencySymbol: string;
   smallTipperMaximum: number;

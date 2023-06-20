@@ -3,11 +3,10 @@ import "@polkadot/types-augment";
 import { ApiPromise } from "@polkadot/api";
 import { ISubmittableResult } from "@polkadot/types/types";
 import { blake2AsHex } from "@polkadot/util-crypto";
-import assert from "assert";
 import { until } from "opstooling-js";
 import { Probot } from "probot";
 
-import { getChainConfig, getTipUrl } from "./chain-config";
+import { getTipUrl } from "./chain-config";
 import { ContributorAccount, State, TipRequest, TipResult } from "./types";
 import { formatReason, tipSizeToOpenGovTrack } from "./util";
 
@@ -18,8 +17,6 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
     tipRequest,
   } = opts;
   const { contributor } = tipRequest;
-  const chainConfig = getChainConfig(contributor.account.network);
-  assert(chainConfig.tipType === "opengov");
 
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
