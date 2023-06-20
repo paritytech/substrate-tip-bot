@@ -22,6 +22,7 @@ jobs:
   test-e2e:
     timeout-minutes: 120
     runs-on: ubuntu-22.04
+    container: paritytech/ci-linux:production
     env:
       POLKADOT_VERSION: 'v0.9.42'
 
@@ -47,9 +48,6 @@ jobs:
       - name: Build Polkadot
         if: steps.polkadot-cache-restore.outputs.cache-hit != 'true'
         run: |
-          rustup update
-          sudo apt update
-          sudo apt install -y build-essential git clang libclang-dev pkg-config libssl-dev protobuf-compiler
           ./scripts/init.sh
           cargo build --release --locked --features=fast-runtime -p polkadot
         working-directory: polkadot
