@@ -55,15 +55,16 @@ jobs:
         run: |
           ./scripts/init.sh
           cargo build --release --locked --features=fast-runtime -p polkadot
+        working-directory: polkadot
       - name: Save Polkadot build cache
         uses: actions/cache/save@v3
         with:
           path: |
             polkadot/target/release/polkadot
           key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}-removewhenworks
-        working-directory: polkadot
       - name: Run a local Kusama node
         run: |
           polkadot/target/release/polkadot --ws-external --rpc-external --no-prometheus --no-telemetry --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --force-kusama &
       - name: Run the tests
         run: yarn test:e2e
+        working-directory: substrate-tip-bot
