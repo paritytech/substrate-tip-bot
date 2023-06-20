@@ -1,0 +1,27 @@
+name: Test
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - rzadp/run-tests
+
+jobs:
+  test-integration:
+    timeout-minutes: 20
+    runs-on: ubuntu-22.04
+    services:
+      localkusama:
+        image: parity/polkadot:v0.9.42
+        ports:
+          - 9901:9901
+        options: --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --ws-external --force-kusama
+      localpolkadot:
+        image: parity/polkadot:v0.9.42
+        ports:
+          - 9900:9900
+        options: --chain=dev --tmp --alice --execution Native --ws-port 9900 --ws-external
+    steps:
+      - uses: actions/checkout@v3.3.0
+      - run: apt-get install -y curl && curl localhost:9900
+
