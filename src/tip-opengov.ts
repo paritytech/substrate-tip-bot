@@ -122,7 +122,7 @@ async function signAndSendCallback(
       bot.log(msg, result.status);
       reject({ success: false, errorMessage: msg });
     } else {
-      bot.log(`Tip for ${contributor.address} ${type} status: ${result.status.type}`, result.status);
+      bot.log(`Tip for ${contributor.address} ${type} status: ${result.status.type}`);
     }
   });
 }
