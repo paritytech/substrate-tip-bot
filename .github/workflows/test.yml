@@ -34,7 +34,9 @@ jobs:
         uses: actions/setup-node@v3.5.1
         with:
           node-version: "18.16"
+      - run: npm i -g yarn@1.22.19
       - run: yarn --frozen-lockfile
+        working-directory: substrate-tip-bot
       - uses: actions/checkout@v3.3.0
         with:
           repository: paritytech/polkadot
