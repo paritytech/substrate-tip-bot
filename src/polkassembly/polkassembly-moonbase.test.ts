@@ -1,6 +1,8 @@
 import "@polkadot/api-augment";
 import { Wallet } from "ethers";
 
+import { formatReason } from "src/util";
+
 import { Polkassembly } from "./polkassembly";
 
 /**
@@ -38,11 +40,22 @@ describe("Polkassembly with production API and Moonbase Alpha testnet", () => {
 
   test.skip("Edits a metadata of an existing referendum", async () => {
     await polkassembly.loginOrSignup();
+
+    const content = formatReason(
+      {
+        pullRequestRepo: "examplerepo",
+        pullRequestNumber: 1,
+        contributor: { githubUsername: "exampleuser", account: { address: "xyz", network: "kusama" } },
+        tip: { size: "medium" },
+      },
+      { markdown: true },
+    );
+
     await polkassembly.editPost("moonbase", {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       postId: manuallyCreatedReferendumId!,
       proposalType: "referendums_v2",
-      content: `Just testing, feel free to vote nay.\nToday is ${new Date().toISOString()}`,
+      content: content,
       title: "A mock referendum",
     });
   });

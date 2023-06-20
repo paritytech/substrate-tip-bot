@@ -85,7 +85,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
         await polkassembly.editPost(tipRequest.contributor.account.network, {
           postId: referendumId.toNumber(),
           proposalType: "referendums_v2",
-          content: formatReason(tipRequest),
+          content: formatReason(tipRequest, { markdown: true }),
           title: track.track.trackName,
         });
         bot.log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
