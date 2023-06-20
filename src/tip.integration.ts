@@ -103,24 +103,17 @@ describe("tip", () => {
       }
 
       test(`huge tip in ${network}`, async () => {
-        const tipRequest = getTipRequest({ size: new BN("999") }, network);
+        const tipRequest = getTipRequest({ size: new BN("1001") }, network);
 
         const result = await tipUser(state, tipRequest);
 
-        if (network === "localpolkadot") {
-          /* Polkadot doesn't have OpenGov (yet).
-             Currently, we don't impose hard constraints on the tip value,
-             as there are no 'tracks' in treasury tips with maximum values like in opengov.
-             The values in treasure tips have no direct programmatic effect,
-             they are just a textual suggestions for the tippers. */
-          expect(result.success).toBeTruthy();
-        } else {
-          expect(result.success).toBeFalsy();
-          const errorMessage = result.success === false ? result.errorMessage : undefined;
-          expect(errorMessage).toEqual(
-            "The requested tip value of '999 KSM' exceeds the BigTipper track maximum of '33.33 KSM'.",
-          );
-        }
+        expect(result.success).toBeFalsy();
+        const errorMessage = !result.success ? result.errorMessage : undefined;
+        const expectedError =
+          network === "localpolkadot"
+            ? "The requested tip value of '1001 DOT' exceeds the BigTipper track maximum of '1000 DOT'."
+            : "The requested tip value of '1001 KSM' exceeds the BigTipper track maximum of '33.33 KSM'.";
+        expect(errorMessage).toEqual(expectedError);
       });
     });
   }
