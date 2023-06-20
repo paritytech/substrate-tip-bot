@@ -48,7 +48,7 @@ jobs:
         if: steps.polkadot-cache-restore.outputs.cache-hit != 'true'
         run: |
           rustup update
-          sudo apt install -y build-essential git clang libclang-dev pkg-config libssl-dev
+          sudo apt install -y build-essential git clang libclang-dev pkg-config libssl-dev protoc
           ./scripts/init.sh
           cargo build --release --locked --features=fast-runtime -p polkadot
         working-directory: polkadot
