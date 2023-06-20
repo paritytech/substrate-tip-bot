@@ -35,7 +35,7 @@ jobs:
         with:
           node-version: "18.16"
       - run: npm i -g yarn@1.22.19
-      - run: yarn --frozen-lockfile
+      - run: yarn --frozen-lockfile --network-concurrency 1
         working-directory: substrate-tip-bot
       - uses: actions/checkout@v3.3.0
         with:
