@@ -49,7 +49,7 @@ jobs:
         run: |
           rustup update
           sudo apt update
-          sudo apt install -y build-essential git clang libclang-dev pkg-config libssl-dev protoc
+          sudo apt install -y build-essential git clang libclang-dev pkg-config libssl-dev protobuf-compiler
           ./scripts/init.sh
           cargo build --release --locked --features=fast-runtime -p polkadot
         working-directory: polkadot
