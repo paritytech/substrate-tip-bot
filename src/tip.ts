@@ -2,7 +2,6 @@ import { ApiPromise, WsProvider } from "@polkadot/api";
 
 import { getChainConfig } from "./chain-config";
 import { tipOpenGov } from "./tip-opengov";
-import { tipTreasury } from "./tip-treasury";
 import { State, TipRequest, TipResult } from "./types";
 
 /* TODO add some kind of timeout then return an error
@@ -25,23 +24,7 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
   bot.log(`You are connected to chain ${chain.toString()} using ${nodeName.toString()} v${nodeVersion.toString()}`);
 
   try {
-    switch (chainConfig.tipType) {
-      case "treasury": {
-        return await tipTreasury({ state, api, tipRequest });
-        break;
-      }
-      case "opengov": {
-        return await tipOpenGov({ state, api, tipRequest });
-        break;
-      }
-      default: {
-        const exhaustivenessCheck: never = chainConfig.tipType;
-        throw new Error(
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Invalid tip type: "${exhaustivenessCheck}"`,
-        );
-      }
-    }
+    return await tipOpenGov({ state, api, tipRequest });
   } catch (e) {
     bot.log.error(e.message);
     return { success: false };
