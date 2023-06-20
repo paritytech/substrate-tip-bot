@@ -46,7 +46,11 @@ jobs:
           key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}-removewhenworks
       - name: Build Polkadot
         if: steps.polkadot-cache-restore.outputs.cache-hit != 'true'
-        run: cargo build --release --locked --features=fast-runtime -p polkadot
+        run: |
+          rustup update
+          sudo apt install -y build-essential git clang libclang-dev pkg-config libssl-dev
+          ./scripts/init.sh
+          cargo build --release --locked --features=fast-runtime -p polkadot
         working-directory: polkadot
       - name: Save Polkadot build cache
         uses: actions/cache/save@v3
