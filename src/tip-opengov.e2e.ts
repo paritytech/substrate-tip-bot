@@ -11,7 +11,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { BN } from "@polkadot/util";
 import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
 import assert from "assert";
-import {until} from "opstooling-js";
+import { until } from "opstooling-js";
 
 import { getChainConfig } from "./chain-config";
 import { tipUser } from "./tip";
@@ -90,7 +90,7 @@ describe("E2E opengov tip", () => {
       .signAndSend(alice, { nonce: -1 });
 
     // Waiting for the referendum voting, enactment, and treasury spend period.
-    await until(async () => (await getUserBalance(tipRequest.contributor.account.address)).gtn(0), 5000, 50)
+    await until(async () => (await getUserBalance(tipRequest.contributor.account.address)).gtn(0), 5000, 50);
 
     // At the end, the balance of the contributor should increase by 2 KSM.
     expect((await getUserBalance(tipRequest.contributor.account.address)).eq(new BN("2000000000000"))).toBeTruthy();
