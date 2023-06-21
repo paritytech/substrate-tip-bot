@@ -87,11 +87,29 @@ export function parseContributorAccount(pullRequestBody: string | null): Contrib
   return { network, address };
 }
 
-export const formatReason = (tipRequest: TipRequest): string => {
+/**
+ * Formats the tip request into a human-readable string.
+ * For example: "TO: someone FOR: substrate#123 (13 KSM)"
+ *
+ * With markdown option enabled, it will produce a multi-line markdown text.
+ */
+export const formatReason = (tipRequest: TipRequest, opts: { markdown: boolean } = { markdown: false }): string => {
   const { contributor, pullRequestNumber, pullRequestRepo } = tipRequest;
-  return `TO: ${contributor.githubUsername} FOR: ${pullRequestRepo}#${pullRequestNumber} (${formatTipSize(
-    tipRequest,
-  )})`;
+  if (!opts.markdown) {
+    return `TO: ${contributor.githubUsername} FOR: ${pullRequestRepo}#${pullRequestNumber} (${formatTipSize(
+      tipRequest,
+    )})`;
+  }
+
+  return `This is a tip created by the [tip-bot](https://github.com/paritytech/substrate-tip-bot/).
+
+### Details
+
+- **Repository:** [${pullRequestRepo}](https://github.com/paritytech/${pullRequestRepo})
+- **PR:** [#${pullRequestNumber}](https://github.com/paritytech/${pullRequestRepo}/pull/${pullRequestNumber})
+- **Contributor:** [${contributor.githubUsername}](https://github.com/${contributor.githubUsername})
+- **Tip Size:** ${formatTipSize(tipRequest)}
+`;
 };
 
 /**
