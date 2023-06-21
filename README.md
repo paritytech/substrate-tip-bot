@@ -161,6 +161,8 @@ cargo build --release --locked --features=fast-runtime -p polkadot
 yarn test:e2e
 ```
 
+Go make a cup of tea, the tests take ~3 minutes (waiting for the various on-chain stages to pass).
+
 ## Contributing
 
 If you have suggestions for how substrate-tip-bot could be improved, or want to report a bug, open
