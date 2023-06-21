@@ -127,6 +127,7 @@ async function signAndSendCallback(
 
       const msg = `Tip for ${contributor.address} ${type} status is 👎: ${result.status.type}`;
       bot.log(msg, result.status);
+      unsubscribe();
       reject({ success: false, errorMessage: msg });
     } else {
       bot.log(`Tip for ${contributor.address} ${type} status: ${result.status.type}`);
