@@ -5,13 +5,13 @@ all the way to completing the referendum.
  */
 
 import "@polkadot/api-augment";
+import { until } from "@eng-automation/js";
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
 import { createTestKeyring } from "@polkadot/keyring";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { BN } from "@polkadot/util";
 import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
 import assert from "assert";
-import { until } from "opstooling-js";
 
 import { getChainConfig } from "./chain-config";
 import { tipUser } from "./tip";
