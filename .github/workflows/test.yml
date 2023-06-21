@@ -15,7 +15,7 @@ jobs:
         run: |
           docker run -d --rm -p 9901:9901 parity/polkadot:v0.9.42 --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --ws-external --force-kusama
           docker run -d --rm -p 9900:9900 parity/polkadot:v0.9.42 --chain=dev --tmp --alice --execution Native --ws-port 9900 --ws-external
-      - run: yarn --network-concurrency 1 --frozen-lockfile
+      - run: yarn --frozen-lockfile
       - run: yarn test:integration
 
   test-e2e:
@@ -34,7 +34,7 @@ jobs:
         with:
           node-version: "18.16"
       - run: npm i -g yarn@1.22.19
-      - run: yarn --frozen-lockfile --network-concurrency 1
+      - run: yarn --frozen-lockfile
         working-directory: substrate-tip-bot
       - uses: actions/checkout@v3.3.0
         with:
