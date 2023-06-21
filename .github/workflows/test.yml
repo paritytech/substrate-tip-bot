@@ -67,6 +67,8 @@ jobs:
       - name: Run a local Kusama node
         run: |
           polkadot/target/release/polkadot --ws-external --rpc-external --no-prometheus --no-telemetry --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --force-kusama &
+          until curl -s '127.0.0.1:9901'; do sleep 3; done
+        timeout-minutes: 1
       - name: Run the tests
         run: yarn test:e2e
         working-directory: substrate-tip-bot
