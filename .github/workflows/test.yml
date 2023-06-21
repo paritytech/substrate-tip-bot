@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - rzadp/run-tests
 
 jobs:
   test-integration:
