@@ -5,6 +5,7 @@ all the way to completing the referendum.
  */
 
 import "@polkadot/api-augment";
+import { until } from "@eng-automation/js";
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
 import { createTestKeyring } from "@polkadot/keyring";
 import { KeyringPair } from "@polkadot/keyring/types";
@@ -88,10 +89,10 @@ describe("E2E opengov tip", () => {
       .vote(referendumId, { Standard: { balance: new BN(1_000_000), vote: { aye: true, conviction: 1 } } })
       .signAndSend(alice, { nonce: -1 });
 
-    // Going to sleep for 5 minutes, waiting for the referendum voting, enactment, and treasury spend period.
-    await new Promise((res) => setTimeout(res, 5 * 60_000));
+    // Waiting for the referendum voting, enactment, and treasury spend period.
+    await until(async () => (await getUserBalance(tipRequest.contributor.account.address)).gtn(0), 5000, 50);
 
-    // At the end, the balance of the contributor should increase.
+    // At the end, the balance of the contributor should increase by 2 KSM.
     expect((await getUserBalance(tipRequest.contributor.account.address)).eq(new BN("2000000000000"))).toBeTruthy();
   });
 });

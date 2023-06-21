@@ -1,0 +1,73 @@
+name: Test
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  test-integration:
+    timeout-minutes: 15
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3.3.0
+      - name: Run the local Kusama and Polkadot nodes
+        run: |
+          docker run -d --rm -p 9901:9901 parity/polkadot:v0.9.42 --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --ws-external --force-kusama
+          docker run -d --rm -p 9900:9900 parity/polkadot:v0.9.42 --chain=dev --tmp --alice --execution Native --ws-port 9900 --ws-external
+      - run: yarn --frozen-lockfile
+      - run: yarn test:integration
+
+  test-e2e:
+    timeout-minutes: 120
+    runs-on: ubuntu-22.04
+    container: paritytech/ci-linux:production
+    env:
+      POLKADOT_VERSION: 'v0.9.42'
+
+    steps:
+      - uses: actions/checkout@v3.3.0
+        with:
+          path: substrate-tip-bot
+      - name: Setup Node.js
+        uses: actions/setup-node@v3.5.1
+        with:
+          node-version: "18.16"
+      - run: npm i -g yarn@1.22.19
+      - run: yarn --frozen-lockfile
+        working-directory: substrate-tip-bot
+      - uses: actions/checkout@v3.3.0
+        with:
+          repository: paritytech/polkadot
+          ref: ${{ env.POLKADOT_VERSION }}
+          path: polkadot
+      - name: Apply Polkadot patches
+        run: git apply ../substrate-tip-bot/polkadot.e2e.patch
+        working-directory: polkadot
+      - name: Restore cached Polkadot build
+        id: polkadot-cache-restore
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            polkadot/target/release/polkadot
+          key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}
+      - name: Build Polkadot
+        if: steps.polkadot-cache-restore.outputs.cache-hit != 'true'
+        run: |
+          ./scripts/init.sh
+          cargo build --release --locked --features=fast-runtime -p polkadot
+        working-directory: polkadot
+      - name: Save Polkadot build cache
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            polkadot/target/release/polkadot
+          key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}
+      - name: Run a local Kusama node
+        run: |
+          polkadot/target/release/polkadot --ws-external --rpc-external --no-prometheus --no-telemetry --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --force-kusama &
+          until curl -s '127.0.0.1:9901'; do sleep 3; done
+        timeout-minutes: 1
+      - name: Run the tests
+        run: yarn test:e2e
+        working-directory: substrate-tip-bot

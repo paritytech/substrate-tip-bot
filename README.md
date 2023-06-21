@@ -161,7 +161,7 @@ cargo build --release --locked --features=fast-runtime -p polkadot
 yarn test:e2e
 ```
 
-Go make a cup of tea, the tests take ~4 minutes (waiting for the various on-chain stages to pass).
+Go make a cup of tea, the tests take ~3 minutes (waiting for the various on-chain stages to pass).
 
 ## Contributing
 

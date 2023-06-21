@@ -107,12 +107,19 @@ async function signAndSendCallback(
   result: ISubmittableResult,
 ): Promise<TipResult> {
   return await new Promise((resolve, reject) => {
-    if (result.status.isInBlock) {
-      bot.log(`${type} for ${contributor.address} included at blockHash ${result.status.asInBlock.toString()}`);
-    } else if (result.status.isFinalized) {
-      bot.log(`Tip for ${contributor.address} ${type} finalized at blockHash ${result.status.asFinalized.toString()}`);
+    const resolveSuccess = () => {
       unsubscribe();
       resolve({ success: true, tipUrl: getTipUrl(contributor.network) });
+    };
+    if (result.status.isInBlock) {
+      bot.log(`${type} for ${contributor.address} included at blockHash ${result.status.asInBlock.toString()}`);
+      if (process.env.NODE_ENV === "test") {
+        // Don't have to wait for block finalization in a test environment.
+        resolveSuccess();
+      }
+    } else if (result.status.isFinalized) {
+      bot.log(`Tip for ${contributor.address} ${type} finalized at blockHash ${result.status.asFinalized.toString()}`);
+      resolveSuccess();
     } else if (result.isError) {
       bot.log(`status to string`, result.status.toString());
       bot.log(`result.toHuman`, result.toHuman());
