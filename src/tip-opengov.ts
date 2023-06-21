@@ -1,9 +1,9 @@
 import "@polkadot/api-augment";
 import "@polkadot/types-augment";
+import { until } from "@eng-automation/js";
 import { ApiPromise } from "@polkadot/api";
 import { ISubmittableResult } from "@polkadot/types/types";
 import { blake2AsHex } from "@polkadot/util-crypto";
-import { until } from "opstooling-js";
 import { Probot } from "probot";
 
 import { getTipUrl } from "./chain-config";

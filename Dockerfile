@@ -25,7 +25,7 @@ COPY babel.config.json ./
 COPY tsconfig.json ./
 COPY src/ ./src
 
-RUN yarn install --network-concurrency 1 --immutable
+RUN yarn install --frozen-lockfile
 
 RUN yarn build
 
