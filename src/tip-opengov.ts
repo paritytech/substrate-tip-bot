@@ -82,7 +82,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
         await polkassembly.editPost(tipRequest.contributor.account.network, {
           postId: referendumId.toNumber(),
           proposalType: "referendums_v2",
-          content: formatReason(tipRequest),
+          content: formatReason(tipRequest, { markdown: true }),
           title: track.track.trackName,
         });
         bot.log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
@@ -122,7 +122,7 @@ async function signAndSendCallback(
       bot.log(msg, result.status);
       reject({ success: false, errorMessage: msg });
     } else {
-      bot.log(`Tip for ${contributor.address} ${type} status: ${result.status.type}`, result.status);
+      bot.log(`Tip for ${contributor.address} ${type} status: ${result.status.type}`);
     }
   });
 }
