@@ -1,4 +1,4 @@
-FROM node:16-alpine
+FROM node:18-alpine
 
 # metadata
 ARG VCS_REF=master
@@ -21,7 +21,6 @@ WORKDIR /usr/src/app
 
 COPY package.json ./
 COPY yarn.lock ./
-COPY babel.config.json ./
 COPY tsconfig.json ./
 COPY src/ ./src
 
