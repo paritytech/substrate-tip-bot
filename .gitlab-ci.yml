@@ -17,7 +17,7 @@ variables:
   KUBE_NAMESPACE:                  "substrate-tip-bot"
   CI_REGISTRY:                     "docker.io/paritytech"
   GIT_STRATEGY:                    fetch
-  CI_IMAGE:                        "node:16.10"
+  CI_IMAGE:                        "docker.io/paritytech/eng-automation-ci:latest"
   BUILDAH_IMAGE:                   "quay.io/buildah/stable:v1.29"
   BUILDAH_COMMAND:                 "buildah --storage-driver overlay2"
   DOCKERHUB_REPO:                  "paritytech"

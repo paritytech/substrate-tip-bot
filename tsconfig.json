@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "noEmit": true,
-    "outDir": "build",
+    "outDir": "./dist",
     "sourceMap": true,
     "declaration": false,
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
     "moduleResolution": "node",
     "module": "commonjs",
-    "target": "ES2021", // Node.js LTS 16
-    "lib": ["ES2021"], // Node.js LTS 16
+    "target": "ES2021",
+    "lib": ["ES2021"],
     "strict": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
@@ -20,5 +19,6 @@
     "types": ["node", "jest"],
     "typeRoots": ["./node_modules/@types", "./src"]
   },
-  "include": ["src"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules/**/*"]
 }
