@@ -48,15 +48,12 @@ const onIssueComment = async (
     comment_id: event.comment.id,
     content: "eyes",
   });
-  if (state.matrix) {
-    const body = `A new tip has been <a href="${event.comment.html_url}">requested</a>.`;
-    await state.matrix.client.sendMessage(state.matrix.roomId, {
-      body,
-      format: "org.matrix.custom.html",
-      formatted_body: body,
-      msgtype: "m.text",
-    });
-  }
+  await state.matrix?.client.sendMessage(state.matrix.roomId, {
+    body: `A new tip has been requested: ${event.comment.html_url}`,
+    format: "org.matrix.custom.html",
+    formatted_body: `A new tip has been <a href="${event.comment.html_url}">requested</a>.`,
+    msgtype: "m.text",
+  });
 
   if (tipRequester === contributorLogin) {
     return { type: "error", errorMessage: `@${tipRequester} Contributor and tipper cannot be the same person!` };
@@ -193,15 +190,14 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
     };
 
     const notifyOnFailure = async () => {
-      const body = `${teamMatrixHandles.join(" ")} A tip has <a href="${context.payload.comment.html_url}">failed</a>!`;
-      if (state.matrix) {
-        await state.matrix.client.sendMessage(state.matrix.roomId, {
-          body,
-          format: "org.matrix.custom.html",
-          formatted_body: body,
-          msgtype: "m.text",
-        });
-      }
+      await state.matrix?.client.sendMessage(state.matrix.roomId, {
+        body: `${teamMatrixHandles.join(" ")} A tip has failed: ${context.payload.comment.html_url}`,
+        format: "org.matrix.custom.html",
+        formatted_body: `${teamMatrixHandles.join(" ")} A tip has <a href="${
+          context.payload.comment.html_url
+        }">failed</a>!`,
+        msgtype: "m.text",
+      });
     };
 
     const respondOnResult = async (result: OnIssueCommentResult) => {
