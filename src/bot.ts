@@ -49,12 +49,12 @@ const onIssueComment = async (
     content: "eyes",
   });
   if (state.matrix) {
-    const body = `A new tip has been <a href="${event.comment.html_url}">requested</a>.`
+    const body = `A new tip has been <a href="${event.comment.html_url}">requested</a>.`;
     await state.matrix.client.sendMessage(state.matrix.roomId, {
       body,
       format: "org.matrix.custom.html",
       formatted_body: body,
-      msgtype: "m.text"
+      msgtype: "m.text",
     });
   }
 
@@ -193,16 +193,16 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
     };
 
     const notifyOnFailure = async () => {
-      const body = `${teamMatrixHandles.join(" ")} A tip has <a href="${context.payload.comment.html_url}">failed</a>!`
+      const body = `${teamMatrixHandles.join(" ")} A tip has <a href="${context.payload.comment.html_url}">failed</a>!`;
       if (state.matrix) {
         await state.matrix.client.sendMessage(state.matrix.roomId, {
           body,
           format: "org.matrix.custom.html",
           formatted_body: body,
-          msgtype: "m.text"
+          msgtype: "m.text",
         });
       }
-    }
+    };
 
     const respondOnResult = async (result: OnIssueCommentResult) => {
       let body: string;
@@ -211,7 +211,7 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
           return;
         case "error":
           body = result.errorMessage;
-          await notifyOnFailure()
+          await notifyOnFailure();
           break;
         case "success":
           body = result.message;
@@ -234,7 +234,7 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
 
     const respondOnUnknownError = async (e: Error) => {
       bot.log.error(e.message);
-      await notifyOnFailure()
+      await notifyOnFailure();
       await github.createComment(
         {
           ...respondParams,

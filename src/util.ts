@@ -132,6 +132,4 @@ export const formatTipSize = (tipRequest: TipRequest): string => {
  * Currently - Engineering Automation / Opstooling.
  * It is used to tag these usernames when there is a failure.
  */
-export const teamMatrixHandles = [
-  "@przemek"
-]
+export const teamMatrixHandles = ["@przemek"];
