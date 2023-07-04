@@ -4,12 +4,15 @@ common:
     APPROVERS_GH_ORG: "paritytech-stg"
     APPROVERS_GH_TEAM: "tip-bot-approvers"
     POLKASSEMBLY_ENDPOINT: "https://test.polkassembly.io/api/v1/"
+    MATRIX_SERVER_URL: "https://m.parity.io"
+    MATRIX_ROOM_ID: "!KiTmXyGkdiLNzrzMgj:parity.io" # ENG: Engineering Automation -> Bot Test Farm
   secrets:
     WEBHOOK_SECRET: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#WEBHOOK_SECRET
     PRIVATE_KEY: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#PRIVATE_KEY
     GITHUB_CLIENT_SECRET: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#GITHUB_CLIENT_SECRET
     ACCOUNT_SEED: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#ACCOUNT_SEED
     APP_ID: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#APP_ID
+    MATRIX_ACCESS_TOKEN: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#MATRIX_ACCESS_TOKEN
   ingress:
     annotations:
       external-dns.alpha.kubernetes.io/target: traefik-external.parity-stg.parity.io.

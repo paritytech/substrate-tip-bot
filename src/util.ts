@@ -126,3 +126,10 @@ export const formatTipSize = (tipRequest: TipRequest): string => {
   // e.g. "medium (5 KSM)
   return `${tipSize} (${value.toString()} ${chainConfig.currencySymbol})`;
 };
+
+/**
+ * Matrix handles of the team supporting this project.
+ * Currently - Engineering Automation / Opstooling.
+ * It is used to tag these usernames when there is a failure.
+ */
+export const teamMatrixHandles = ["@przemek", "@mak", "@yuri", "@bullrich"];

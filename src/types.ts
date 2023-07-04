@@ -1,5 +1,6 @@
 import { KeyringPair } from "@polkadot/keyring/types";
 import { BN } from "@polkadot/util";
+import type { MatrixClient } from "matrix-js-sdk";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
@@ -36,6 +37,12 @@ export type State = {
   botTipAccount: KeyringPair;
   bot: Probot;
   polkassembly?: Polkassembly | undefined;
+  matrix?:
+    | {
+        client: MatrixClient;
+        roomId: string;
+      }
+    | undefined;
 };
 
 export type TipRequest = {

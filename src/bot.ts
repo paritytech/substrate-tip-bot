@@ -4,6 +4,7 @@ import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
 import { Keyring } from "@polkadot/api";
 import { BN } from "@polkadot/util";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
+import { createClient } from "matrix-js-sdk";
 import { ApplicationFunction, Probot, run } from "probot";
 
 import { updateAllBalances, updateBalance } from "./balance";
@@ -11,7 +12,7 @@ import { addMetricsRoute, recordTip } from "./metrics";
 import { Polkassembly } from "./polkassembly/polkassembly";
 import { tipUser } from "./tip";
 import { ContributorAccount, State, TipRequest, TipSize } from "./types";
-import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
+import { formatTipSize, getTipSize, parseContributorAccount, teamMatrixHandles } from "./util";
 
 type OnIssueCommentResult =
   | { type: "skip" }
@@ -46,6 +47,12 @@ const onIssueComment = async (
     issue_number: event.issue.number,
     comment_id: event.comment.id,
     content: "eyes",
+  });
+  await state.matrix?.client.sendMessage(state.matrix.roomId, {
+    body: `A new tip has been requested: ${event.comment.html_url}`,
+    format: "org.matrix.custom.html",
+    formatted_body: `A new tip has been <a href="${event.comment.html_url}">requested</a>.`,
+    msgtype: "m.text",
   });
 
   if (tipRequester === contributorLogin) {
@@ -121,7 +128,7 @@ const onIssueComment = async (
       type: "error",
       errorMessage:
         tipResult.errorMessage ??
-        `@${tipRequester} Could not submit tip :( Notify someone [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
+        `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
     };
   }
 };
@@ -148,6 +155,14 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
     allowedGitHubTeam: envVar("APPROVERS_GH_TEAM"),
     botTipAccount,
     polkassembly: new Polkassembly(envVar("POLKASSEMBLY_ENDPOINT"), { type: "polkadot", keyringPair: botTipAccount }),
+    matrix: {
+      client: createClient({
+        accessToken: envVar("MATRIX_ACCESS_TOKEN"),
+        baseUrl: envVar("MATRIX_SERVER_URL"),
+        localTimeoutMs: 10000,
+      }),
+      roomId: envVar("MATRIX_ROOM_ID"),
+    },
   };
 
   bot.log.info("Tip bot was loaded!");
@@ -174,6 +189,17 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
       issue_number: context.payload.issue.number,
     };
 
+    const notifyOnFailure = async () => {
+      await state.matrix?.client.sendMessage(state.matrix.roomId, {
+        body: `${teamMatrixHandles.join(" ")} A tip has failed: ${context.payload.comment.html_url}`,
+        format: "org.matrix.custom.html",
+        formatted_body: `${teamMatrixHandles.join(" ")} A tip has <a href="${
+          context.payload.comment.html_url
+        }">failed</a>!`,
+        msgtype: "m.text",
+      });
+    };
+
     const respondOnResult = async (result: OnIssueCommentResult) => {
       let body: string;
       switch (result.type) {
@@ -181,6 +207,7 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
           return;
         case "error":
           body = result.errorMessage;
+          await notifyOnFailure();
           break;
         case "success":
           body = result.message;
@@ -203,10 +230,11 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
 
     const respondOnUnknownError = async (e: Error) => {
       bot.log.error(e.message);
+      await notifyOnFailure();
       await github.createComment(
         {
           ...respondParams,
-          body: `@${tipRequester} Could not submit tip :( Notify someone [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
+          body: `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
         },
         { octokitInstance },
       );
