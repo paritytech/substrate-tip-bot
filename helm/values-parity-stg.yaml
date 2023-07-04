@@ -10,7 +10,6 @@ common:
     # WEBHOOK_SECRET is used internally by probot: https://probot.github.io/docs/configuration/
     WEBHOOK_SECRET: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#WEBHOOK_SECRET
     PRIVATE_KEY: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#PRIVATE_KEY
-    GITHUB_CLIENT_SECRET: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#GITHUB_CLIENT_SECRET
     ACCOUNT_SEED: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#ACCOUNT_SEED
     APP_ID: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#APP_ID
     MATRIX_ACCESS_TOKEN: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-stg#MATRIX_ACCESS_TOKEN
