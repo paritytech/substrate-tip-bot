@@ -9,7 +9,6 @@ common:
   secrets:
     WEBHOOK_SECRET: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-prod#WEBHOOK_SECRET
     PRIVATE_KEY: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-prod#PRIVATE_KEY
-    GITHUB_CLIENT_SECRET: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-prod#GITHUB_CLIENT_SECRET
     ACCOUNT_SEED: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-prod#ACCOUNT_SEED
     APP_ID: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-prod#APP_ID
     MATRIX_ACCESS_TOKEN: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-prod#MATRIX_ACCESS_TOKEN
