@@ -7,6 +7,7 @@ common:
     MATRIX_SERVER_URL: "https://m.parity.io"
     MATRIX_ROOM_ID: "!tQFMxBymnjGQYNwlzM:parity.io" # ENG: Engineering Automation -> tip-bot
   secrets:
+    # WEBHOOK_SECRET is used internally by probot: https://probot.github.io/docs/configuration/
     WEBHOOK_SECRET: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-prod#WEBHOOK_SECRET
     PRIVATE_KEY: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-prod#PRIVATE_KEY
     GITHUB_CLIENT_SECRET: ref+vault://kv/gitlab/parity/mirrors/substrate-tip-bot/opstooling-parity-prod#GITHUB_CLIENT_SECRET
