@@ -32,10 +32,17 @@ export const updateBalance = async (opts: { network: TipNetwork; tipBotAddress: 
   const api = await ApiPromise.create({ provider, throwOnConnect: true });
   await api.isReady;
 
-  const { data: balances } = await api.query.system.account(tipBotAddress);
-  const balance = balances.free
-    .toBn()
-    .div(new BN(10 ** config.decimals))
-    .toNumber();
-  balanceGauge.set({ network }, balance);
+  try {
+    const { data: balances } = await api.query.system.account(tipBotAddress);
+    const balance = balances.free
+      .toBn()
+      .div(new BN(10 ** config.decimals))
+      .toNumber();
+    balanceGauge.set({ network }, balance);
+  } catch (e) {
+    throw e;
+  } finally {
+    await api.disconnect();
+    await provider.disconnect();
+  }
 };
