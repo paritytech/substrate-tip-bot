@@ -3,12 +3,11 @@ import "@polkadot/types-augment";
 import { until } from "@eng-automation/js";
 import { ApiPromise } from "@polkadot/api";
 import { ISubmittableResult } from "@polkadot/types/types";
-import { blake2AsHex } from "@polkadot/util-crypto";
 import { Probot } from "probot";
 
 import { getTipUrl } from "./chain-config";
 import { ContributorAccount, State, TipRequest, TipResult } from "./types";
-import { formatReason, tipSizeToOpenGovTrack } from "./util";
+import { byteSize, formatReason, tipSizeToOpenGovTrack } from "./util";
 
 export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
   const {
@@ -27,40 +26,30 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   const proposalTx = api.tx.treasury.spend(track.value.toString(), contributorAddress);
   const nonce = (await api.rpc.system.accountNextIndex(botTipAccount.address)).toNumber();
   const encodedProposal = proposalTx.method.toHex();
-  const proposalHash = blake2AsHex(encodedProposal);
-  const encodedLength = Math.ceil((encodedProposal.length - 2) / 2);
+  const proposalByteSize = byteSize(encodedProposal);
+  if (proposalByteSize >= 128) {
+    return {
+      success: false,
+      errorMessage: `The proposal length of ${proposalByteSize} equals or exceeds 128 bytes and cannot be inlined in the referendum.`,
+    };
+  }
 
   bot.log(
-    `Tip proposal for ${contributor.account.address} hash: ${proposalHash}, encoded length: ${encodedLength}, nonce: ${nonce}`,
+    `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
   );
 
   const referendumId = await api.query.referenda.referendumCount(); // The next free referendum index.
   const tipResult = await new Promise<TipResult>(async (resolve, reject) => {
-    // create a preimage from opengov with the encodedProposal above
-    const preimageUnsubscribe = await api.tx.preimage
-      .notePreimage(encodedProposal)
-      .signAndSend(botTipAccount, async (result) => {
-        await signAndSendCallback(bot, contributor.account, "preimage", preimageUnsubscribe, result)
-          .then(async () => {
-            const readPreimage = await api.query.preimage.statusFor(proposalHash);
-
-            if (readPreimage.isEmpty) {
-              reject(new Error(`Preimage for ${proposalHash} was not found, check if the bot has enough funds.`));
-            }
-
-            const proposalUnsubscribe = await api.tx.referenda
-              .submit(
-                // TODO: There should be a way to set those types properly.
-                { Origins: track.track.trackName } as never,
-                { Lookup: { hash: proposalHash, len: encodedLength } },
-                { after: 10 } as never,
-              )
-              .signAndSend(botTipAccount, async (refResult) => {
-                await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
-                  .then(resolve)
-                  .catch(reject);
-              });
-          })
+    const proposalUnsubscribe = await api.tx.referenda
+      .submit(
+        // TODO: There should be a way to set those types properly.
+        { Origins: track.track.trackName } as never,
+        { Inline: encodedProposal },
+        { after: 10 } as never,
+      )
+      .signAndSend(botTipAccount, async (refResult) => {
+        await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
+          .then(resolve)
           .catch(reject);
       });
   });
