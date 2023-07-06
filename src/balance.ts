@@ -39,8 +39,6 @@ export const updateBalance = async (opts: { network: TipNetwork; tipBotAddress: 
       .div(new BN(10 ** config.decimals))
       .toNumber();
     balanceGauge.set({ network }, balance);
-  } catch (e) {
-    throw e;
   } finally {
     await api.disconnect();
     await provider.disconnect();
