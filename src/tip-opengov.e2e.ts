@@ -7,15 +7,17 @@ all the way to completing the referendum.
 import "@polkadot/api-augment";
 import { until } from "@eng-automation/js";
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
+import { createTestKeyring } from "@polkadot/keyring";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { BN } from "@polkadot/util";
-import { cryptoWaitReady } from "@polkadot/util-crypto";
+import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
 import assert from "assert";
 
 import { getChainConfig } from "./chain-config";
-import { randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
+
+const randomAddress = () => createTestKeyring().addFromSeed(randomAsU8a(32)).address;
 
 const logMock: any = console.log.bind(console); // eslint-disable-line @typescript-eslint/no-explicit-any
 logMock.error = console.error.bind(console);
