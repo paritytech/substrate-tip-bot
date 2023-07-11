@@ -135,7 +135,7 @@ describe("tip", () => {
           throw new Error("Tipping unsuccessful.");
         }
 
-        const apiAtBlock = await kusamaApi.at(result.blockHash);
+        const apiAtBlock = await api.at(result.blockHash);
         const id = await getReferendumId(apiAtBlock, encodedProposal);
 
         expect(id).toBeDefined();
