@@ -73,7 +73,8 @@ const onIssueComment = async (
 
   let contributorAccount: ContributorAccount;
   try {
-    contributorAccount = parseContributorAccount(pullRequestBody);
+    const userData = await octokitInstance.rest.users.getByUsername({ username: contributorLogin });
+    contributorAccount = parseContributorAccount([pullRequestBody, userData.data.bio]);
   } catch (error: unknown) {
     return { type: "error", errorMessage: `@${contributorLogin} ${(error as Error).message}` };
   }
