@@ -137,3 +137,6 @@ export const formatTipSize = (tipRequest: TipRequest): string => {
  * It is used to tag these usernames when there is a failure.
  */
 export const teamMatrixHandles = ["@przemek", "@mak", "@yuri", "@bullrich"];
+
+// https://stackoverflow.com/a/52254083
+export const byteSize = (str: string): number => new Blob([str]).size;
