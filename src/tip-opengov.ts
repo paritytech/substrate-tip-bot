@@ -113,14 +113,16 @@ async function signAndSendCallback(
       resolve({ success: true, tipUrl: getTipUrl(contributor.network), blockHash });
     };
     if (result.status.isInBlock) {
-      bot.log(`${type} for ${contributor.address} included at blockHash ${result.status.asInBlock.toString()}`);
+      const blockHash = result.status.asInBlock.toString();
+      bot.log(`${type} for ${contributor.address} included at blockHash ${blockHash}`);
       if (process.env.NODE_ENV === "test") {
         // Don't have to wait for block finalization in a test environment.
-        resolveSuccess(result.status.asInBlock.toString());
+        resolveSuccess(blockHash);
       }
     } else if (result.status.isFinalized) {
-      bot.log(`Tip for ${contributor.address} ${type} finalized at blockHash ${result.status.asFinalized.toString()}`);
-      resolveSuccess(result.status.asFinalized.toString());
+      const blockHash = result.status.asFinalized.toString();
+      bot.log(`Tip for ${contributor.address} ${type} finalized at blockHash ${blockHash}`);
+      resolveSuccess(blockHash);
     } else if (result.isError) {
       bot.log(`status to string`, result.status.toString());
       bot.log(`result.toHuman`, result.toHuman());
