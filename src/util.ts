@@ -171,10 +171,9 @@ export const getReferendumId = async (
   apiAtBlock: ApiDecoration<"promise">,
   encodedProposal: string,
 ): Promise<undefined | number> => {
-
   // https://github.com/paritytech/substrate/blob/63246b699d7e2645c8b12aae46f8f0765c682183/frame/referenda/src/lib.rs#L271-L278
   // [index, track, proposal]
-  type ReferendumSubmittedData = [number, number, Record<string, unknown>]
+  type ReferendumSubmittedData = [number, number, Record<string, unknown>];
 
   const events = await apiAtBlock.query.system.events();
   const referendumEvent = events.find(
