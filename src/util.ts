@@ -1,3 +1,5 @@
+import { ApiPromise } from "@polkadot/api";
+import type { ApiDecoration } from "@polkadot/api/types";
 import { BN } from "@polkadot/util";
 import assert from "assert";
 
@@ -9,6 +11,7 @@ import {
   SmallTipperTrack,
   TipNetwork,
   TipRequest,
+  TipResult,
   TipSize,
 } from "./types";
 
@@ -140,3 +143,42 @@ export const teamMatrixHandles = ["@przemek", "@mak", "@yuri", "@bullrich"];
 
 // https://stackoverflow.com/a/52254083
 export const byteSize = (str: string): number => new Blob([str]).size;
+
+export const encodeProposal = (api: ApiPromise, tipRequest: TipRequest): string | TipResult => {
+  const track = tipSizeToOpenGovTrack(tipRequest);
+  if ("error" in track) {
+    return { success: false, errorMessage: track.error };
+  }
+  const contributorAddress = tipRequest.contributor.account.address;
+
+  const proposalTx = api.tx.treasury.spend(track.value.toString(), contributorAddress);
+  const encodedProposal = proposalTx.method.toHex();
+  const proposalByteSize = byteSize(encodedProposal);
+  if (proposalByteSize >= 128) {
+    return {
+      success: false,
+      errorMessage: `The proposal length of ${proposalByteSize} equals or exceeds 128 bytes and cannot be inlined in the referendum.`,
+    };
+  }
+  return encodedProposal;
+};
+
+/**
+ * @param apiAtBlock - The ApiPromise should be pointing at the block hash that is expected to contain the referendum.
+ * @param encodedProposal - Encoded proposal of the referendum - aka inlined preimage.
+ */
+export const getReferendumId = async (
+  apiAtBlock: ApiDecoration<"promise">,
+  encodedProposal: string,
+): Promise<undefined | number> => {
+  const events = await apiAtBlock.query.system.events();
+  const referendumEvent = events.find(
+    (record) =>
+      record.event.section === "referenda" &&
+      record.event.method === "Submitted" &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (record.event.data.toJSON() as any)[2].inline === encodedProposal,
+  );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (referendumEvent?.event.data.toJSON() as any)?.[0];
+};

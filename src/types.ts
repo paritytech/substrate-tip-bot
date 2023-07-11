@@ -54,4 +54,6 @@ export type TipRequest = {
   };
 };
 
-export type TipResult = { success: true; tipUrl: string } | { success: false; errorMessage?: string };
+export type TipResult =
+  | { success: true; tipUrl: string; blockHash: string }
+  | { success: false; errorMessage?: string };
