@@ -136,7 +136,8 @@ export const formatTipSize = (tipRequest: TipRequest): string => {
  * Currently - Engineering Automation / Opstooling.
  * It is used to tag these usernames when there is a failure.
  */
-export const teamMatrixHandles = ["@przemek", "@mak", "@yuri", "@bullrich"];
+export const teamMatrixHandles =
+  process.env.NODE_ENV === "development" ? [] : ["@przemek", "@mak", "@yuri", "@bullrich"]; // Don't interrupt other people when testing.
 
 // https://stackoverflow.com/a/52254083
 export const byteSize = (str: string): number => new Blob([str]).size;
