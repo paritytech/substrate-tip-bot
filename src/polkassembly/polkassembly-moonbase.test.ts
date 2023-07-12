@@ -1,6 +1,7 @@
 import "@polkadot/api-augment";
 import { Wallet } from "ethers";
 
+import { logMock } from "src/testUtil";
 import { formatReason } from "src/util";
 
 import { Polkassembly } from "./polkassembly";
@@ -35,7 +36,7 @@ describe("Polkassembly with production API and Moonbase Alpha testnet", () => {
       throw new Error("Variables needed. Read description above.");
     }
     const wallet = Wallet.fromMnemonic(moonbaseMnemonic);
-    polkassembly = new Polkassembly("https://api.polkassembly.io/api/v1/", { type: "ethereum", wallet });
+    polkassembly = new Polkassembly("https://api.polkassembly.io/api/v1/", { type: "ethereum", wallet }, logMock);
   });
 
   test.skip("Edits a metadata of an existing referendum", async () => {
