@@ -2,6 +2,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { stringToU8a } from "@polkadot/util";
 import { Wallet } from "ethers";
 import fetch from "node-fetch";
+import type { Probot } from "probot";
 
 const headers = { "Content-Type": "application/json" };
 
@@ -11,6 +12,7 @@ export class Polkassembly {
   constructor(
     private endpoint: string,
     private signer: { type: "polkadot"; keyringPair: KeyringPair } | { type: "ethereum"; wallet: Wallet }, // Ethereum type is used for EVM chains.
+    private log: Probot["log"],
   ) {}
 
   public get loggedIn(): boolean {
@@ -22,13 +24,18 @@ export class Polkassembly {
   }
 
   public async signup(): Promise<void> {
-    if (this.loggedIn) return;
+    if (this.loggedIn) {
+      this.log("Already logged in to Polkassembly - signup is skipped.");
+      return;
+    }
+    this.log("Signing up to Polkassembly...");
     const signupStartResponse = await fetch(`${this.endpoint}/auth/actions/addressSignupStart`, {
       headers,
       method: "POST",
       body: JSON.stringify({ address: this.address }),
     });
     if (!signupStartResponse.ok) {
+      this.log.error(`addressSignupStart failed with status code ${signupStartResponse.status}`);
       throw new Error(await signupStartResponse.text());
     }
     const signupStartBody = (await signupStartResponse.json()) as { signMessage: string };
@@ -43,6 +50,7 @@ export class Polkassembly {
       }),
     });
     if (!signupResponse.ok) {
+      this.log.error(`addressSignupConfirm failed with status code ${signupResponse.status}`);
       throw new Error(await signupResponse.text());
     }
     const signupBody = (await signupResponse.json()) as { token: string };
@@ -50,10 +58,15 @@ export class Polkassembly {
       throw new Error("Signup unsuccessful, the authentication token is missing.");
     }
     this.token = signupBody.token;
+    this.log.info("Polkassembly sign up successful.");
   }
 
   public async login(): Promise<void> {
-    if (this.loggedIn) return;
+    if (this.loggedIn) {
+      this.log("Already logged in to Polkassembly - login is skipped.");
+      return;
+    }
+    this.log("Logging in to Polkassembly...");
 
     const loginStartResponse = await fetch(`${this.endpoint}/auth/actions/addressLoginStart`, {
       headers,
@@ -61,6 +74,7 @@ export class Polkassembly {
       body: JSON.stringify({ address: this.address }),
     });
     if (!loginStartResponse.ok) {
+      this.log.error(`addressLoginStart failed with status code ${loginStartResponse.status}`);
       throw new Error(await loginStartResponse.text());
     }
     const loginStartBody = (await loginStartResponse.json()) as { signMessage: string };
@@ -75,13 +89,17 @@ export class Polkassembly {
       }),
     });
     if (!loginResponse.ok) {
+      this.log.error(`addressLogin failed with status code ${loginResponse.status}`);
       throw new Error(await loginResponse.text());
     }
     const loginBody = (await loginResponse.json()) as { token: string };
     if (!loginBody.token) {
+      this.log.error("Login to Polkassembly failed, the token was not found in response body");
+      this.log.info(`Available response body fields: ${Object.keys(loginBody).join(",")}`);
       throw new Error("Login unsuccessful, the authentication token is missing.");
     }
     this.token = loginBody.token;
+    this.log.info("Polkassembly login successful.");
   }
 
   public logout(): void {
@@ -95,6 +113,8 @@ export class Polkassembly {
       if ((e as Error).message.includes("Please sign up")) {
         await this.signup();
       } else {
+        this.log.error("loginOrSignup to Polkassembly failed.");
+        this.log.error(e.message);
         throw e;
       }
     }
@@ -110,6 +130,7 @@ export class Polkassembly {
     },
   ): Promise<void> {
     if (!this.token) {
+      this.log.error("Attempted to edit Polkassembly post without logging in.");
       throw new Error("Not logged in.");
     }
     const response = await fetch(`${this.endpoint}/auth/actions/editPost`, {
@@ -118,8 +139,10 @@ export class Polkassembly {
       body: JSON.stringify(opts),
     });
     if (!response.ok) {
+      this.log.error(`editPost failed with status code ${response.status}`);
       throw new Error(await response.text());
     }
+    this.log.info("Polkassembly post editing successful.");
   }
 
   async getLastReferendumNumber(network: string, trackNo: number): Promise<number | undefined> {
@@ -128,10 +151,13 @@ export class Polkassembly {
       { headers: { ...headers, "x-network": network }, method: "POST", body: JSON.stringify({}) },
     );
     if (!response.ok) {
+      this.log.error(`listing/on-chain-posts failed with status code ${response.status}`);
       throw new Error(await response.text());
     }
     const body = (await response.json()) as { posts: { post_id: number }[] };
-    return body.posts[0]?.post_id;
+    const result = body.posts[0]?.post_id;
+    this.log.info(`Most recent referendum id on Polkassembly is: ${result}`);
+    return result;
   }
 
   public async signMessage(message: string): Promise<string> {
