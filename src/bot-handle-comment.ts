@@ -87,10 +87,10 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     });
   };
 
-  void onIssueComment(state, event, tipRequester, octokitInstance).then(respondOnResult, respondOnUnknownError);
+  void handleTipRequest(state, event, tipRequester, octokitInstance).then(respondOnResult, respondOnUnknownError);
 };
 
-export const onIssueComment = async (
+export const handleTipRequest = async (
   state: State,
   event: IssueCommentCreatedEvent,
   tipRequester: string,
