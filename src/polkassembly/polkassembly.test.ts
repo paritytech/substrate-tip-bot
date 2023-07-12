@@ -3,6 +3,8 @@ import { Keyring } from "@polkadot/api";
 import type { KeyringPair } from "@polkadot/keyring/types";
 import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
 
+import { logMock } from "src/testUtil";
+
 import { Polkassembly } from "./polkassembly";
 
 describe("Polkassembly with a test endpoint", () => {
@@ -17,7 +19,7 @@ describe("Polkassembly with a test endpoint", () => {
     const keyring = new Keyring({ type: "sr25519" });
     // A random account for every test.
     keyringPair = keyring.addFromSeed(randomAsU8a(32));
-    polkassembly = new Polkassembly("https://test.polkassembly.io/api/v1/", { type: "polkadot", keyringPair });
+    polkassembly = new Polkassembly("https://test.polkassembly.io/api/v1/", { type: "polkadot", keyringPair }, logMock);
   });
 
   test("Can produce a signature", async () => {

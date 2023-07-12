@@ -155,7 +155,11 @@ const main: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
     allowedGitHubOrg: envVar("APPROVERS_GH_ORG"),
     allowedGitHubTeam: envVar("APPROVERS_GH_TEAM"),
     botTipAccount,
-    polkassembly: new Polkassembly(envVar("POLKASSEMBLY_ENDPOINT"), { type: "polkadot", keyringPair: botTipAccount }),
+    polkassembly: new Polkassembly(
+      envVar("POLKASSEMBLY_ENDPOINT"),
+      { type: "polkadot", keyringPair: botTipAccount },
+      bot.log,
+    ),
     matrix: {
       client: createClient({
         accessToken: envVar("MATRIX_ACCESS_TOKEN"),
