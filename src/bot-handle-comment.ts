@@ -10,7 +10,7 @@ import { tipUser } from "./tip";
 import { ContributorAccount, GithubReactionType, State, TipRequest, TipSize } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
-type OnIssueCommentResult = { type: "success"; message: string } | { type: "error"; errorMessage: string };
+type OnIssueCommentResult = { type: "success"; message: string } | { type: "error"; errorMessage: string | undefined };
 
 export const handleIssueCommentCreated = async (state: State, event: IssueCommentCreatedEvent): Promise<void> => {
   const [botMention] = event.comment.body.split(" ") as (string | undefined)[];
@@ -46,11 +46,13 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     });
   };
 
+  const UNKNOWN_ERROR_MSG = `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`
+
   const respondOnResult = async (result: OnIssueCommentResult) => {
     let body: string;
     switch (result.type) {
       case "error":
-        body = result.errorMessage;
+        body = result.errorMessage ?? UNKNOWN_ERROR_MSG;
         await matrixNotifyOnFailure(state.matrix, event);
         break;
       case "success":
@@ -74,7 +76,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     await github.createComment(
       {
         ...respondParams,
-        body: `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
+        body: UNKNOWN_ERROR_MSG,
       },
       { octokitInstance },
     );
@@ -173,9 +175,7 @@ export const handleTipRequest = async (
   } else {
     return {
       type: "error",
-      errorMessage:
-        tipResult.errorMessage ??
-        `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
+      errorMessage: tipResult.errorMessage,
     };
   }
 };
