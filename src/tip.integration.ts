@@ -20,6 +20,7 @@ import { getChainConfig } from "./chain-config";
 import { logMock, randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
+import { encodeProposal, getReferendumId } from "./util";
 
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
@@ -114,6 +115,32 @@ describe("tip", () => {
             ? "The requested tip value of '1001 DOT' exceeds the BigTipper track maximum of '1000 DOT'."
             : "The requested tip value of '1001 KSM' exceeds the BigTipper track maximum of '33.33 KSM'.";
         expect(errorMessage).toEqual(expectedError);
+      });
+
+      test(`getReferendumId in ${network}`, async () => {
+        const api = network === "localkusama" ? kusamaApi : polkadotApi;
+        const tipRequest = getTipRequest({ size: new BN("1") }, network);
+        const encodedProposal = encodeProposal(api, tipRequest);
+        if (typeof encodedProposal !== "string") {
+          throw new Error("Encoding the proposal failed.");
+        }
+        const nextFreeReferendumId = new BN(await api.query.referenda.referendumCount());
+
+        // We surround our tip with two "decoys" to make sure that we find the proper one.
+        await tipUser(state, tipRequest); // Will occupy nextFreeReferendumId
+        const result = await tipUser(state, tipRequest); // Will occupy nextFreeReferendumId + 1
+        await tipUser(state, tipRequest); // Will occupy nextFreeReferendumId + 2
+
+        if (!result.success) {
+          throw new Error("Tipping unsuccessful.");
+        }
+
+        const apiAtBlock = await api.at(result.blockHash);
+        const id = await getReferendumId(apiAtBlock, encodedProposal);
+
+        expect(id).toBeDefined();
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        expect(new BN(id!).eq(nextFreeReferendumId.addn(1))).toBeTruthy();
       });
     });
   }
