@@ -54,21 +54,8 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   });
 
   if (tipResult.success && polkassembly) {
-    let referendumId: number;
-    try {
-      const maybeReferendumId = await getReferendumId(await api.at(tipResult.blockHash), encodedProposal);
-      if (maybeReferendumId === undefined) {
-        bot.log.error(
-          `Could not find referendumId in block ${tipResult.blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,
-        );
-        return tipResult;
-      }
-      referendumId = maybeReferendumId;
-    } catch (e) {
-      bot.log.error(
-        `Error when trying to find referendumId in block ${tipResult.blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,
-      );
-      bot.log.error(e.message);
+    const referendumId = await tryGetReferendumId(api, tipResult.blockHash, encodedProposal, bot.log);
+    if (referendumId === null) {
       return tipResult;
     }
     void (async () => {
@@ -141,3 +128,27 @@ async function signAndSendCallback(
     }
   });
 }
+
+const tryGetReferendumId = async (
+  api: ApiPromise,
+  blockHash: string,
+  encodedProposal: string,
+  log: Probot["log"],
+): Promise<null | number> => {
+  try {
+    const referendumId = await getReferendumId(await api.at(blockHash), encodedProposal);
+    if (referendumId === undefined) {
+      log.error(
+        `Could not find referendumId in block ${blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,
+      );
+      return null;
+    }
+    return referendumId;
+  } catch (e) {
+    log.error(
+      `Error when trying to find referendumId in block ${blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,
+    );
+    log.error(e.message);
+    return null;
+  }
+};
