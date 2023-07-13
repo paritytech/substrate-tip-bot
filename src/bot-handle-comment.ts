@@ -4,10 +4,11 @@ import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
 import { BN } from "@polkadot/util";
 
 import { updateBalance } from "./balance";
+import { matrixNotifyOnFailure, matrixNotifyOnNewTip } from "./matrix";
 import { recordTip } from "./metrics";
 import { tipUser } from "./tip";
 import { ContributorAccount, GithubReactionType, State, TipRequest, TipSize } from "./types";
-import { formatTipSize, getTipSize, parseContributorAccount, teamMatrixHandles } from "./util";
+import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
 type OnIssueCommentResult = { type: "success"; message: string } | { type: "error"; errorMessage: string };
 
@@ -45,21 +46,12 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     });
   };
 
-  const notifyOnFailure = async () => {
-    await state.matrix?.client.sendMessage(state.matrix.roomId, {
-      body: `${teamMatrixHandles.join(" ")} A tip has failed: ${event.comment.html_url}`,
-      format: "org.matrix.custom.html",
-      formatted_body: `${teamMatrixHandles.join(" ")} A tip has <a href="${event.comment.html_url}">failed</a>!`,
-      msgtype: "m.text",
-    });
-  };
-
   const respondOnResult = async (result: OnIssueCommentResult) => {
     let body: string;
     switch (result.type) {
       case "error":
         body = result.errorMessage;
-        await notifyOnFailure();
+        await matrixNotifyOnFailure(state.matrix, event);
         break;
       case "success":
         body = result.message;
@@ -78,7 +70,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
 
   const respondOnUnknownError = async (e: Error) => {
     state.bot.log.error(e.message);
-    await notifyOnFailure();
+    await matrixNotifyOnFailure(state.matrix, event);
     await github.createComment(
       {
         ...respondParams,
@@ -90,6 +82,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
   };
 
   await githubEmojiReaction("eyes");
+  await matrixNotifyOnNewTip(state.matrix, event);
   void handleTipRequest(state, event, tipRequester, octokitInstance).then(respondOnResult, respondOnUnknownError);
 };
 
@@ -107,13 +100,6 @@ export const handleTipRequest = async (
   const contributorLogin = event.issue.user.login;
   const pullRequestNumber = event.issue.number;
   const pullRequestRepo = event.repository.name;
-
-  await state.matrix?.client.sendMessage(state.matrix.roomId, {
-    body: `A new tip has been requested: ${event.comment.html_url}`,
-    format: "org.matrix.custom.html",
-    formatted_body: `A new tip has been <a href="${event.comment.html_url}">requested</a>.`,
-    msgtype: "m.text",
-  });
 
   if (tipRequester === contributorLogin) {
     return { type: "error", errorMessage: `@${tipRequester} Contributor and tipper cannot be the same person!` };
