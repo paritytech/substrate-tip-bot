@@ -1,3 +1,5 @@
+import { ApiPromise } from "@polkadot/api";
+import type { ApiDecoration } from "@polkadot/api/types";
 import { BN } from "@polkadot/util";
 import assert from "assert";
 
@@ -9,6 +11,7 @@ import {
   SmallTipperTrack,
   TipNetwork,
   TipRequest,
+  TipResult,
   TipSize,
 } from "./types";
 
@@ -141,3 +144,44 @@ export const teamMatrixHandles =
 
 // https://stackoverflow.com/a/52254083
 export const byteSize = (str: string): number => new Blob([str]).size;
+
+export const encodeProposal = (api: ApiPromise, tipRequest: TipRequest): string | TipResult => {
+  const track = tipSizeToOpenGovTrack(tipRequest);
+  if ("error" in track) {
+    return { success: false, errorMessage: track.error };
+  }
+  const contributorAddress = tipRequest.contributor.account.address;
+
+  const proposalTx = api.tx.treasury.spend(track.value.toString(), contributorAddress);
+  const encodedProposal = proposalTx.method.toHex();
+  const proposalByteSize = byteSize(encodedProposal);
+  if (proposalByteSize >= 128) {
+    return {
+      success: false,
+      errorMessage: `The proposal length of ${proposalByteSize} equals or exceeds 128 bytes and cannot be inlined in the referendum.`,
+    };
+  }
+  return encodedProposal;
+};
+
+/**
+ * @param apiAtBlock - The ApiPromise should be pointing at the block hash that is expected to contain the referendum.
+ * @param encodedProposal - Encoded proposal of the referendum - aka inlined preimage.
+ */
+export const getReferendumId = async (
+  apiAtBlock: ApiDecoration<"promise">,
+  encodedProposal: string,
+): Promise<undefined | number> => {
+  // https://github.com/paritytech/substrate/blob/63246b699d7e2645c8b12aae46f8f0765c682183/frame/referenda/src/lib.rs#L271-L278
+  // [index, track, proposal]
+  type ReferendumSubmittedData = [number, number, Record<string, unknown>];
+
+  const events = await apiAtBlock.query.system.events();
+  const referendumEvent = events.find(
+    (record) =>
+      record.event.section === "referenda" &&
+      record.event.method === "Submitted" &&
+      (record.event.data.toJSON() as ReferendumSubmittedData)[2].inline === encodedProposal,
+  );
+  return (referendumEvent?.event.data.toJSON() as ReferendumSubmittedData)?.[0];
+};

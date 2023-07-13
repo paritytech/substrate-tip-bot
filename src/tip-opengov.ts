@@ -6,8 +6,9 @@ import { ISubmittableResult } from "@polkadot/types/types";
 import { Probot } from "probot";
 
 import { getTipUrl } from "./chain-config";
-import { ContributorAccount, State, TipRequest, TipResult } from "./types";
-import { byteSize, formatReason, tipSizeToOpenGovTrack } from "./util";
+import { Polkassembly } from "./polkassembly/polkassembly";
+import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
+import { byteSize, encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
 
 export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
   const {
@@ -21,24 +22,19 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   if ("error" in track) {
     return { success: false, errorMessage: track.error };
   }
-  const contributorAddress = contributor.account.address;
 
-  const proposalTx = api.tx.treasury.spend(track.value.toString(), contributorAddress);
-  const nonce = (await api.rpc.system.accountNextIndex(botTipAccount.address)).toNumber();
-  const encodedProposal = proposalTx.method.toHex();
-  const proposalByteSize = byteSize(encodedProposal);
-  if (proposalByteSize >= 128) {
-    return {
-      success: false,
-      errorMessage: `The proposal length of ${proposalByteSize} equals or exceeds 128 bytes and cannot be inlined in the referendum.`,
-    };
+  const encodedProposal = encodeProposal(api, tipRequest);
+  if (typeof encodedProposal !== "string") {
+    return encodedProposal;
   }
 
+  const nonce = (await api.rpc.system.accountNextIndex(botTipAccount.address)).toNumber();
   bot.log(
-    `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
+    `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${byteSize(
+      encodedProposal,
+    )}, nonce: ${nonce}`,
   );
 
-  const referendumId = await api.query.referenda.referendumCount(); // The next free referendum index.
   const tipResult = await new Promise<TipResult>(async (resolve, reject) => {
     try {
       const proposalUnsubscribe = await api.tx.referenda
@@ -59,34 +55,14 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   });
 
   if (tipResult.success && polkassembly) {
-    void (async () => {
-      const condition = async (): Promise<boolean> => {
-        const lastReferendum = await polkassembly.getLastReferendumNumber(
-          contributor.account.network,
-          track.track.trackNo,
-        );
-        return lastReferendum !== undefined && lastReferendum >= referendumId.toNumber();
-      };
-      try {
-        bot.log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
-        await until(condition, 30_000);
-        polkassembly.logout();
-        await polkassembly.loginOrSignup();
-        await polkassembly.editPost(tipRequest.contributor.account.network, {
-          postId: referendumId.toNumber(),
-          proposalType: "referendums_v2",
-          content: formatReason(tipRequest, { markdown: true }),
-          title: track.track.trackName,
-        });
-        bot.log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
-      } catch (e) {
-        bot.log.error("Failed to update the Polkasssembly metadata", {
-          referendumId: referendumId.toNumber(),
-          tipRequest: JSON.stringify(tipRequest),
-        });
-        bot.log.error(e.message);
-      }
-    })();
+    const referendumId = await tryGetReferendumId(api, tipResult.blockHash, encodedProposal, bot.log);
+    if (referendumId === null) {
+      return tipResult;
+    }
+    // We fire off the Polkassembly separately, so the user doesn't have to wait for it to get a response.
+    // But we await running the tryGetReferendumId first,
+    // because we re-use the ApiPromise which gets disconnected at the end of a tip process.
+    void tryUpdatingPolkassemblyPost(polkassembly, referendumId, tipRequest, track.track, bot.log);
   }
 
   return tipResult;
@@ -100,19 +76,21 @@ async function signAndSendCallback(
   result: ISubmittableResult,
 ): Promise<TipResult> {
   return await new Promise((resolve, reject) => {
-    const resolveSuccess = () => {
+    const resolveSuccess = (blockHash: string) => {
       unsubscribe();
-      resolve({ success: true, tipUrl: getTipUrl(contributor.network) });
+      resolve({ success: true, tipUrl: getTipUrl(contributor.network), blockHash });
     };
     if (result.status.isInBlock) {
-      bot.log(`${type} for ${contributor.address} included at blockHash ${result.status.asInBlock.toString()}`);
+      const blockHash = result.status.asInBlock.toString();
+      bot.log(`${type} for ${contributor.address} included at blockHash ${blockHash}`);
       if (process.env.NODE_ENV === "test") {
         // Don't have to wait for block finalization in a test environment.
-        resolveSuccess();
+        resolveSuccess(blockHash);
       }
     } else if (result.status.isFinalized) {
-      bot.log(`Tip for ${contributor.address} ${type} finalized at blockHash ${result.status.asFinalized.toString()}`);
-      resolveSuccess();
+      const blockHash = result.status.asFinalized.toString();
+      bot.log(`Tip for ${contributor.address} ${type} finalized at blockHash ${blockHash}`);
+      resolveSuccess(blockHash);
     } else if (result.isError) {
       bot.log(`status to string`, result.status.toString());
       bot.log(`result.toHuman`, result.toHuman());
@@ -127,3 +105,62 @@ async function signAndSendCallback(
     }
   });
 }
+
+const tryGetReferendumId = async (
+  api: ApiPromise,
+  blockHash: string,
+  encodedProposal: string,
+  log: Probot["log"],
+): Promise<null | number> => {
+  try {
+    const referendumId = await getReferendumId(await api.at(blockHash), encodedProposal);
+    if (referendumId === undefined) {
+      log.error(
+        `Could not find referendumId in block ${blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,
+      );
+      return null;
+    }
+    return referendumId;
+  } catch (e) {
+    log.error(
+      `Error when trying to find referendumId in block ${blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,
+    );
+    log.error(e.message);
+    return null;
+  }
+};
+
+const tryUpdatingPolkassemblyPost = async (
+  polkassembly: Polkassembly,
+  referendumId: number,
+  tipRequest: TipRequest,
+  track: OpenGovTrack,
+  log: Probot["log"],
+): Promise<void> => {
+  const condition = async (): Promise<boolean> => {
+    const lastReferendum = await polkassembly.getLastReferendumNumber(
+      tipRequest.contributor.account.network,
+      track.trackNo,
+    );
+    return lastReferendum !== undefined && lastReferendum >= referendumId;
+  };
+  try {
+    log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
+    await until(condition, 30_000);
+    polkassembly.logout();
+    await polkassembly.loginOrSignup();
+    await polkassembly.editPost(tipRequest.contributor.account.network, {
+      postId: referendumId,
+      proposalType: "referendums_v2",
+      content: formatReason(tipRequest, { markdown: true }),
+      title: track.trackName,
+    });
+    log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
+  } catch (e) {
+    log.error("Failed to update the Polkasssembly metadata", {
+      referendumId: referendumId,
+      tipRequest: JSON.stringify(tipRequest),
+    });
+    log.error(e.message);
+  }
+};
