@@ -3,5 +3,8 @@
   "watch": ["src/"],
   "ignore": ["test/", "node_modules/", ".git"],
   "ext": ".ts",
-  "exec": "node -r ts-node/register -r dotenv/config src/bot.ts"
+  "exec": "node -r ts-node/register -r dotenv/config src/bot.ts",
+  "env": {
+    "NODE_ENV": "development"
+  }
 }

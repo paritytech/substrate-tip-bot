@@ -35,18 +35,22 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   );
 
   const tipResult = await new Promise<TipResult>(async (resolve, reject) => {
-    const proposalUnsubscribe = await api.tx.referenda
-      .submit(
-        // TODO: There should be a way to set those types properly.
-        { Origins: track.track.trackName } as never,
-        { Inline: encodedProposal },
-        { after: 10 } as never,
-      )
-      .signAndSend(botTipAccount, async (refResult) => {
-        await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
-          .then(resolve)
-          .catch(reject);
-      });
+    try {
+      const proposalUnsubscribe = await api.tx.referenda
+        .submit(
+          // TODO: There should be a way to set those types properly.
+          { Origins: track.track.trackName } as never,
+          { Inline: encodedProposal },
+          { after: 10 } as never,
+        )
+        .signAndSend(botTipAccount, async (refResult) => {
+          await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
+            .then(resolve)
+            .catch(reject);
+        });
+    } catch (e) {
+      reject(e);
+    }
   });
 
   if (tipResult.success && polkassembly) {
