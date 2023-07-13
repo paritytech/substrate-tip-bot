@@ -9,12 +9,16 @@ import { tipUser } from "./tip";
 import { ContributorAccount, State, TipRequest, TipSize } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount, teamMatrixHandles } from "./util";
 
-type OnIssueCommentResult =
-  | { type: "skip" }
-  | { type: "success"; message: string }
-  | { type: "error"; errorMessage: string };
+type OnIssueCommentResult = { type: "success"; message: string } | { type: "error"; errorMessage: string };
 
 export const handleIssueCommentCreated = async (state: State, event: IssueCommentCreatedEvent): Promise<void> => {
+  const [botMention] = event.comment.body.split(" ") as (string | undefined)[];
+
+  // The bot only triggers on creation of a new comment on a pull request.
+  if (!event.issue.pull_request || event.action !== "created" || !botMention?.startsWith("/tip")) {
+    return;
+  }
+
   const tipRequester = event.comment.user.login;
   const installationId = (
     await github.getRepoInstallation({ owner: event.repository.owner.login, repo: event.repository.name })
@@ -45,8 +49,6 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
   const respondOnResult = async (result: OnIssueCommentResult) => {
     let body: string;
     switch (result.type) {
-      case "skip":
-        return;
       case "error":
         body = result.errorMessage;
         await notifyOnFailure();
@@ -98,19 +100,12 @@ export const handleTipRequest = async (
 ): Promise<OnIssueCommentResult> => {
   const { allowedGitHubOrg, allowedGitHubTeam, bot } = state;
 
-  const commentText = event.comment.body;
+  const [_, tipSizeInput] = event.comment.body.split(" ") as (string | undefined)[];
   const pullRequestBody = event.issue.body;
   const pullRequestUrl = event.issue.html_url;
   const contributorLogin = event.issue.user.login;
   const pullRequestNumber = event.issue.number;
   const pullRequestRepo = event.repository.name;
-
-  const [botMention, tipSizeInput] = commentText.split(" ") as (string | undefined)[];
-
-  // The bot only triggers on creation of a new comment on a pull request.
-  if (!event.issue.pull_request || event.action !== "created" || !botMention?.startsWith("/tip")) {
-    return { type: "skip" };
-  }
 
   await octokitInstance.rest.reactions.createForIssueComment({
     owner: event.repository.owner.login,
