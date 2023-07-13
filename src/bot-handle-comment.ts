@@ -6,7 +6,7 @@ import { BN } from "@polkadot/util";
 import { updateBalance } from "./balance";
 import { recordTip } from "./metrics";
 import { tipUser } from "./tip";
-import { ContributorAccount, State, TipRequest, TipSize } from "./types";
+import { ContributorAccount, GithubReactionType, State, TipRequest, TipSize } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount, teamMatrixHandles } from "./util";
 
 type OnIssueCommentResult = { type: "success"; message: string } | { type: "error"; errorMessage: string };
@@ -37,6 +37,14 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     issue_number: event.issue.number,
   };
 
+  const githubEmojiReaction = async (reaction: GithubReactionType) => {
+    await octokitInstance.rest.reactions.createForIssueComment({
+      ...respondParams,
+      comment_id: event.comment.id,
+      content: reaction,
+    });
+  };
+
   const notifyOnFailure = async () => {
     await state.matrix?.client.sendMessage(state.matrix.roomId, {
       body: `${teamMatrixHandles.join(" ")} A tip has failed: ${event.comment.html_url}`,
@@ -65,11 +73,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
       }
     }
     await github.createComment({ ...respondParams, body }, { octokitInstance });
-    await octokitInstance.rest.reactions.createForIssueComment({
-      ...respondParams,
-      comment_id: event.comment.id,
-      content: result.type === "success" ? "rocket" : "confused",
-    });
+    await githubEmojiReaction(result.type === "success" ? "rocket" : "confused");
   };
 
   const respondOnUnknownError = async (e: Error) => {
@@ -82,13 +86,10 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
       },
       { octokitInstance },
     );
-    await octokitInstance.rest.reactions.createForIssueComment({
-      ...respondParams,
-      comment_id: event.comment.id,
-      content: "confused",
-    });
+    await githubEmojiReaction("confused");
   };
 
+  await githubEmojiReaction("eyes");
   void handleTipRequest(state, event, tipRequester, octokitInstance).then(respondOnResult, respondOnUnknownError);
 };
 
@@ -107,13 +108,6 @@ export const handleTipRequest = async (
   const pullRequestNumber = event.issue.number;
   const pullRequestRepo = event.repository.name;
 
-  await octokitInstance.rest.reactions.createForIssueComment({
-    owner: event.repository.owner.login,
-    repo: event.repository.name,
-    issue_number: event.issue.number,
-    comment_id: event.comment.id,
-    content: "eyes",
-  });
   await state.matrix?.client.sendMessage(state.matrix.roomId, {
     body: `A new tip has been requested: ${event.comment.html_url}`,
     format: "org.matrix.custom.html",

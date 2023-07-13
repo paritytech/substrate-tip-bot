@@ -57,3 +57,6 @@ export type TipRequest = {
 export type TipResult =
   | { success: true; tipUrl: string; blockHash: string }
   | { success: false; errorMessage?: string };
+
+// https://docs.github.com/en/rest/reactions/reactions#about-reactions
+export type GithubReactionType = "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
