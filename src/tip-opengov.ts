@@ -61,7 +61,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
     }
     // We fire off the Polkassembly separately, so the user doesn't have to wait for it to get a response.
     // But we await running the tryGetReferendumId first,
-    // because we re-use the ApiPromise and it gets disconnected at the end of a tip process.
+    // because we re-use the ApiPromise which gets disconnected at the end of a tip process.
     void tryUpdatingPolkassemblyPost(polkassembly, referendumId, tipRequest, track.track, bot.log);
   }
 
