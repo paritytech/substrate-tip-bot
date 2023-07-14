@@ -4,12 +4,13 @@ import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
 import { BN } from "@polkadot/util";
 
 import { updateBalance } from "./balance";
+import { matrixNotifyOnFailure, matrixNotifyOnNewTip } from "./matrix";
 import { recordTip } from "./metrics";
 import { tipUser } from "./tip";
-import { ContributorAccount, State, TipRequest, TipSize } from "./types";
-import { formatTipSize, getTipSize, parseContributorAccount, teamMatrixHandles } from "./util";
+import { ContributorAccount, GithubReactionType, State, TipRequest, TipSize } from "./types";
+import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
-type OnIssueCommentResult = { type: "success"; message: string } | { type: "error"; errorMessage: string };
+type OnIssueCommentResult = { type: "success"; message: string } | { type: "error"; errorMessage: string | undefined };
 
 export const handleIssueCommentCreated = async (state: State, event: IssueCommentCreatedEvent): Promise<void> => {
   const [botMention] = event.comment.body.split(" ") as (string | undefined)[];
@@ -37,21 +38,20 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     issue_number: event.issue.number,
   };
 
-  const notifyOnFailure = async () => {
-    await state.matrix?.client.sendMessage(state.matrix.roomId, {
-      body: `${teamMatrixHandles.join(" ")} A tip has failed: ${event.comment.html_url}`,
-      format: "org.matrix.custom.html",
-      formatted_body: `${teamMatrixHandles.join(" ")} A tip has <a href="${event.comment.html_url}">failed</a>!`,
-      msgtype: "m.text",
-    });
-  };
+  const githubEmojiReaction = async (reaction: GithubReactionType) =>
+    await github.createReactionForIssueComment(
+      { ...respondParams, comment_id: event.comment.id, content: reaction },
+      { octokitInstance },
+    );
+
+  const UNKNOWN_ERROR_MSG = `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`;
 
   const respondOnResult = async (result: OnIssueCommentResult) => {
     let body: string;
     switch (result.type) {
       case "error":
-        body = result.errorMessage;
-        await notifyOnFailure();
+        body = result.errorMessage ?? UNKNOWN_ERROR_MSG;
+        await matrixNotifyOnFailure(state.matrix, event);
         break;
       case "success":
         body = result.message;
@@ -65,30 +65,18 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
       }
     }
     await github.createComment({ ...respondParams, body }, { octokitInstance });
-    await octokitInstance.rest.reactions.createForIssueComment({
-      ...respondParams,
-      comment_id: event.comment.id,
-      content: result.type === "success" ? "rocket" : "confused",
-    });
+    await githubEmojiReaction(result.type === "success" ? "rocket" : "confused");
   };
 
   const respondOnUnknownError = async (e: Error) => {
     state.bot.log.error(e.message);
-    await notifyOnFailure();
-    await github.createComment(
-      {
-        ...respondParams,
-        body: `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
-      },
-      { octokitInstance },
-    );
-    await octokitInstance.rest.reactions.createForIssueComment({
-      ...respondParams,
-      comment_id: event.comment.id,
-      content: "confused",
-    });
+    await matrixNotifyOnFailure(state.matrix, event);
+    await github.createComment({ ...respondParams, body: UNKNOWN_ERROR_MSG }, { octokitInstance });
+    await githubEmojiReaction("confused");
   };
 
+  await githubEmojiReaction("eyes");
+  await matrixNotifyOnNewTip(state.matrix, event);
   void handleTipRequest(state, event, tipRequester, octokitInstance).then(respondOnResult, respondOnUnknownError);
 };
 
@@ -106,20 +94,6 @@ export const handleTipRequest = async (
   const contributorLogin = event.issue.user.login;
   const pullRequestNumber = event.issue.number;
   const pullRequestRepo = event.repository.name;
-
-  await octokitInstance.rest.reactions.createForIssueComment({
-    owner: event.repository.owner.login,
-    repo: event.repository.name,
-    issue_number: event.issue.number,
-    comment_id: event.comment.id,
-    content: "eyes",
-  });
-  await state.matrix?.client.sendMessage(state.matrix.roomId, {
-    body: `A new tip has been requested: ${event.comment.html_url}`,
-    format: "org.matrix.custom.html",
-    formatted_body: `A new tip has been <a href="${event.comment.html_url}">requested</a>.`,
-    msgtype: "m.text",
-  });
 
   if (tipRequester === contributorLogin) {
     return { type: "error", errorMessage: `@${tipRequester} Contributor and tipper cannot be the same person!` };
@@ -190,11 +164,6 @@ export const handleTipRequest = async (
       }). \n\n ${tipResult.tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`,
     };
   } else {
-    return {
-      type: "error",
-      errorMessage:
-        tipResult.errorMessage ??
-        `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
-    };
+    return { type: "error", errorMessage: tipResult.errorMessage };
   }
 };
