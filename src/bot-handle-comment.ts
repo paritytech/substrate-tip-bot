@@ -162,7 +162,6 @@ export const handleTipRequest = async (
     }
   })();
 
-  // TODO actually check for problems with submitting the tip. Maybe even query storage to ensure the tip is there.
   if (tipResult.success) {
     return {
       type: "success",
