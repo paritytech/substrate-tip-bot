@@ -10,7 +10,7 @@ import { tipUser } from "./tip";
 import { ContributorAccount, GithubReactionType, State, TipRequest, TipSize } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
-type OnIssueCommentResult = { type: "success"; message: string } | { type: "error"; errorMessage: string | undefined };
+type OnIssueCommentResult = { success: true; message: string } | { success: false; errorMessage: string | undefined };
 
 export const handleIssueCommentCreated = async (state: State, event: IssueCommentCreatedEvent): Promise<void> => {
   const [botMention] = event.comment.body.split(" ") as (string | undefined)[];
@@ -38,6 +38,8 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     issue_number: event.issue.number,
   };
 
+  const githubComment = async (body: string) =>
+    await github.createComment({ ...respondParams, body }, { octokitInstance });
   const githubEmojiReaction = async (reaction: GithubReactionType) =>
     await github.createReactionForIssueComment(
       { ...respondParams, comment_id: event.comment.id, content: reaction },
@@ -45,39 +47,24 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     );
 
   const UNKNOWN_ERROR_MSG = `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`;
-
-  const respondOnResult = async (result: OnIssueCommentResult) => {
-    let body: string;
-    switch (result.type) {
-      case "error":
-        body = result.errorMessage ?? UNKNOWN_ERROR_MSG;
-        await matrixNotifyOnFailure(state.matrix, event);
-        break;
-      case "success":
-        body = result.message;
-        break;
-      default: {
-        const exhaustivenessCheck: never = result;
-        throw new Error(
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          `Result type is not handled properly in respondOnResult: ${JSON.stringify(exhaustivenessCheck)}`,
-        );
-      }
-    }
-    await github.createComment({ ...respondParams, body }, { octokitInstance });
-    await githubEmojiReaction(result.type === "success" ? "rocket" : "confused");
-  };
-
-  const respondOnUnknownError = async (e: Error) => {
-    state.bot.log.error(e.message);
-    await matrixNotifyOnFailure(state.matrix, event);
-    await github.createComment({ ...respondParams, body: UNKNOWN_ERROR_MSG }, { octokitInstance });
-    await githubEmojiReaction("confused");
-  };
-
   await githubEmojiReaction("eyes");
   await matrixNotifyOnNewTip(state.matrix, event);
-  void handleTipRequest(state, event, tipRequester, octokitInstance).then(respondOnResult, respondOnUnknownError);
+  try {
+    const result = await handleTipRequest(state, event, tipRequester, octokitInstance);
+    if (result.success) {
+      await githubComment(result.message);
+      await githubEmojiReaction("rocket");
+    } else {
+      await githubComment(result.errorMessage ?? UNKNOWN_ERROR_MSG);
+      await githubEmojiReaction("confused");
+      await matrixNotifyOnFailure(state.matrix, event);
+    }
+  } catch (e) {
+    state.bot.log.error(e.message);
+    await githubComment(UNKNOWN_ERROR_MSG);
+    await githubEmojiReaction("confused");
+    await matrixNotifyOnFailure(state.matrix, event);
+  }
 };
 
 export const handleTipRequest = async (
@@ -96,7 +83,7 @@ export const handleTipRequest = async (
   const pullRequestRepo = event.repository.name;
 
   if (tipRequester === contributorLogin) {
-    return { type: "error", errorMessage: `@${tipRequester} Contributor and tipper cannot be the same person!` };
+    return { success: false, errorMessage: `@${tipRequester} Contributor and tipper cannot be the same person!` };
   }
 
   if (
@@ -106,7 +93,7 @@ export const handleTipRequest = async (
     ))
   ) {
     return {
-      type: "error",
+      success: false,
       errorMessage: `@${tipRequester} You are not allowed to request a tip. Only members of ${allowedGitHubOrg}/${allowedGitHubTeam} are allowed.`,
     };
   }
@@ -116,14 +103,14 @@ export const handleTipRequest = async (
     const userData = await octokitInstance.rest.users.getByUsername({ username: contributorLogin });
     contributorAccount = parseContributorAccount([pullRequestBody, userData.data.bio]);
   } catch (error: unknown) {
-    return { type: "error", errorMessage: `@${contributorLogin} ${(error as Error).message}` };
+    return { success: false, errorMessage: `@${contributorLogin} ${(error as Error).message}` };
   }
 
   let tipSize: TipSize | BN;
   try {
     tipSize = getTipSize(tipSizeInput);
   } catch (error: unknown) {
-    return { type: "error", errorMessage: `@${tipRequester} ${(error as Error).message}` };
+    return { success: false, errorMessage: `@${tipRequester} ${(error as Error).message}` };
   }
 
   const tipRequest: TipRequest = {
@@ -156,7 +143,7 @@ export const handleTipRequest = async (
 
   if (tipResult.success) {
     return {
-      type: "success",
+      success: true,
       message: `@${tipRequester} A ${formatTipSize(
         tipRequest,
       )} tip was successfully submitted for @${contributorLogin} (${contributorAccount.address} on ${
@@ -164,6 +151,6 @@ export const handleTipRequest = async (
       }). \n\n ${tipResult.tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`,
     };
   } else {
-    return { type: "error", errorMessage: tipResult.errorMessage };
+    return { success: false, errorMessage: tipResult.errorMessage };
   }
 };
