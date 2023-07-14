@@ -46,7 +46,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     });
   };
 
-  const UNKNOWN_ERROR_MSG = `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`
+  const UNKNOWN_ERROR_MSG = `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`;
 
   const respondOnResult = async (result: OnIssueCommentResult) => {
     let body: string;
@@ -73,13 +73,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
   const respondOnUnknownError = async (e: Error) => {
     state.bot.log.error(e.message);
     await matrixNotifyOnFailure(state.matrix, event);
-    await github.createComment(
-      {
-        ...respondParams,
-        body: UNKNOWN_ERROR_MSG,
-      },
-      { octokitInstance },
-    );
+    await github.createComment({ ...respondParams, body: UNKNOWN_ERROR_MSG }, { octokitInstance });
     await githubEmojiReaction("confused");
   };
 
@@ -172,9 +166,6 @@ export const handleTipRequest = async (
       }). \n\n ${tipResult.tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`,
     };
   } else {
-    return {
-      type: "error",
-      errorMessage: tipResult.errorMessage,
-    };
+    return { type: "error", errorMessage: tipResult.errorMessage };
   }
 };
