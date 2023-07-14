@@ -38,13 +38,11 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     issue_number: event.issue.number,
   };
 
-  const githubEmojiReaction = async (reaction: GithubReactionType) => {
-    await octokitInstance.rest.reactions.createForIssueComment({
-      ...respondParams,
-      comment_id: event.comment.id,
-      content: reaction,
-    });
-  };
+  const githubEmojiReaction = async (reaction: GithubReactionType) =>
+    await github.createReactionForIssueComment(
+      { ...respondParams, comment_id: event.comment.id, content: reaction },
+      { octokitInstance },
+    );
 
   const UNKNOWN_ERROR_MSG = `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`;
 
