@@ -15,16 +15,22 @@ describe("Utility functions", () => {
       expect(result.address).toEqual(address);
     });
 
-    test("Throws when cannot parse", () => {
+    test("Returns error message when cannot parse", () => {
       const address = randomAddress();
-      expect(() => parseContributorAccount([`kusama: ${address}`])).toThrowError(
-        "Contributor did not properly post their account address",
-      );
+      const result = parseContributorAccount([`kusama: ${address}`]);
+      if (!("error" in result)) {
+        throw new Error("Expected error message not found.");
+      }
+      expect(result.error).toEqual("Contributor did not properly post their account address");
     });
 
     test("Throws on invalid network", () => {
       const address = randomAddress();
-      expect(() => parseContributorAccount([`kussama address: ${address}`])).toThrowError("Invalid network");
+      const result = parseContributorAccount([`kussama address: ${address}`]);
+      if (!("error" in result)) {
+        throw new Error("Expected error message not found.");
+      }
+      expect(result.error).toEqual("Invalid network");
     });
 
     test("First body takes precedence over following bodies", () => {
@@ -64,9 +70,11 @@ describe("Utility functions", () => {
     test("Throws when the first body has invalid network", () => {
       const addressA = randomAddress();
       const addressB = randomAddress();
-      expect(() =>
-        parseContributorAccount([`kussama address: ${addressA}`, `polkadot address: ${addressB}`]),
-      ).toThrowError("Invalid network");
+      const result = parseContributorAccount([`kussama address: ${addressA}`, `polkadot address: ${addressB}`]);
+      if (!("error" in result)) {
+        throw new Error("Expected error message not found.");
+      }
+      expect(result.error).toEqual("Invalid network");
     });
   });
 });
