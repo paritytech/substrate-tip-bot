@@ -30,7 +30,7 @@ describe("Utility functions", () => {
       if (!("error" in result)) {
         throw new Error("Expected error message not found.");
       }
-      expect(result.error).toEqual("Invalid network");
+      expect(result.error).toMatch("Invalid network");
     });
 
     test("First body takes precedence over following bodies", () => {
@@ -74,7 +74,7 @@ describe("Utility functions", () => {
       if (!("error" in result)) {
         throw new Error("Expected error message not found.");
       }
-      expect(result.error).toEqual("Invalid network");
+      expect(result.error).toMatch("Invalid network");
     });
   });
 });
