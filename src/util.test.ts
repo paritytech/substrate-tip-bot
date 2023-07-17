@@ -8,6 +8,9 @@ describe("Utility functions", () => {
     test("Can parse the account", () => {
       const address = randomAddress();
       const result = parseContributorAccount([`kusama address: ${address}`]);
+      if ("error" in result) {
+        throw new Error(result.error);
+      }
       expect(result.network).toEqual("kusama");
       expect(result.address).toEqual(address);
     });
@@ -28,6 +31,9 @@ describe("Utility functions", () => {
       const addressA = randomAddress();
       const addressB = randomAddress();
       const result = parseContributorAccount([`kusama address: ${addressA}`, `polkadot address: ${addressB}`]);
+      if ("error" in result) {
+        throw new Error(result.error);
+      }
       expect(result.network).toEqual("kusama");
       expect(result.address).toEqual(addressA);
     });
@@ -38,12 +44,18 @@ describe("Utility functions", () => {
 
       {
         const result = parseContributorAccount([`kusama: ${addressA}`, `polkadot address: ${addressB}`]);
+        if ("error" in result) {
+          throw new Error(result.error);
+        }
         expect(result.network).toEqual("polkadot");
         expect(result.address).toEqual(addressB);
       }
 
       {
         const result = parseContributorAccount([null, `polkadot address: ${addressB}`]);
+        if ("error" in result) {
+          throw new Error(result.error);
+        }
         expect(result.network).toEqual("polkadot");
         expect(result.address).toEqual(addressB);
       }
