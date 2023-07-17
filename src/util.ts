@@ -23,9 +23,9 @@ const validNetworks: { [key: string]: TipNetwork } = {
   localpolkadot: "localpolkadot",
 } as const;
 
-export function getTipSize(tipSizeInput: string | undefined): TipSize | BN {
+export function getTipSize(tipSizeInput: string | undefined): TipSize | BN | { error: string } {
   if (tipSizeInput === undefined || tipSizeInput.length === 0) {
-    throw new Error("Tip size not specified");
+    return { error: "Tip size not specified" };
   }
 
   try {
@@ -34,7 +34,7 @@ export function getTipSize(tipSizeInput: string | undefined): TipSize | BN {
   } catch {}
 
   if (!tipSizeInput || !(tipSizeInput in validTipSizes)) {
-    throw new Error(`Invalid tip size. Please specify one of ${Object.keys(validTipSizes).join(", ")}.`);
+    return { error: `Invalid tip size. Please specify one of ${Object.keys(validTipSizes).join(", ")}.` };
   }
 
   return validTipSizes[tipSizeInput];
@@ -59,7 +59,7 @@ export function tipSizeToOpenGovTrack(tipRequest: TipRequest): { track: OpenGovT
   };
 }
 
-export function parseContributorAccount(bodys: (string | null)[]): ContributorAccount {
+export function parseContributorAccount(bodys: (string | null)[]): ContributorAccount | { error: string } {
   for (const body of bodys) {
     const matches =
       typeof body === "string" &&
@@ -81,17 +81,17 @@ export function parseContributorAccount(bodys: (string | null)[]): ContributorAc
         ? validNetworks[networkInput.toLowerCase() as keyof typeof validNetworks]
         : undefined;
     if (!network) {
-      throw new Error(
-        `Invalid network: "${networkInput}". Please select one of: ${Object.keys(validNetworks).join(", ")}.`,
-      );
+      return {
+        error: `Invalid network: "${networkInput}". Please select one of: ${Object.keys(validNetworks).join(", ")}.`,
+      };
     }
 
     return { network, address };
   }
 
-  throw new Error(
-    `Contributor did not properly post their account address.\n\nMake sure the pull request description (or user bio) has: "{network} address: {address}".`,
-  );
+  return {
+    error: `Contributor did not properly post their account address.\n\nMake sure the pull request description (or user bio) has: "{network} address: {address}".`,
+  };
 }
 
 /**

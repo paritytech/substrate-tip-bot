@@ -1,13 +1,12 @@
 import { github } from "@eng-automation/integrations";
 import { envVar } from "@eng-automation/js";
 import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
-import { BN } from "@polkadot/util";
 
 import { updateBalance } from "./balance";
 import { matrixNotifyOnFailure, matrixNotifyOnNewTip } from "./matrix";
 import { recordTip } from "./metrics";
 import { tipUser } from "./tip";
-import { ContributorAccount, GithubReactionType, State, TipRequest, TipSize } from "./types";
+import { GithubReactionType, State, TipRequest } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
 type OnIssueCommentResult = { success: true; message: string } | { success: false; errorMessage: string | undefined };
@@ -98,19 +97,15 @@ export const handleTipRequest = async (
     };
   }
 
-  let contributorAccount: ContributorAccount;
-  try {
-    const userData = await octokitInstance.rest.users.getByUsername({ username: contributorLogin });
-    contributorAccount = parseContributorAccount([pullRequestBody, userData.data.bio]);
-  } catch (error: unknown) {
-    return { success: false, errorMessage: `@${contributorLogin} ${(error as Error).message}` };
+  const userBio = (await octokitInstance.rest.users.getByUsername({ username: contributorLogin })).data.bio;
+  const contributorAccount = parseContributorAccount([pullRequestBody, userBio]);
+  if ("error" in contributorAccount) {
+    return { success: false, errorMessage: `@${contributorLogin} ${contributorAccount.error}` };
   }
 
-  let tipSize: TipSize | BN;
-  try {
-    tipSize = getTipSize(tipSizeInput);
-  } catch (error: unknown) {
-    return { success: false, errorMessage: `@${tipRequester} ${(error as Error).message}` };
+  const tipSize = getTipSize(tipSizeInput);
+  if (typeof tipSize == "object" && "error" in tipSize) {
+    return { success: false, errorMessage: `@${tipRequester} ${tipSize.error}` };
   }
 
   const tipRequest: TipRequest = {
