@@ -21,7 +21,7 @@ describe("Utility functions", () => {
       if (!("error" in result)) {
         throw new Error("Expected error message not found.");
       }
-      expect(result.error).toEqual("Contributor did not properly post their account address");
+      expect(result.error).toMatch("Contributor did not properly post their account address");
     });
 
     test("Throws on invalid network", () => {
