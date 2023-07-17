@@ -9,7 +9,7 @@ import { tipUser } from "./tip";
 import { GithubReactionType, State, TipRequest } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
-type OnIssueCommentResult = { success: true; message: string } | { success: false; errorMessage: string | undefined };
+type OnIssueCommentResult = { success: true; message: string } | { success: false; errorMessage: string };
 
 export const handleIssueCommentCreated = async (state: State, event: IssueCommentCreatedEvent): Promise<void> => {
   const [botMention] = event.comment.body.split(" ") as (string | undefined)[];
@@ -45,7 +45,6 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
       { octokitInstance },
     );
 
-  const UNKNOWN_ERROR_MSG = `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`;
   await githubEmojiReaction("eyes");
   await matrixNotifyOnNewTip(state.matrix, event);
   try {
@@ -54,13 +53,15 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
       await githubComment(result.message);
       await githubEmojiReaction("rocket");
     } else {
-      await githubComment(result.errorMessage ?? UNKNOWN_ERROR_MSG);
+      await githubComment(result.errorMessage);
       await githubEmojiReaction("confused");
       await matrixNotifyOnFailure(state.matrix, event);
     }
   } catch (e) {
     state.bot.log.error(e.message);
-    await githubComment(UNKNOWN_ERROR_MSG);
+    await githubComment(
+      `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
+    );
     await githubEmojiReaction("confused");
     await matrixNotifyOnFailure(state.matrix, event);
   }
@@ -100,6 +101,7 @@ export const handleTipRequest = async (
   const userBio = (await octokitInstance.rest.users.getByUsername({ username: contributorLogin })).data.bio;
   const contributorAccount = parseContributorAccount([pullRequestBody, userBio]);
   if ("error" in contributorAccount) {
+    // Contributor is tagged because it is up to him to properly prepare his address.
     return { success: false, errorMessage: `@${contributorLogin} ${contributorAccount.error}` };
   }
 

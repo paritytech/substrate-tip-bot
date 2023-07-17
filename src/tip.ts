@@ -25,9 +25,6 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
 
   try {
     return await tipOpenGov({ state, api, tipRequest });
-  } catch (e) {
-    bot.log.error(e.message);
-    return { success: false };
   } finally {
     await api.disconnect();
     await provider.disconnect();
