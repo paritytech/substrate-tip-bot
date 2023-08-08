@@ -55,7 +55,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     } else {
       await githubComment(result.errorMessage);
       await githubEmojiReaction("confused");
-      await matrixNotifyOnFailure(state.matrix, event);
+      await matrixNotifyOnFailure(state.matrix, event, { tagMaintainers: false });
     }
   } catch (e) {
     state.bot.log.error(e.message);
@@ -63,7 +63,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
       `@${tipRequester} Could not submit tip :( The team has been notified. Alternatively open an issue [here](https://github.com/paritytech/substrate-tip-bot/issues/new).`,
     );
     await githubEmojiReaction("confused");
-    await matrixNotifyOnFailure(state.matrix, event);
+    await matrixNotifyOnFailure(state.matrix, event, { tagMaintainers: true });
   }
 };
 

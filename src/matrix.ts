@@ -25,9 +25,11 @@ export const matrixNotifyOnNewTip = async (matrix: State["matrix"], event: Issue
 export const matrixNotifyOnFailure = async (
   matrix: State["matrix"],
   event: IssueCommentCreatedEvent,
+  opts: { tagMaintainers: boolean },
 ): Promise<void> => {
+  const tag = opts.tagMaintainers ? `${teamMatrixHandles.join(" ")} ` : "";
   await sendMatrixMessage(matrix, {
-    text: `${teamMatrixHandles.join(" ")} A tip has failed: ${event.comment.html_url}`,
-    html: `${teamMatrixHandles.join(" ")} A tip has <a href="${event.comment.html_url}">failed</a>!`,
+    text: `${tag}A tip has failed: ${event.comment.html_url}`,
+    html: `${tag}A tip has <a href="${event.comment.html_url}">failed</a>!`,
   });
 };
