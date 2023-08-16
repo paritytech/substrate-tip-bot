@@ -21,10 +21,9 @@ WORKDIR /usr/src/app
 
 COPY package.json ./
 COPY yarn.lock ./
+RUN yarn install --frozen-lockfile
 COPY tsconfig.json ./
 COPY src/ ./src
-
-RUN yarn install --frozen-lockfile
 
 RUN yarn build
 
