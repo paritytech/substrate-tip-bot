@@ -120,10 +120,11 @@ describe("tip", () => {
       test(`getReferendumId in ${network}`, async () => {
         const api = network === "localkusama" ? kusamaApi : polkadotApi;
         const tipRequest = getTipRequest({ size: new BN("1") }, network);
-        const encodedProposal = encodeProposal(api, tipRequest);
-        if (typeof encodedProposal !== "string") {
+        const encodeProposalResult = encodeProposal(api, tipRequest);
+        if ("success" in encodeProposalResult) {
           throw new Error("Encoding the proposal failed.");
         }
+        const { encodedProposal } = encodeProposalResult;
         const nextFreeReferendumId = new BN(await api.query.referenda.referendumCount());
 
         // We surround our tip with two "decoys" to make sure that we find the proper one.
