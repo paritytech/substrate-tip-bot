@@ -146,7 +146,10 @@ export const teamMatrixHandles =
 export const byteSize = (extrinsic: SubmittableExtrinsic): number =>
   extrinsic.method.toU8a().length * Uint8Array.BYTES_PER_ELEMENT;
 
-export const encodeProposal = (api: ApiPromise, tipRequest: TipRequest): string | TipResult => {
+export const encodeProposal = (
+  api: ApiPromise,
+  tipRequest: TipRequest,
+): { encodedProposal: string; proposalByteSize: number } | TipResult => {
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
     return { success: false, errorMessage: track.error };
@@ -162,7 +165,7 @@ export const encodeProposal = (api: ApiPromise, tipRequest: TipRequest): string 
       errorMessage: `The proposal length of ${proposalByteSize} equals or exceeds 128 bytes and cannot be inlined in the referendum.`,
     };
   }
-  return encodedProposal;
+  return { encodedProposal, proposalByteSize };
 };
 
 /**
