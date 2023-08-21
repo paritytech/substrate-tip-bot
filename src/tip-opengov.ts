@@ -8,7 +8,7 @@ import { Probot } from "probot";
 import { getTipUrl } from "./chain-config";
 import { Polkassembly } from "./polkassembly/polkassembly";
 import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
-import { byteSize, encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
+import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
 
 export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
   const {
@@ -23,16 +23,15 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
     return { success: false, errorMessage: track.error };
   }
 
-  const encodedProposal = encodeProposal(api, tipRequest);
-  if (typeof encodedProposal !== "string") {
-    return encodedProposal;
+  const encodeProposalResult = encodeProposal(api, tipRequest);
+  if ("success" in encodeProposalResult) {
+    return encodeProposalResult;
   }
+  const { encodedProposal, proposalByteSize } = encodeProposalResult;
 
   const nonce = (await api.rpc.system.accountNextIndex(botTipAccount.address)).toNumber();
   bot.log(
-    `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${byteSize(
-      encodedProposal,
-    )}, nonce: ${nonce}`,
+    `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
   );
 
   const tipResult = await new Promise<TipResult>(async (resolve, reject) => {

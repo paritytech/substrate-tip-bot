@@ -1,4 +1,5 @@
 import { ApiPromise } from "@polkadot/api";
+import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import type { ApiDecoration } from "@polkadot/api/types";
 import { BN } from "@polkadot/util";
 import assert from "assert";
@@ -142,10 +143,13 @@ export const formatTipSize = (tipRequest: TipRequest): string => {
 export const teamMatrixHandles =
   process.env.NODE_ENV === "development" ? [] : ["@przemek", "@mak", "@yuri", "@bullrich"]; // Don't interrupt other people when testing.
 
-// https://stackoverflow.com/a/52254083
-export const byteSize = (str: string): number => new Blob([str]).size;
+export const byteSize = (extrinsic: SubmittableExtrinsic): number =>
+  extrinsic.method.toU8a().length * Uint8Array.BYTES_PER_ELEMENT;
 
-export const encodeProposal = (api: ApiPromise, tipRequest: TipRequest): string | TipResult => {
+export const encodeProposal = (
+  api: ApiPromise,
+  tipRequest: TipRequest,
+): { encodedProposal: string; proposalByteSize: number } | TipResult => {
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
     return { success: false, errorMessage: track.error };
@@ -154,14 +158,14 @@ export const encodeProposal = (api: ApiPromise, tipRequest: TipRequest): string 
 
   const proposalTx = api.tx.treasury.spend(track.value.toString(), contributorAddress);
   const encodedProposal = proposalTx.method.toHex();
-  const proposalByteSize = byteSize(encodedProposal);
+  const proposalByteSize = byteSize(proposalTx);
   if (proposalByteSize >= 128) {
     return {
       success: false,
       errorMessage: `The proposal length of ${proposalByteSize} equals or exceeds 128 bytes and cannot be inlined in the referendum.`,
     };
   }
-  return encodedProposal;
+  return { encodedProposal, proposalByteSize };
 };
 
 /**
