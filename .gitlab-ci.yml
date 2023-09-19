@@ -18,7 +18,7 @@ variables:
   CI_REGISTRY:                     "docker.io/paritytech"
   GIT_STRATEGY:                    fetch
   CI_IMAGE:                        "docker.io/paritytech/eng-automation-ci:latest"
-  BUILDAH_IMAGE:                   "quay.io/buildah/stable:v1.29"
+  # BUILDAH_IMAGE is defined in group variables
   BUILDAH_COMMAND:                 "buildah --storage-driver overlay2"
   DOCKERHUB_REPO:                  "paritytech"
   IMAGE_NAME:                      docker.io/$DOCKERHUB_REPO/substrate-tip-bot
