@@ -12,7 +12,7 @@ import { BN } from "@polkadot/util";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import assert from "assert";
 
-import { getChainConfig } from "./chain-config";
+import { getChainConfig, kusamaConstants } from "./chain-config";
 import { randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
@@ -90,7 +90,8 @@ describe("E2E opengov tip", () => {
     // Waiting for the referendum voting, enactment, and treasury spend period.
     await until(async () => (await getUserBalance(tipRequest.contributor.account.address)).gtn(0), 5000, 50);
 
-    // At the end, the balance of the contributor should increase by 2 KSM.
-    expect((await getUserBalance(tipRequest.contributor.account.address)).eq(new BN("2000000000000"))).toBeTruthy();
+    // At the end, the balance of the contributor should increase by the KSM small tip amount.
+    const expectedTip = new BN(kusamaConstants.namedTips.small).mul(new BN("10").pow(new BN(kusamaConstants.decimals)));
+    expect((await getUserBalance(tipRequest.contributor.account.address)).eq(expectedTip)).toBeTruthy();
   });
 });
