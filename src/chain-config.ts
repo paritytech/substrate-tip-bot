@@ -22,7 +22,7 @@ const kusamaConstants: Constants = {
   /**
    * These are arbitrary values, can be changed at any time.
    */
-  namedTips: { small: 2, medium: 5, large: 8 },
+  namedTips: { small: 4, medium: 16, large: 30 },
 };
 
 const polkadotConstants: Constants = {
