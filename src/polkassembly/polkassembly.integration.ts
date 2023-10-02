@@ -85,6 +85,10 @@ describe("Polkassembly with a test endpoint", () => {
     // Can log back in.
     await polkassembly.loginOrSignup(network);
     expect(polkassembly.loggedIn).toBeTruthy();
+
+    // Can relog to a different network.
+    await polkassembly.loginOrSignup("kusama");
+    expect(polkassembly.loggedIn).toBeTruthy();
   });
 
   test("Can retrieve a last referendum number on a track", async () => {
