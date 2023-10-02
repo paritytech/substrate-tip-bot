@@ -7,6 +7,8 @@ import { logMock } from "src/testUtil";
 
 import { Polkassembly } from "./polkassembly";
 
+const network = "moonbase";
+
 describe("Polkassembly with a test endpoint", () => {
   let keyringPair: KeyringPair;
   let polkassembly: Polkassembly;
@@ -31,35 +33,35 @@ describe("Polkassembly with a test endpoint", () => {
   });
 
   test("We cannot log in without signing up first", async () => {
-    await expect(() => polkassembly.login()).rejects.toThrowError(
+    await expect(() => polkassembly.login(network)).rejects.toThrowError(
       "Please sign up prior to logging in with a web3 address",
     );
   });
 
   test("Can sign up", async () => {
-    await polkassembly.signup();
+    await polkassembly.signup(network);
     expect(polkassembly.loggedIn).toBeTruthy();
   });
 
   test("Can log in and logout, having signed up", async () => {
-    await polkassembly.signup();
+    await polkassembly.signup(network);
     expect(polkassembly.loggedIn).toBeTruthy();
 
     polkassembly.logout();
     expect(polkassembly.loggedIn).toBeFalsy();
 
-    await polkassembly.login();
+    await polkassembly.login(network);
     expect(polkassembly.loggedIn).toBeTruthy();
   });
 
-  test("Cannot sign up on different networks with the same address", async () => {
-    await polkassembly.signup();
+  test("Cannot sign up twice", async () => {
+    await polkassembly.signup(network);
     expect(polkassembly.loggedIn).toBeTruthy();
 
     polkassembly.logout();
     expect(polkassembly.loggedIn).toBeFalsy();
 
-    await expect(() => polkassembly.signup()).rejects.toThrowError(
+    await expect(() => polkassembly.signup(network)).rejects.toThrowError(
       "There is already an account associated with this address, you cannot sign-up with this address",
     );
     expect(polkassembly.loggedIn).toBeFalsy();
@@ -69,11 +71,11 @@ describe("Polkassembly with a test endpoint", () => {
     expect(polkassembly.loggedIn).toBeFalsy();
 
     // Will sign up.
-    await polkassembly.loginOrSignup();
+    await polkassembly.loginOrSignup(network);
     expect(polkassembly.loggedIn).toBeTruthy();
 
     // Won't throw an error when trying again.
-    await polkassembly.loginOrSignup();
+    await polkassembly.loginOrSignup(network);
     expect(polkassembly.loggedIn).toBeTruthy();
 
     // Can log out.
@@ -81,7 +83,7 @@ describe("Polkassembly with a test endpoint", () => {
     expect(polkassembly.loggedIn).toBeFalsy();
 
     // Can log back in.
-    await polkassembly.loginOrSignup();
+    await polkassembly.loginOrSignup(network);
     expect(polkassembly.loggedIn).toBeTruthy();
   });
 
