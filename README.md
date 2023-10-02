@@ -31,9 +31,9 @@ In OpenGov, the tip sizes are translated to specific values as follows:
 
 Size | Value on Kusama | Value on Polkadot
 --- | --- | ---
-small | 2 KSM | 20 DOT
-medium | 5 KSM | 80 DOT
-large | 8 KSM | 150 DOT
+small | 4 KSM | 20 DOT
+medium | 16 KSM | 80 DOT
+large | 30 KSM | 150 DOT
 
 ## Local development 🔧
 
