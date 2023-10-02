@@ -1,20 +1,17 @@
 /*
-These are semi-automatic tests that will send out
-different sizes of tips - both gov1 (treasury) and opengov,
-but do not have meaningful assertions.
-
-They rely on manually inspecting the produced tips in the browser UI.
-The URLs are printed in the output.
+These are integration tests that will send out
+different sizes of opengov tips.
 
 These tests do not cover the part with GitHub interaction,
 they execute the tipping functions directly.
- */
+*/
 
 import "@polkadot/api-augment";
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
 import { BN } from "@polkadot/util";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import assert from "assert";
+import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 
 import { getChainConfig } from "./chain-config";
 import { logMock, randomAddress } from "./testUtil";
@@ -35,18 +32,31 @@ const getTipRequest = (tip: TipRequest["tip"], network: "localkusama" | "localpo
 
 const networks = ["localkusama", "localpolkadot"] as const;
 const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", new BN("7"), new BN("30")];
+const commonDockerArgs =
+  "--tmp --alice --execution Native --ws-port 9945 --ws-external --rpc-external --no-prometheus --no-telemetry --rpc-cors all";
 
 describe("tip", () => {
   let state: State;
+  let kusamaContainer: StartedTestContainer;
   let kusamaApi: ApiPromise;
+  let polkadotContainer: StartedTestContainer;
   let polkadotApi: ApiPromise;
 
-  beforeAll(() => {
+  beforeAll(async () => {
+    kusamaContainer = await new GenericContainer("parity/polkadot:v0.9.42")
+      .withExposedPorts({ container: 9945, host: 9901 }) // Corresponds to chain-config.ts
+      .withWaitStrategy(Wait.forListeningPorts())
+      .withCommand(("--chain kusama-dev --force-kusama " + commonDockerArgs).split(" "))
+      .start();
     kusamaApi = new ApiPromise({
       provider: new WsProvider(getChainConfig("localkusama").providerEndpoint),
       types: { Address: "AccountId", LookupSource: "AccountId" },
     });
-
+    polkadotContainer = await new GenericContainer("parity/polkadot:v0.9.42")
+      .withExposedPorts({ container: 9945, host: 9900 }) // Corresponds to chain-config.ts
+      .withWaitStrategy(Wait.forListeningPorts())
+      .withCommand(("--chain dev " + commonDockerArgs).split(" "))
+      .start();
     polkadotApi = new ApiPromise({
       provider: new WsProvider(getChainConfig("localpolkadot").providerEndpoint),
       types: { Address: "AccountId", LookupSource: "AccountId" },
@@ -56,6 +66,8 @@ describe("tip", () => {
   afterAll(async () => {
     await kusamaApi.disconnect();
     await polkadotApi.disconnect();
+    await kusamaContainer.stop();
+    await polkadotContainer.stop();
   });
 
   const getUserBalance = async (api: ApiPromise, userAddress: string) => {
@@ -70,7 +82,7 @@ describe("tip", () => {
       await kusamaApi.isReadyOrError;
       await polkadotApi.isReadyOrError;
     } catch (e) {
-      console.log(
+      throw new Error(
         `For these integrations tests, we're expecting local Kusama on ${
           getChainConfig("localkusama").providerEndpoint
         } and local Polkadot on ${getChainConfig("localpolkadot").providerEndpoint}. Please refer to the Readme.`,
@@ -93,13 +105,17 @@ describe("tip", () => {
         test(`tips a user (${tipSize.toString()})`, async () => {
           const tipRequest = getTipRequest({ size: tipSize }, network);
 
+          const api = network === "localkusama" ? kusamaApi : polkadotApi;
+          const nextFreeReferendumId = new BN(await api.query.referenda.referendumCount());
           const result = await tipUser(state, tipRequest);
 
           expect(result.success).toBeTruthy();
           const tipUrl = result.success ? result.tipUrl : undefined;
           expect(tipUrl).toBeDefined();
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-          console.log(`Assert the results manually: ${tipUrl!.toString()}`);
+
+          const referendum = await api.query.referenda.referendumInfoFor(nextFreeReferendumId);
+          expect(referendum.isSome).toBeTruthy();
+          expect(referendum.value.isOngoing).toBeTruthy();
         });
       }
 

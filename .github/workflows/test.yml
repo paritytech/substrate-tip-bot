@@ -11,10 +11,6 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3.3.0
-      - name: Run the local Kusama and Polkadot nodes
-        run: |
-          docker run -d --rm -p 9901:9901 parity/polkadot:v0.9.42 --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --ws-external --force-kusama
-          docker run -d --rm -p 9900:9900 parity/polkadot:v0.9.42 --chain=dev --tmp --alice --execution Native --ws-port 9900 --ws-external
       - run: yarn --frozen-lockfile
       - run: yarn test:integration
 
