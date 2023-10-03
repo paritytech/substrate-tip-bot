@@ -40,7 +40,7 @@ describe("Polkassembly with production API and Moonbase Alpha testnet", () => {
   });
 
   test.skip("Edits a metadata of an existing referendum", async () => {
-    await polkassembly.loginOrSignup();
+    await polkassembly.loginOrSignup("moonbase");
 
     const content = formatReason(
       {
