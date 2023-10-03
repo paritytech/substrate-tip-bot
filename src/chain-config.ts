@@ -1,7 +1,7 @@
 import { ChainConfig, TipNetwork } from "./types";
 
 type Constants = Omit<ChainConfig, "providerEndpoint">;
-const kusamaConstants: Constants = {
+export const kusamaConstants: Constants = {
   decimals: 12,
   currencySymbol: "KSM",
 
@@ -22,10 +22,10 @@ const kusamaConstants: Constants = {
   /**
    * These are arbitrary values, can be changed at any time.
    */
-  namedTips: { small: 2, medium: 5, large: 8 },
+  namedTips: { small: 4, medium: 16, large: 30 },
 };
 
-const polkadotConstants: Constants = {
+export const polkadotConstants: Constants = {
   decimals: 10,
   currencySymbol: "DOT",
 

@@ -147,7 +147,7 @@ const tryUpdatingPolkassemblyPost = async (
     log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
     await until(condition, 30_000);
     polkassembly.logout();
-    await polkassembly.loginOrSignup();
+    await polkassembly.loginOrSignup(tipRequest.contributor.account.network);
     await polkassembly.editPost(tipRequest.contributor.account.network, {
       postId: referendumId,
       proposalType: "referendums_v2",

@@ -7,7 +7,13 @@ import type { Probot } from "probot";
 const headers = { "Content-Type": "application/json" };
 
 export class Polkassembly {
-  private token: string | undefined;
+  private loggedInData: { token: string; network: string } | undefined = undefined;
+  private get token(): string | undefined {
+    return this.loggedInData?.token;
+  }
+  private get network(): string | undefined {
+    return this.loggedInData?.network;
+  }
 
   constructor(
     private endpoint: string,
@@ -16,21 +22,25 @@ export class Polkassembly {
   ) {}
 
   public get loggedIn(): boolean {
-    return this.token !== undefined;
+    return this.loggedInData !== undefined;
   }
 
   public get address(): string {
     return this.signer.type === "polkadot" ? this.signer.keyringPair.address : this.signer.wallet.address;
   }
 
-  public async signup(): Promise<void> {
-    if (this.loggedIn) {
+  public async signup(network: string): Promise<void> {
+    if (this.loggedIn && this.network === network) {
       this.log("Already logged in to Polkassembly - signup is skipped.");
       return;
     }
+    if (this.loggedIn && this.network !== network) {
+      this.log("Already logged in to Polkassembly but on different network - signing up and relogging.");
+      this.logout();
+    }
     this.log("Signing up to Polkassembly...");
     const signupStartResponse = await fetch(`${this.endpoint}/auth/actions/addressSignupStart`, {
-      headers,
+      headers: { ...headers, "x-network": network },
       method: "POST",
       body: JSON.stringify({ address: this.address }),
     });
@@ -41,7 +51,7 @@ export class Polkassembly {
     const signupStartBody = (await signupStartResponse.json()) as { signMessage: string };
 
     const signupResponse = await fetch(`${this.endpoint}/auth/actions/addressSignupConfirm`, {
-      headers,
+      headers: { ...headers, "x-network": network },
       method: "POST",
       body: JSON.stringify({
         address: this.address,
@@ -57,19 +67,24 @@ export class Polkassembly {
     if (!signupBody.token) {
       throw new Error("Signup unsuccessful, the authentication token is missing.");
     }
-    this.token = signupBody.token;
+    this.loggedInData = { token: signupBody.token, network };
     this.log.info("Polkassembly sign up successful.");
   }
 
-  public async login(): Promise<void> {
-    if (this.loggedIn) {
+  public async login(network: string): Promise<void> {
+    if (this.loggedIn && this.network === network) {
       this.log("Already logged in to Polkassembly - login is skipped.");
       return;
     }
+    if (this.loggedIn && this.network !== network) {
+      this.log("Already logged in to Polkassembly but on different network - relogging.");
+      this.logout();
+    }
+
     this.log("Logging in to Polkassembly...");
 
     const loginStartResponse = await fetch(`${this.endpoint}/auth/actions/addressLoginStart`, {
-      headers,
+      headers: { ...headers, "x-network": network },
       method: "POST",
       body: JSON.stringify({ address: this.address }),
     });
@@ -80,7 +95,7 @@ export class Polkassembly {
     const loginStartBody = (await loginStartResponse.json()) as { signMessage: string };
 
     const loginResponse = await fetch(`${this.endpoint}/auth/actions/addressLogin`, {
-      headers,
+      headers: { ...headers, "x-network": network },
       method: "POST",
       body: JSON.stringify({
         address: this.address,
@@ -98,20 +113,20 @@ export class Polkassembly {
       this.log.info(`Available response body fields: ${Object.keys(loginBody).join(",")}`);
       throw new Error("Login unsuccessful, the authentication token is missing.");
     }
-    this.token = loginBody.token;
+    this.loggedInData = { token: loginBody.token, network };
     this.log.info("Polkassembly login successful.");
   }
 
   public logout(): void {
-    this.token = undefined;
+    this.loggedInData = undefined;
   }
 
-  public async loginOrSignup(): Promise<void> {
+  public async loginOrSignup(network: string): Promise<void> {
     try {
-      await this.login();
+      await this.login(network);
     } catch (e) {
       if ((e as Error).message.includes("Please sign up")) {
-        await this.signup();
+        await this.signup(network);
       } else {
         this.log.error("loginOrSignup to Polkassembly failed.");
         this.log.error(e.message);
