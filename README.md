@@ -71,29 +71,15 @@ guidance
 
 ### Integration tests
 
-There are semi-automatic integration tests that execute the tip functions against a locally running Polkadot and Kusama nodes.
+There are integration tests that execute the tip functions against a locally running Polkadot and Kusama nodes.
 
-| Network        | Snippet                                                                                                                                                |
-|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Local Kusama   | `docker run --rm -p 9901:9901 parity/polkadot:v0.9.42 --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --ws-external --force-kusama` |
-| Local Polkadot | `docker run --rm -p 9900:9900 parity/polkadot:v0.9.42 --chain=dev --tmp --alice --execution Native --ws-port 9900 --ws-external`                       |
+The tests will spin up the local nodes automatically.
 
-Notes: 
-- the node needs to have the OpenGov features - Kusama development chain can be used for that (`--chain=kusama-dev`).
-- on macos apple silicon chip, you might see error `docker: no matching manifest for linux/arm64/v8 in the manifest list entries.`, 
-  in this case 
-  - close docker desktop, 
-  - open terminal in Rosetta. 
-  - run `open /Applications/Docker.app`
-  - add `--platform linux/amd64` flag to docker run command after `--rm`
-
-With that, run the tests:
+To run the tests:
 
 ```bash
 yarn test:integration
 ```
-
-The tests require manual inspection - follow the tip URLs printed in the output.
 
 #### Github app permissions
 
