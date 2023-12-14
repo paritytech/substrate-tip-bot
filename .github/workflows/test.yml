@@ -45,7 +45,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: |
-            polkadot/target/release/polkadot
+            polkadot/target/release
           key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}
       - name: Build Polkadot
         if: steps.polkadot-cache-restore.outputs.cache-hit != 'true'
@@ -57,7 +57,7 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: |
-            polkadot/target/release/polkadot
+            polkadot/target/release
           key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}
       - name: Run a local Kusama node
         run: |
