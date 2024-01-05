@@ -5,6 +5,9 @@ stages:
   - production
 
 default:
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud: https://gitlab.parity.io
   interruptible:                   true
   retry:
     max: 2
@@ -24,8 +27,8 @@ variables:
   IMAGE_NAME:                      docker.io/$DOCKERHUB_REPO/substrate-tip-bot
   DOCKER_TAG:                      "${CI_COMMIT_SHORT_SHA}"
   VAULT_ADDR:                      "https://vault.parity-mgmt-vault.parity.io"
-  VAULT_AUTH_PATH:                 "gitlab-parity-io-jwt"
-  VAULT_AUTH_ROLE:                 "gitlab_${CI_PROJECT_NAME}"
+  VAULT_AUTH_PATH:                 "gitlab-parity-io-jwt-oidc"
+  VAULT_AUTH_ROLE:                 "gitlab_oidc_${CI_PROJECT_NAME}"
   HELM_SECRETS_DRIVER:             vals
 
 .common-refs:                      &common-refs
@@ -158,7 +161,7 @@ publish-docker-image-description:
     - |-
       sed -i "s/appVersion:.*/appVersion: $KUBERNETES_VERSION_TAG/" helm/Chart.yaml
     # https://docs.gitlab.com/ee/ci/examples/authenticating-with-hashicorp-vault/#example
-    - export VAULT_TOKEN="$(vault write -field=token auth/$VAULT_AUTH_PATH/login role=$VAULT_AUTH_ROLE jwt=$CI_JOB_JWT)"
+    - export VAULT_TOKEN="$(vault write -field=token auth/$VAULT_AUTH_PATH/login role=$VAULT_AUTH_ROLE jwt=$VAULT_ID_TOKEN)"
     - helm dependency update helm/
     - helm secrets --version
     - helm secrets upgrade
