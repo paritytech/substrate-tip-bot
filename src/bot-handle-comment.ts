@@ -141,7 +141,7 @@ export const handleTipRequest = async (
   if (tipResult.success) {
     return {
       success: true,
-      message: `@${tipRequester} A ${formatTipSize(
+      message: `@${tipRequester} A referendum for a ${formatTipSize(
         tipRequest,
       )} tip was successfully submitted for @${contributorLogin} (${contributorAccount.address} on ${
         contributorAccount.network
