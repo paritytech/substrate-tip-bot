@@ -2,7 +2,10 @@ name: Keep Polkadot cache
 on:
   schedule:
     - cron: 0 3 */6 * * # Every 6 days at 3 am.
-  push:
+
+# The Github Actions cache is removed if not used for 7 days.
+# In this repository, we have a Polkadot build cache that takes a long time to build.
+# This workflow will restore the cache every 6 days, in order to preserve it.
 
 jobs:
   keep-polkadot-cache:
