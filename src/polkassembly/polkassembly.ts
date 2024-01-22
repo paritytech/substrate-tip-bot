@@ -148,10 +148,15 @@ export class Polkassembly {
       this.log.error("Attempted to edit Polkassembly post without logging in.");
       throw new Error("Not logged in.");
     }
+    const body = {
+      ...opts,
+      // GENERAL from https://github.com/polkassembly/polkassembly/blob/670f3ab9dae95ccb9a293f8cadfa409620604abf/src/global/post_topics.ts
+      topicId: 5,
+    };
     const response = await fetch(`${this.endpoint}/auth/actions/editPost`, {
       headers: { ...headers, "x-network": network, authorization: `Bearer ${this.token}` },
       method: "POST",
-      body: JSON.stringify(opts),
+      body: JSON.stringify(body),
     });
     if (!response.ok) {
       this.log.error(`editPost failed with status code ${response.status}`);
