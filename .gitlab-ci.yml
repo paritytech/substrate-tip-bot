@@ -147,6 +147,8 @@ publish-docker-image-description:
   variables:
     ARGOCD_OPTS: --grpc-web --grpc-web-root-path /$ENVIRONMENT
     APP: substrate-tip-bot
+  environment:
+    name: $ENVIRONMENT
   script:
     - argocd app list
     - argocd app set $APP --helm-set common.image.tag="${DOCKER_TAG}"
