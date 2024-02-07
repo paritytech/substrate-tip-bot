@@ -5,9 +5,6 @@ stages:
   - production
 
 default:
-  id_tokens:
-    VAULT_ID_TOKEN:
-      aud: https://gitlab.parity.io
   interruptible:                   true
   retry:
     max: 2
@@ -26,10 +23,6 @@ variables:
   DOCKERHUB_REPO:                  "paritytech"
   IMAGE_NAME:                      docker.io/$DOCKERHUB_REPO/substrate-tip-bot
   DOCKER_TAG:                      "${CI_COMMIT_SHORT_SHA}"
-  VAULT_ADDR:                      "https://vault.parity-mgmt-vault.parity.io"
-  VAULT_AUTH_PATH:                 "gitlab-parity-io-jwt-oidc"
-  VAULT_AUTH_ROLE:                 "gitlab_oidc_${CI_PROJECT_NAME}"
-  HELM_SECRETS_DRIVER:             vals
 
 .common-refs:                      &common-refs
   rules:
@@ -150,49 +143,30 @@ publish-docker-image-description:
 
 #### stage:                        deploy
 
-.deploy:                           &deploy-k8s
+.deploy-k8s:                           &deploy-k8s
+  variables:
+    ARGOCD_OPTS: --grpc-web --grpc-web-root-path /$ENVIRONMENT
+    APP: substrate-tip-bot
   script:
-    # Change the app version during build so that Kubernetes is able to update
-    # the deployment even if the images' tags did not change
-    # $CI_PIPELINE_ID is guaranteed to be unique
-    - export KUBERNETES_VERSION_TAG="$CI_PIPELINE_ID"
-    # Those values are embedded in the annotations and that's how the change is
-    # noticed
-    - |-
-      sed -i "s/appVersion:.*/appVersion: $KUBERNETES_VERSION_TAG/" helm/Chart.yaml
-    # https://docs.gitlab.com/ee/ci/examples/authenticating-with-hashicorp-vault/#example
-    - export VAULT_TOKEN="$(vault write -field=token auth/$VAULT_AUTH_PATH/login role=$VAULT_AUTH_ROLE jwt=$VAULT_ID_TOKEN)"
-    - helm dependency update helm/
-    - helm secrets --version
-    - helm secrets upgrade
-        --install
-        --atomic
-        --timeout 300s
-        --namespace ${CI_PROJECT_NAME}
-        --values helm/values.yaml
-        --values helm/values-$ENVIRONMENT.yaml
-        --set common.image.tag="$DOCKER_TAG"
-        $CI_PROJECT_NAME helm/
-    - kubectl get pods -n ${CI_PROJECT_NAME}
+    - argocd app list
+    - argocd app set $APP --helm-set common.image.tag="${DOCKER_TAG}"
+    - argocd app sync $APP
+    - argocd app wait $APP --timeout 180
 
 deploy-stg:
   stage:                           staging
-  <<:                              *deploy-k8s
+  extends:                         .deploy-k8s
   <<:                              *kubernetes-env
   <<:                              *publish-deploy-stg-refs
   variables:
-    CI_IMAGE:                      "paritytech/kubetools:3.5.3"
+    CI_IMAGE:                      "quay.io/argoproj/argocd:v2.7.9"
     ENVIRONMENT:                   parity-stg
-  tags:
-    - substrate-tip-bot-stg
 
 deploy-prod:
   stage:                           production
-  <<:                              *deploy-k8s
+  extends:                         .deploy-k8s
   <<:                              *kubernetes-env
   <<:                              *deploy-prod-refs
   variables:
-    CI_IMAGE:                      "paritytech/kubetools:3.5.3"
+    CI_IMAGE:                      "quay.io/argoproj/argocd:v2.7.9"
     ENVIRONMENT:                   parity-prod
-  tags:
-    - substrate-tip-bot-prod
