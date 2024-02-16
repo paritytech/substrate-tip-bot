@@ -10,6 +10,8 @@ import { Polkassembly } from "./polkassembly/polkassembly";
 import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
 import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
 
+type ExtrinsicResult = {success: true, blockHash: string} | {success: false; errorMessage: string}
+
 export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
   const {
     state: { bot, botTipAccount, polkassembly },
@@ -34,7 +36,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
     `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
   );
 
-  const tipResult = await new Promise<TipResult>(async (resolve, reject) => {
+  const extrinsicResult = await new Promise<ExtrinsicResult>(async (resolve, reject) => {
     try {
       const proposalUnsubscribe = await api.tx.referenda
         .submit(
@@ -52,6 +54,18 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
       reject(e);
     }
   });
+
+  if (extrinsicResult.success === false) {
+    return extrinsicResult as TipResult
+  }
+
+  const tipResult: TipResult = {
+    success: extrinsicResult.success,
+    blockHash: extrinsicResult.blockHash,
+    tipUrl: getTipUrl(contributor.account.network),
+    track: track.track,
+    value: track.value
+  }
 
   if (tipResult.success && polkassembly) {
     const referendumId = await tryGetReferendumId(api, tipResult.blockHash, encodedProposal, bot.log);
@@ -73,11 +87,11 @@ async function signAndSendCallback(
   type: "preimage" | "referendum",
   unsubscribe: () => void,
   result: ISubmittableResult,
-): Promise<TipResult> {
+): Promise<ExtrinsicResult> {
   return await new Promise((resolve, reject) => {
     const resolveSuccess = (blockHash: string) => {
       unsubscribe();
-      resolve({ success: true, tipUrl: getTipUrl(contributor.network), blockHash });
+      resolve({ success: true, blockHash });
     };
     if (result.status.isInBlock) {
       const blockHash = result.status.asInBlock.toString();
