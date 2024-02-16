@@ -7,7 +7,7 @@ import { Probot } from "probot";
 
 import { getTipUrl } from "./chain-config";
 import { Polkassembly } from "./polkassembly/polkassembly";
-import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
+import { ContributorAccount, OpenGovTrack, State, TipNetwork, TipRequest, TipResult } from "./types";
 import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
 
 type ExtrinsicResult = {success: true, blockHash: string} | {success: false; errorMessage: string}
@@ -147,13 +147,14 @@ export const tryUpdatingPolkassemblyPost = async (opts: {
   polkassembly: Polkassembly,
   referendumId: number,
   tipRequest: TipRequest,
+  network: TipNetwork,
   track: OpenGovTrack,
   log: Probot["log"],
 }): Promise<void> => {
-  const {polkassembly, referendumId, tipRequest, track, log} = opts;
+  const {polkassembly, referendumId, tipRequest, network, track, log} = opts;
   const condition = async (): Promise<boolean> => {
     const lastReferendum = await polkassembly.getLastReferendumNumber(
-      tipRequest.contributor.account.network,
+      network,
       track.trackNo,
     );
     return lastReferendum !== undefined && lastReferendum >= referendumId;
@@ -162,8 +163,8 @@ export const tryUpdatingPolkassemblyPost = async (opts: {
     log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
     await until(condition, 30_000);
     polkassembly.logout();
-    await polkassembly.loginOrSignup(tipRequest.contributor.account.network);
-    await polkassembly.editPost(tipRequest.contributor.account.network, {
+    await polkassembly.loginOrSignup(network);
+    await polkassembly.editPost(network, {
       postId: referendumId,
       proposalType: "referendums_v2",
       content: formatReason(tipRequest, { markdown: true }),
