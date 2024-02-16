@@ -6,10 +6,10 @@ import { updateBalance } from "./balance";
 import { matrixNotifyOnFailure, matrixNotifyOnNewTip } from "./matrix";
 import { recordTip } from "./metrics";
 import { tipUser } from "./tip";
-import { GithubReactionType, State, TipRequest } from "./types";
+import { GithubReactionType, State, TipRequest, TipResult } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
-type OnIssueCommentResult = { success: true; message: string } | { success: false; errorMessage: string };
+type OnIssueCommentResult = { success: true; message: string, tipResult: Extract<TipResult,{success: true}> } | { success: false; errorMessage: string };
 
 export const handleIssueCommentCreated = async (state: State, event: IssueCommentCreatedEvent): Promise<void> => {
   const [botMention] = event.comment.body.split(" ") as (string | undefined)[];
@@ -47,8 +47,9 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
 
   await githubEmojiReaction("eyes");
   await matrixNotifyOnNewTip(state.matrix, event);
+  let result: OnIssueCommentResult
   try {
-    const result = await handleTipRequest(state, event, tipRequester, octokitInstance);
+    result = await handleTipRequest(state, event, tipRequester, octokitInstance);
     if (result.success) {
       await githubComment(result.message);
       await githubEmojiReaction("rocket");
@@ -64,6 +65,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     );
     await githubEmojiReaction("confused");
     await matrixNotifyOnFailure(state.matrix, event, { tagMaintainers: true });
+    return
   }
 };
 
@@ -141,6 +143,7 @@ export const handleTipRequest = async (
   if (tipResult.success) {
     return {
       success: true,
+      tipResult,
       message: `@${tipRequester} A referendum for a ${formatTipSize(
         tipRequest,
       )} tip was successfully submitted for @${contributorLogin} (${contributorAccount.address} on ${
