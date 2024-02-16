@@ -9,7 +9,7 @@ import { tipUser } from "./tip";
 import { GithubReactionType, State, TipRequest, TipResult } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
-type OnIssueCommentResult = { success: true; message: string, tipResult: Extract<TipResult,{success: true}> } | { success: false; errorMessage: string };
+type OnIssueCommentResult = { success: true; message: string, tipRequest: TipRequest, tipResult: Extract<TipResult,{success: true}> } | { success: false; errorMessage: string };
 
 export const handleIssueCommentCreated = async (state: State, event: IssueCommentCreatedEvent): Promise<void> => {
   const [botMention] = event.comment.body.split(" ") as (string | undefined)[];
@@ -143,6 +143,7 @@ export const handleTipRequest = async (
   if (tipResult.success) {
     return {
       success: true,
+      tipRequest,
       tipResult,
       message: `@${tipRequester} A referendum for a ${formatTipSize(
         tipRequest,
