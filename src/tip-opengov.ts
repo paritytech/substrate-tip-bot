@@ -129,13 +129,14 @@ const tryGetReferendumId = async (
   }
 };
 
-const tryUpdatingPolkassemblyPost = async (
+export const tryUpdatingPolkassemblyPost = async (opts: {
   polkassembly: Polkassembly,
   referendumId: number,
   tipRequest: TipRequest,
   track: OpenGovTrack,
   log: Probot["log"],
-): Promise<void> => {
+}): Promise<void> => {
+  const {polkassembly, referendumId, tipRequest, track, log} = opts;
   const condition = async (): Promise<boolean> => {
     const lastReferendum = await polkassembly.getLastReferendumNumber(
       tipRequest.contributor.account.network,
