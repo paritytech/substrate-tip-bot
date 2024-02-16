@@ -10,11 +10,11 @@ import { Polkassembly } from "./polkassembly/polkassembly";
 import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
 import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
 
-type ExtrinsicResult = {success: true, blockHash: string} | {success: false; errorMessage: string}
+type ExtrinsicResult = { success: true; blockHash: string } | { success: false; errorMessage: string };
 
 export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
   const {
-    state: { bot, botTipAccount, polkassembly },
+    state: { bot, botTipAccount },
     api,
     tipRequest,
   } = opts;
@@ -56,7 +56,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   });
 
   if (extrinsicResult.success === false) {
-    return extrinsicResult
+    return extrinsicResult;
   }
 
   return {
@@ -65,8 +65,8 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
     blockHash: extrinsicResult.blockHash,
     tipUrl: getTipUrl(contributor.account.network),
     track: track.track,
-    value: track.value
-  }
+    value: track.value,
+  };
 }
 
 async function signAndSendCallback(
@@ -132,13 +132,13 @@ const tryGetReferendumId = async (
 };
 
 export const updatePolkassemblyPost = async (opts: {
-  polkassembly: Polkassembly,
-  referendumId: number,
-  tipRequest: TipRequest,
-  track: OpenGovTrack,
-  log: Probot["log"],
-}): Promise<{url: string}> => {
-  const {polkassembly, referendumId, tipRequest, track, log} = opts;
+  polkassembly: Polkassembly;
+  referendumId: number;
+  tipRequest: TipRequest;
+  track: OpenGovTrack;
+  log: Probot["log"];
+}): Promise<{ url: string }> => {
+  const { polkassembly, referendumId, tipRequest, track, log } = opts;
   const condition = async (): Promise<boolean> => {
     const lastReferendum = await polkassembly.getLastReferendumNumber(
       tipRequest.contributor.account.network,
@@ -158,6 +158,6 @@ export const updatePolkassemblyPost = async (opts: {
   });
   log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
   return {
-    url: `https://${tipRequest.contributor.account.network}.polkassembly.io/referenda/${referendumId.toString()}`
-  }
+    url: `https://${tipRequest.contributor.account.network}.polkassembly.io/referenda/${referendumId.toString()}`,
+  };
 };
