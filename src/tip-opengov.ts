@@ -131,13 +131,13 @@ const tryGetReferendumId = async (
   }
 };
 
-export const tryUpdatingPolkassemblyPost = async (opts: {
+export const updatePolkassemblyPost = async (opts: {
   polkassembly: Polkassembly,
   referendumId: number,
   tipRequest: TipRequest,
   track: OpenGovTrack,
   log: Probot["log"],
-}): Promise<void> => {
+}): Promise<{url: string}> => {
   const {polkassembly, referendumId, tipRequest, track, log} = opts;
   const condition = async (): Promise<boolean> => {
     const lastReferendum = await polkassembly.getLastReferendumNumber(
@@ -146,23 +146,18 @@ export const tryUpdatingPolkassemblyPost = async (opts: {
     );
     return lastReferendum !== undefined && lastReferendum >= referendumId;
   };
-  try {
-    log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
-    await until(condition, 30_000);
-    polkassembly.logout();
-    await polkassembly.loginOrSignup(tipRequest.contributor.account.network);
-    await polkassembly.editPost(tipRequest.contributor.account.network, {
-      postId: referendumId,
-      proposalType: "referendums_v2",
-      content: formatReason(tipRequest, { markdown: true }),
-      title: track.trackName,
-    });
-    log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
-  } catch (e) {
-    log.error("Failed to update the Polkasssembly metadata", {
-      referendumId: referendumId,
-      tipRequest: JSON.stringify(tipRequest),
-    });
-    log.error(e.message);
+  log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
+  await until(condition, 30_000);
+  polkassembly.logout();
+  await polkassembly.loginOrSignup(tipRequest.contributor.account.network);
+  await polkassembly.editPost(tipRequest.contributor.account.network, {
+    postId: referendumId,
+    proposalType: "referendums_v2",
+    content: formatReason(tipRequest, { markdown: true }),
+    title: track.trackName,
+  });
+  log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
+  return {
+    url: `https://${tipRequest.contributor.account.network}.polkassembly.io/referenda/${referendumId.toString()}`
   }
 };

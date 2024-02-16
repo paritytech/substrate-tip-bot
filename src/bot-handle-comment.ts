@@ -8,6 +8,7 @@ import { recordTip } from "./metrics";
 import { tipUser } from "./tip";
 import { GithubReactionType, State, TipRequest, TipResult } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
+import { updatePolkassemblyPost } from "./tip-opengov";
 
 type OnIssueCommentResult = { success: true; message: string, tipRequest: TipRequest, tipResult: Extract<TipResult,{success: true}> } | { success: false; errorMessage: string };
 
@@ -66,6 +67,26 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     await githubEmojiReaction("confused");
     await matrixNotifyOnFailure(state.matrix, event, { tagMaintainers: true });
     return
+  }
+
+  if (result.success && state.polkassembly && result.tipResult.referendumNumber) {
+    try {
+      const {url} = await updatePolkassemblyPost({
+        polkassembly: state.polkassembly,
+        referendumId: result.tipResult.referendumNumber,
+        tipRequest: result.tipRequest,
+        track: result.tipResult.track,
+        log: state.bot.log
+      });
+      await githubComment(`The referendum has appeared on [Polkassembly](${url}).`)
+    } catch (e) {
+      state.bot.log.error("Failed to update the Polkasssembly metadata", {
+        referendumId: result.tipResult.referendumNumber,
+        tipRequest: JSON.stringify(result.tipRequest),
+      });
+      state.bot.log.error(e.message);
+      await matrixNotifyOnFailure(state.matrix, event, { tagMaintainers: true, failedItem: "Polkassembly post update" });
+    }
   }
 };
 
