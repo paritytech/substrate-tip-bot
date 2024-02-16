@@ -56,29 +56,17 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   });
 
   if (extrinsicResult.success === false) {
-    return extrinsicResult as TipResult
+    return extrinsicResult
   }
 
-  const tipResult: TipResult = {
+  return {
     success: extrinsicResult.success,
+    referendumNumber: await tryGetReferendumId(api, extrinsicResult.blockHash, encodedProposal, bot.log),
     blockHash: extrinsicResult.blockHash,
     tipUrl: getTipUrl(contributor.account.network),
     track: track.track,
     value: track.value
   }
-
-  if (tipResult.success && polkassembly) {
-    const referendumId = await tryGetReferendumId(api, tipResult.blockHash, encodedProposal, bot.log);
-    if (referendumId === null) {
-      return tipResult;
-    }
-    // We fire off the Polkassembly separately, so the user doesn't have to wait for it to get a response.
-    // But we await running the tryGetReferendumId first,
-    // because we re-use the ApiPromise which gets disconnected at the end of a tip process.
-    void tryUpdatingPolkassemblyPost(polkassembly, referendumId, tipRequest, track.track, bot.log);
-  }
-
-  return tipResult;
 }
 
 async function signAndSendCallback(

@@ -54,7 +54,7 @@ export type TipRequest = {
   };
 };
 
-export type TipResult = { success: true; tipUrl: string; blockHash: string; track: OpenGovTrack; value: BN } | { success: false; errorMessage: string };
+export type TipResult = { success: true; referendumNumber: number | null; tipUrl: string; blockHash: string; track: OpenGovTrack; value: BN } | { success: false; errorMessage: string };
 
 // https://docs.github.com/en/rest/reactions/reactions#about-reactions
 export type GithubReactionType = "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
