@@ -20,8 +20,16 @@ const validTipSizes: { [key: string]: TipSize } = { small: "small", medium: "med
 const validNetworks: { [key: string]: TipNetwork } = {
   polkadot: "polkadot",
   kusama: "kusama",
-  localkusama: "localkusama",
-  localpolkadot: "localpolkadot",
+  rococo: "rococo",
+  westend: "westend",
+  ...(process.env.NODE_TYPE === "development"
+    ? {
+        localpolkadot: "localpolkadot",
+        localkusama: "localkusama",
+        localrococo: "localrococo",
+        localwestend: "localwestend",
+      }
+    : {}),
 } as const;
 
 export function getTipSize(tipSizeInput: string | undefined): TipSize | BN | { error: string } {
