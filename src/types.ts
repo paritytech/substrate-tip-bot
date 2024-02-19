@@ -5,7 +5,15 @@ import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
 
-export type TipNetwork = "localkusama" | "localpolkadot" | "localrococo" | "localwestend" | "kusama" | "polkadot" | "rococo" | "westend";
+export type TipNetwork =
+  | "localkusama"
+  | "localpolkadot"
+  | "localrococo"
+  | "localwestend"
+  | "kusama"
+  | "polkadot"
+  | "rococo"
+  | "westend";
 
 export type TipSize = "small" | "medium" | "large";
 export type OpenGovTrack = { trackNo: number; trackName: string };

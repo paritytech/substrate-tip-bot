@@ -108,11 +108,11 @@ export function getChainConfig(network: TipNetwork): ChainConfig {
     }
     case "localrococo": {
       const providerEndpoint = "ws://127.0.0.1:9902";
-      return {providerEndpoint, ...rococoConstants}
+      return { providerEndpoint, ...rococoConstants };
     }
     case "localwestend": {
       const providerEndpoint = "ws://127.0.0.1:9903";
-      return {providerEndpoint, ...westendConstants}
+      return { providerEndpoint, ...westendConstants };
     }
     case "polkadot": {
       const providerEndpoint = "wss://rpc.polkadot.io";
@@ -124,11 +124,11 @@ export function getChainConfig(network: TipNetwork): ChainConfig {
     }
     case "rococo": {
       const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
-      return {providerEndpoint, ...rococoConstants}
+      return { providerEndpoint, ...rococoConstants };
     }
     case "westend": {
       const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
-      return {providerEndpoint, ...westendConstants}
+      return { providerEndpoint, ...westendConstants };
     }
     default: {
       const exhaustivenessCheck: never = network;
