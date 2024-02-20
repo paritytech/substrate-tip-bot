@@ -22,5 +22,5 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: |
-            polkadot/target/release
+            polkadot-sdk/target/release
           key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}
