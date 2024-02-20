@@ -164,7 +164,7 @@ export const encodeProposal = (
   }
   const contributorAddress = tipRequest.contributor.account.address;
 
-  const proposalTx = api.tx.treasury.spend(track.value.toString(), contributorAddress);
+  const proposalTx = api.tx.treasury.spendLocal(track.value.toString(), contributorAddress);
   const encodedProposal = proposalTx.method.toHex();
   const proposalByteSize = byteSize(proposalTx);
   if (proposalByteSize >= 128) {

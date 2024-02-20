@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-22.04
     container: paritytech/ci-linux:production
     env:
-      POLKADOT_VERSION: 'v0.9.42'
+      POLKADOT_VERSION: 'polkadot-v1.7.1'
 
     steps:
       - uses: actions/checkout@v3.3.0
@@ -34,35 +34,37 @@ jobs:
         working-directory: substrate-tip-bot
       - uses: actions/checkout@v3.3.0
         with:
-          repository: paritytech/polkadot
+          repository: paritytech/polkadot-sdk
           ref: ${{ env.POLKADOT_VERSION }}
-          path: polkadot
+          path: polkadot-sdk
       - name: Apply Polkadot patches
         run: git apply ../substrate-tip-bot/polkadot.e2e.patch
-        working-directory: polkadot
+        working-directory: polkadot-sdk
       - name: Restore cached Polkadot build
         id: polkadot-cache-restore
         uses: actions/cache/restore@v3
         with:
           path: |
-            polkadot/target/release
+            polkadot-sdk/target/release
           key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}
       - name: Build Polkadot
         if: steps.polkadot-cache-restore.outputs.cache-hit != 'true'
         run: |
-          ./scripts/init.sh
+          rustup update nightly
+          rustup update stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
           cargo build --release --locked --features=fast-runtime -p polkadot
-        working-directory: polkadot
+        working-directory: polkadot-sdk
       - name: Save Polkadot build cache
         uses: actions/cache/save@v3
         with:
           path: |
-            polkadot/target/release
+            polkadot-sdk/target/release
           key: ${{ runner.os }}-${{ env.POLKADOT_VERSION }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}
-      - name: Run a local Kusama node
+      - name: Run a local Rococo node
         run: |
-          polkadot/target/release/polkadot --ws-external --rpc-external --no-prometheus --no-telemetry --chain=kusama-dev --tmp --alice --execution Native --ws-port 9901 --force-kusama &
-          until curl -s '127.0.0.1:9901'; do sleep 3; done
+          polkadot-sdk/target/release/polkadot --rpc-external --no-prometheus --no-telemetry --chain=rococo-dev --tmp --alice --execution Native --rpc-port 9902 &
+          until curl -s '127.0.0.1:9902'; do sleep 3; done
         timeout-minutes: 1
       - name: Run the tests
         run: yarn test:e2e
