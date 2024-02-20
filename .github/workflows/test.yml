@@ -50,7 +50,6 @@ jobs:
       - name: Build Polkadot
         if: steps.polkadot-cache-restore.outputs.cache-hit != 'true'
         run: |
-          ./scripts/init.sh
           cargo build --release --locked --features=fast-runtime -p polkadot
         working-directory: polkadot-sdk
       - name: Save Polkadot build cache
