@@ -50,6 +50,9 @@ jobs:
       - name: Build Polkadot
         if: steps.polkadot-cache-restore.outputs.cache-hit != 'true'
         run: |
+          rustup update nightly
+          rustup update stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
           cargo build --release --locked --features=fast-runtime -p polkadot
         working-directory: polkadot-sdk
       - name: Save Polkadot build cache
