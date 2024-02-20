@@ -21,7 +21,7 @@ import { encodeProposal, getReferendumId } from "./util";
 
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
-const getTipRequest = (tip: TipRequest["tip"], network: "localkusama" | "localpolkadot"): TipRequest => {
+const getTipRequest = (tip: TipRequest["tip"], network: "localrococo" | "localwestend"): TipRequest => {
   return {
     tip,
     contributor: { githubUsername: "test", account: { address: randomAddress(), network } },
@@ -30,44 +30,45 @@ const getTipRequest = (tip: TipRequest["tip"], network: "localkusama" | "localpo
   };
 };
 
-const networks = ["localkusama", "localpolkadot"] as const;
-const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", new BN("7"), new BN("30")];
+const POLKADOT_VERSION = 'v1.7.1'
+const networks = ["localrococo", "localwestend"] as const;
+const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", new BN("1"), new BN("3")];
 const commonDockerArgs =
-  "--tmp --alice --execution Native --ws-port 9945 --ws-external --rpc-external --no-prometheus --no-telemetry --rpc-cors all";
+  "--tmp --alice --execution Native --rpc-port 9945 --rpc-external --no-prometheus --no-telemetry --rpc-cors all";
 
 describe("tip", () => {
   let state: State;
-  let kusamaContainer: StartedTestContainer;
-  let kusamaApi: ApiPromise;
-  let polkadotContainer: StartedTestContainer;
-  let polkadotApi: ApiPromise;
+  let rococoContainer: StartedTestContainer;
+  let rococoApi: ApiPromise;
+  let westendContainer: StartedTestContainer;
+  let westendApi: ApiPromise;
 
   beforeAll(async () => {
-    kusamaContainer = await new GenericContainer("parity/polkadot:v0.9.42")
-      .withExposedPorts({ container: 9945, host: 9901 }) // Corresponds to chain-config.ts
+    rococoContainer = await new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
+      .withExposedPorts({ container: 9945, host: 9902 }) // Corresponds to chain-config.ts
       .withWaitStrategy(Wait.forListeningPorts())
-      .withCommand(("--chain kusama-dev --force-kusama " + commonDockerArgs).split(" "))
+      .withCommand(("--chain rococo-dev " + commonDockerArgs).split(" "))
       .start();
-    kusamaApi = new ApiPromise({
-      provider: new WsProvider(getChainConfig("localkusama").providerEndpoint),
+    rococoApi = new ApiPromise({
+      provider: new WsProvider(getChainConfig("localrococo").providerEndpoint),
       types: { Address: "AccountId", LookupSource: "AccountId" },
     });
-    polkadotContainer = await new GenericContainer("parity/polkadot:v0.9.42")
-      .withExposedPorts({ container: 9945, host: 9900 }) // Corresponds to chain-config.ts
+    westendContainer = await new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
+      .withExposedPorts({ container: 9945, host: 9903 }) // Corresponds to chain-config.ts
       .withWaitStrategy(Wait.forListeningPorts())
-      .withCommand(("--chain dev " + commonDockerArgs).split(" "))
+      .withCommand(("--chain westend-dev " + commonDockerArgs).split(" "))
       .start();
-    polkadotApi = new ApiPromise({
-      provider: new WsProvider(getChainConfig("localpolkadot").providerEndpoint),
+    westendApi = new ApiPromise({
+      provider: new WsProvider(getChainConfig("localwestend").providerEndpoint),
       types: { Address: "AccountId", LookupSource: "AccountId" },
     });
   });
 
   afterAll(async () => {
-    await kusamaApi.disconnect();
-    await polkadotApi.disconnect();
-    await kusamaContainer.stop();
-    await polkadotContainer.stop();
+    await rococoApi.disconnect();
+    await westendApi.disconnect();
+    await rococoContainer.stop();
+    await westendContainer.stop();
   });
 
   const getUserBalance = async (api: ApiPromise, userAddress: string) => {
@@ -79,18 +80,18 @@ describe("tip", () => {
     await cryptoWaitReady();
     const keyring = new Keyring({ type: "sr25519" });
     try {
-      await kusamaApi.isReadyOrError;
-      await polkadotApi.isReadyOrError;
+      await rococoApi.isReadyOrError;
+      await westendApi.isReadyOrError;
     } catch (e) {
       throw new Error(
-        `For these integrations tests, we're expecting local Kusama on ${
-          getChainConfig("localkusama").providerEndpoint
-        } and local Polkadot on ${getChainConfig("localpolkadot").providerEndpoint}. Please refer to the Readme.`,
+        `For these integrations tests, we're expecting local Rococo on ${
+          getChainConfig("localrococo").providerEndpoint
+        } and local Westend on ${getChainConfig("localwestend").providerEndpoint}. Please refer to the Readme.`,
       );
     }
 
-    assert((await getUserBalance(kusamaApi, tipperAccount)).gtn(0));
-    assert((await getUserBalance(polkadotApi, tipperAccount)).gtn(0));
+    assert((await getUserBalance(rococoApi, tipperAccount)).gtn(0));
+    assert((await getUserBalance(westendApi, tipperAccount)).gtn(0));
     state = {
       allowedGitHubOrg: "test",
       allowedGitHubTeam: "test",
@@ -105,7 +106,7 @@ describe("tip", () => {
         test(`tips a user (${tipSize.toString()})`, async () => {
           const tipRequest = getTipRequest({ size: tipSize }, network);
 
-          const api = network === "localkusama" ? kusamaApi : polkadotApi;
+          const api = network === "localrococo" ? rococoApi : westendApi;
           const nextFreeReferendumId = new BN(await api.query.referenda.referendumCount());
           const result = await tipUser(state, tipRequest);
 
@@ -127,14 +128,14 @@ describe("tip", () => {
         expect(result.success).toBeFalsy();
         const errorMessage = !result.success ? result.errorMessage : undefined;
         const expectedError =
-          network === "localpolkadot"
-            ? "The requested tip value of '1001 DOT' exceeds the BigTipper track maximum of '1000 DOT'."
-            : "The requested tip value of '1001 KSM' exceeds the BigTipper track maximum of '33.33 KSM'.";
+          network === "localrococo"
+            ? "The requested tip value of '1001 ROC' exceeds the BigTipper track maximum of '3.333 ROC'."
+            : "The requested tip value of '1001 WND' exceeds the BigTipper track maximum of '3.333 WND'.";
         expect(errorMessage).toEqual(expectedError);
       });
 
       test(`getReferendumId in ${network}`, async () => {
-        const api = network === "localkusama" ? kusamaApi : polkadotApi;
+        const api = network === "localrococo" ? rococoApi : westendApi;
         const tipRequest = getTipRequest({ size: new BN("1") }, network);
         const encodeProposalResult = encodeProposal(api, tipRequest);
         if ("success" in encodeProposalResult) {
