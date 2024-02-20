@@ -1,0 +1,9 @@
+name: E2E tests
+on:
+  push:
+
+jobs:
+  test-e2e:
+    uses: ./.github/workflows/reusable-e2e.yml
+    with:
+      polkadot-version: 'polkadot-v1.7.1'
