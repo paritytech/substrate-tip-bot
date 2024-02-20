@@ -69,7 +69,7 @@ describe("E2E opengov tip", () => {
     alice = keyring.addFromUri("//Alice");
 
     // In some local dev chains, treasury is broke, so we fund it.
-    await api.tx.balances.transfer(treasuryAccount, new BN("10000000000000")).signAndSend(alice, { nonce: -1 });
+    await api.tx.balances.transferKeepAlive(treasuryAccount, new BN("10000000000000")).signAndSend(alice, { nonce: -1 });
   });
 
   test("Small OpenGov tip", async () => {
