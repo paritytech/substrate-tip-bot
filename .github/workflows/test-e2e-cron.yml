@@ -11,9 +11,9 @@ jobs:
         run: |
           git ls-remote --refs --tags https://github.com/paritytech/polkadot-sdk.git 'polkadot-v*' \
             # Get the last (newest) one
-            tail -1 \
+            | tail -1 \
             # Extract just the tag name
-            sed 's,[^r]*refs/tags/,,' \
+            | sed 's,[^r]*refs/tags/,,' \
             >> $GITHUB_OUTPUT
       - name: Announce version
         run: echo "Running tests with Polkadot version ${{ steps.vars.outputs.read-polkadot-tag }}"
