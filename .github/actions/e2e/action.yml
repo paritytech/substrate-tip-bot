@@ -1,11 +1,12 @@
-name: E2E reusable workflow
+name: E2E action
+description: Reusable E2E tests action accepting a Polkadot version to test against
 inputs:
   polkadot-version:
     description: 'Version tag, e.g. polkadot-v1.7.1'
-    type: string
     required: true
 
 runs:
+  using: "composite"
   container: paritytech/ci-linux:production
   steps:
     - uses: actions/checkout@v3.3.0

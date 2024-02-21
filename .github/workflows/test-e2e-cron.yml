@@ -17,6 +17,6 @@ jobs:
       - name: Announce version
         run: echo "Running tests with Polkadot version ${{ steps.read-tag.outputs.tag }}"
       - uses: actions/checkout@v3.3.0
-      - uses: ./.github/actions/e2e.yml
+      - uses: ./.github/actions/e2e
         with:
           polkadot-version: "${{ steps.read-tag.outputs.tag }}"
