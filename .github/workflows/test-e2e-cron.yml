@@ -3,8 +3,9 @@ on:
   push:
 
 jobs:
-  test-e2e:
+  test-e2e-cron:
     runs-on: ubuntu-22.04
+    timeout-minutes: 120
     container: paritytech/ci-linux:production
     steps:
       - name: Read latest polkadot tag
@@ -29,3 +30,4 @@ jobs:
       - name: Run the tests
         run: yarn test:e2e
         working-directory: substrate-tip-bot
+        timeout-minutes: 10
