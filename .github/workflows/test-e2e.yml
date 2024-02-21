@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - rzadp/cron-test
 
 jobs:
   test-e2e:
