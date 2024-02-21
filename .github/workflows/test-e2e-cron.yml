@@ -1,0 +1,21 @@
+name: E2E tests
+on:
+  push:
+
+jobs:
+  test-e2e:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Read latest polkadot tag
+        id: read-polkadot-tag
+        run: |
+          git ls-remote --refs --tags https://github.com/paritytech/polkadot-sdk.git 'polkadot-v*' \
+            tail -1 \ # Get the last (newest) one
+            sed 's,[^r]*refs/tags/,,' \ # Extract just the tag name
+            >> $GITHUB_OUTPUT
+      - name: Announce version
+        run: echo "Running tests with Polkadot version ${{ steps.vars.outputs.read-polkadot-tag }}"
+
+      # - uses: ./.github/workflows/reusable-e2e.yml
+      #   with:
+      #     polkadot-version: 'polkadot-v1.7.1'
