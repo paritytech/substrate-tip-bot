@@ -9,10 +9,9 @@ jobs:
       - name: Read latest polkadot tag
         id: read-polkadot-tag
         run: |
+          # Fetch all Polkadot release tags, get the last (newest) one, and parse its name from the output.
           git ls-remote --refs --tags https://github.com/paritytech/polkadot-sdk.git 'polkadot-v*' \
-            # Get the last (newest) one
             | tail -1 \
-            # Extract just the tag name
             | sed 's,[^r]*refs/tags/,,' \
             >> $GITHUB_OUTPUT
       - name: Announce version
