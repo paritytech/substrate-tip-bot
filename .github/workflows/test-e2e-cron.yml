@@ -19,6 +19,6 @@ jobs:
       - uses: actions/checkout@v3.3.0
         with:
           path: substrate-tip-bot
-      - uses: ./substrate-tip-bot/.github/workflows/reusable-e2e.yml
+      - uses: ./.github/workflows/reusable-e2e.yml
         with:
           polkadot-version: "${{ steps.read-tag.outputs.tag }}"
