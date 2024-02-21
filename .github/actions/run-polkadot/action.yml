@@ -11,15 +11,6 @@ runs:
     - uses: actions/checkout@v3.3.0
       with:
         path: substrate-tip-bot
-    - name: Setup Node.js
-      uses: actions/setup-node@v3.5.1
-      with:
-        node-version: "18.16"
-    - run: npm i -g yarn@1.22.19
-      shell: bash
-    - run: yarn --frozen-lockfile
-      working-directory: substrate-tip-bot
-      shell: bash
     - uses: actions/checkout@v3.3.0
       with:
         repository: paritytech/polkadot-sdk
@@ -55,8 +46,4 @@ runs:
       run: |
         polkadot-sdk/target/release/polkadot --rpc-external --no-prometheus --no-telemetry --chain=rococo-dev --tmp --alice --execution Native --rpc-port 9902 &
         until curl -s '127.0.0.1:9902'; do sleep 3; done
-      shell: bash
-    - name: Run the tests
-      run: yarn test:e2e
-      working-directory: substrate-tip-bot
       shell: bash

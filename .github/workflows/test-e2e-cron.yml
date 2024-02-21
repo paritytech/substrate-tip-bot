@@ -29,7 +29,10 @@ jobs:
         run: |
           until curl -s '127.0.0.1:9902'; do sleep 3; done
         timeout-minutes: 1
-      - name: Run the tests
-        run: yarn test:e2e
-        working-directory: substrate-tip-bot
+      - uses: actions/setup-node@v3.5.1
+        with:
+          node-version: "18.16"
+      - run: npm i -g yarn@1.22.19
+      - run: yarn --frozen-lockfile
+      - run: yarn test:e2e
         timeout-minutes: 10
