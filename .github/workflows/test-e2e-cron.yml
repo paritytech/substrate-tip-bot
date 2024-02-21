@@ -5,6 +5,7 @@ on:
 jobs:
   test-e2e:
     runs-on: ubuntu-22.04
+    container: paritytech/ci-linux:production
     steps:
       - name: Read latest polkadot tag
         id: read-tag
@@ -17,6 +18,14 @@ jobs:
       - name: Announce version
         run: echo "Running tests with Polkadot version ${{ steps.read-tag.outputs.tag }}"
       - uses: actions/checkout@v3.3.0
-      - uses: ./.github/actions/e2e
+      - name: Start a local Polkadot node
+        uses: ./.github/actions/run-polkadot
         with:
           polkadot-version: "${{ steps.read-tag.outputs.tag }}"
+      - name: Wait for the node
+        run: |
+          until curl -s '127.0.0.1:9902'; do sleep 3; done
+        timeout-minutes: 1
+      - name: Run the tests
+        run: yarn test:e2e
+        working-directory: substrate-tip-bot
