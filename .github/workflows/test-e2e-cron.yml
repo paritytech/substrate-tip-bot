@@ -16,7 +16,6 @@ jobs:
             echo "tag=$TAG" >> $GITHUB_OUTPUT
       - name: Announce version
         run: echo "Running tests with Polkadot version ${{ steps.read-tag.outputs.tag }}"
-
-      # - uses: ./.github/workflows/reusable-e2e.yml
-      #   with:
-      #     polkadot-version: 'polkadot-v1.7.1'
+      - uses: ./.github/workflows/reusable-e2e.yml
+        with:
+          polkadot-version: "${{ steps.read-tag.outputs.tag }}"
