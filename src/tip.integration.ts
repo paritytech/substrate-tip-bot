@@ -107,7 +107,7 @@ describe("tip", () => {
           const tipRequest = getTipRequest({ size: tipSize }, network);
 
           const api = network === "localrococo" ? rococoApi : westendApi;
-          const nextFreeReferendumId = new BN(await api.query.referenda.referendumCount());
+          const nextFreeReferendumId = (await api.query.referenda.referendumCount()).toNumber();
           const result = await tipUser(state, tipRequest);
 
           expect(result.success).toBeTruthy();
