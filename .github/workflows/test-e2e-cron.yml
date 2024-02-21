@@ -1,6 +1,8 @@
-name: E2E tests
+name: E2E tests against most recent Polkadot release
 on:
-  push:
+  schedule:
+    - cron: 0 3 * * SUN # Once a week on Sunday.
+  workflow_dispatch:
 
 jobs:
   test-e2e-cron:
