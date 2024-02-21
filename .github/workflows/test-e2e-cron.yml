@@ -7,15 +7,15 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Read latest polkadot tag
-        id: read-polkadot-tag
+        id: read-tag
         run: |
           # Fetch all Polkadot release tags, get the last (newest) one, and parse its name from the output.
-          git ls-remote --refs --tags https://github.com/paritytech/polkadot-sdk.git 'polkadot-v*' \
+          TAG=$(git ls-remote --refs --tags https://github.com/paritytech/polkadot-sdk.git 'polkadot-v*' \
             | tail -1 \
-            | sed 's,[^r]*refs/tags/,,' \
-            >> $GITHUB_OUTPUT
+            | sed 's,[^r]*refs/tags/,,')
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
       - name: Announce version
-        run: echo "Running tests with Polkadot version ${{ steps.vars.outputs.read-polkadot-tag }}"
+        run: echo "Running tests with Polkadot version ${{ steps.read-tag.outputs.tag }}"
 
       # - uses: ./.github/workflows/reusable-e2e.yml
       #   with:
