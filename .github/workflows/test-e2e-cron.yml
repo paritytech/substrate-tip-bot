@@ -16,6 +16,9 @@ jobs:
             echo "tag=$TAG" >> $GITHUB_OUTPUT
       - name: Announce version
         run: echo "Running tests with Polkadot version ${{ steps.read-tag.outputs.tag }}"
-      - uses: ./.github/workflows/reusable-e2e.yml
+      - uses: actions/checkout@v3.3.0
+        with:
+          path: substrate-tip-bot
+      - uses: ./substrate-tip-bot/.github/workflows/reusable-e2e.yml
         with:
           polkadot-version: "${{ steps.read-tag.outputs.tag }}"
