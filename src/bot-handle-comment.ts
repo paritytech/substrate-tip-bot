@@ -168,7 +168,7 @@ export const handleTipRequest = async (
 
   if (tipResult.success) {
     const numberInfo =
-      tipResult.referendumNumber !== null ? `Referendum number: **${tipResult.referendumNumber}**` : "";
+      tipResult.referendumNumber !== null ? `Referendum number: **${tipResult.referendumNumber}**.` : "";
     return {
       success: true,
       tipRequest,
