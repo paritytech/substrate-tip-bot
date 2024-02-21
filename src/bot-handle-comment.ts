@@ -167,6 +167,8 @@ export const handleTipRequest = async (
   })();
 
   if (tipResult.success) {
+    const numberInfo =
+      tipResult.referendumNumber !== null ? `Referendum number: **${tipResult.referendumNumber}**` : "";
     return {
       success: true,
       tipRequest,
@@ -175,7 +177,7 @@ export const handleTipRequest = async (
         tipRequest,
       )} tip was successfully submitted for @${contributorLogin} (${contributorAccount.address} on ${
         contributorAccount.network
-      }). \n\n ${tipResult.tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`,
+      }).\n\n${numberInfo}\n![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`,
     };
   } else {
     return { success: false, errorMessage: tipResult.errorMessage };

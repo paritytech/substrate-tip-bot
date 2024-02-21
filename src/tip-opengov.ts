@@ -5,7 +5,6 @@ import { ApiPromise } from "@polkadot/api";
 import { ISubmittableResult } from "@polkadot/types/types";
 import { Probot } from "probot";
 
-import { getTipUrl } from "./chain-config";
 import { Polkassembly } from "./polkassembly/polkassembly";
 import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
 import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
@@ -63,7 +62,6 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
     success: extrinsicResult.success,
     referendumNumber: await tryGetReferendumId(api, extrinsicResult.blockHash, encodedProposal, bot.log),
     blockHash: extrinsicResult.blockHash,
-    tipUrl: getTipUrl(contributor.account.network),
     track: track.track,
     value: track.value,
   };

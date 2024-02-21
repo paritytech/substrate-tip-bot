@@ -66,7 +66,6 @@ export type TipResult =
   | {
       success: true;
       referendumNumber: number | null;
-      tipUrl: string;
       blockHash: string;
       track: OpenGovTrack;
       value: BN;
