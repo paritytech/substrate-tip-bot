@@ -5,14 +5,15 @@ import { ApiPromise } from "@polkadot/api";
 import { ISubmittableResult } from "@polkadot/types/types";
 import { Probot } from "probot";
 
-import { getTipUrl } from "./chain-config";
 import { Polkassembly } from "./polkassembly/polkassembly";
 import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
 import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
 
+type ExtrinsicResult = { success: true; blockHash: string } | { success: false; errorMessage: string };
+
 export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
   const {
-    state: { bot, botTipAccount, polkassembly },
+    state: { bot, botTipAccount },
     api,
     tipRequest,
   } = opts;
@@ -34,7 +35,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
     `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
   );
 
-  const tipResult = await new Promise<TipResult>(async (resolve, reject) => {
+  const extrinsicResult = await new Promise<ExtrinsicResult>(async (resolve, reject) => {
     try {
       const proposalUnsubscribe = await api.tx.referenda
         .submit(
@@ -53,18 +54,17 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
     }
   });
 
-  if (tipResult.success && polkassembly) {
-    const referendumId = await tryGetReferendumId(api, tipResult.blockHash, encodedProposal, bot.log);
-    if (referendumId === null) {
-      return tipResult;
-    }
-    // We fire off the Polkassembly separately, so the user doesn't have to wait for it to get a response.
-    // But we await running the tryGetReferendumId first,
-    // because we re-use the ApiPromise which gets disconnected at the end of a tip process.
-    void tryUpdatingPolkassemblyPost(polkassembly, referendumId, tipRequest, track.track, bot.log);
+  if (extrinsicResult.success === false) {
+    return extrinsicResult;
   }
 
-  return tipResult;
+  return {
+    success: extrinsicResult.success,
+    referendumNumber: await tryGetReferendumId(api, extrinsicResult.blockHash, encodedProposal, bot.log),
+    blockHash: extrinsicResult.blockHash,
+    track: track.track,
+    value: track.value,
+  };
 }
 
 async function signAndSendCallback(
@@ -73,11 +73,11 @@ async function signAndSendCallback(
   type: "preimage" | "referendum",
   unsubscribe: () => void,
   result: ISubmittableResult,
-): Promise<TipResult> {
+): Promise<ExtrinsicResult> {
   return await new Promise((resolve, reject) => {
     const resolveSuccess = (blockHash: string) => {
       unsubscribe();
-      resolve({ success: true, tipUrl: getTipUrl(contributor.network), blockHash });
+      resolve({ success: true, blockHash });
     };
     if (result.status.isInBlock) {
       const blockHash = result.status.asInBlock.toString();
@@ -129,13 +129,14 @@ const tryGetReferendumId = async (
   }
 };
 
-const tryUpdatingPolkassemblyPost = async (
-  polkassembly: Polkassembly,
-  referendumId: number,
-  tipRequest: TipRequest,
-  track: OpenGovTrack,
-  log: Probot["log"],
-): Promise<void> => {
+export const updatePolkassemblyPost = async (opts: {
+  polkassembly: Polkassembly;
+  referendumId: number;
+  tipRequest: TipRequest;
+  track: OpenGovTrack;
+  log: Probot["log"];
+}): Promise<{ url: string }> => {
+  const { polkassembly, referendumId, tipRequest, track, log } = opts;
   const condition = async (): Promise<boolean> => {
     const lastReferendum = await polkassembly.getLastReferendumNumber(
       tipRequest.contributor.account.network,
@@ -143,23 +144,18 @@ const tryUpdatingPolkassemblyPost = async (
     );
     return lastReferendum !== undefined && lastReferendum >= referendumId;
   };
-  try {
-    log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
-    await until(condition, 30_000);
-    polkassembly.logout();
-    await polkassembly.loginOrSignup(tipRequest.contributor.account.network);
-    await polkassembly.editPost(tipRequest.contributor.account.network, {
-      postId: referendumId,
-      proposalType: "referendums_v2",
-      content: formatReason(tipRequest, { markdown: true }),
-      title: track.trackName,
-    });
-    log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
-  } catch (e) {
-    log.error("Failed to update the Polkasssembly metadata", {
-      referendumId: referendumId,
-      tipRequest: JSON.stringify(tipRequest),
-    });
-    log.error(e.message);
-  }
+  log.info(`Waiting until referendum ${referendumId.toString()} appears on Polkasssembly`);
+  await until(condition, 30_000);
+  polkassembly.logout();
+  await polkassembly.loginOrSignup(tipRequest.contributor.account.network);
+  await polkassembly.editPost(tipRequest.contributor.account.network, {
+    postId: referendumId,
+    proposalType: "referendums_v2",
+    content: formatReason(tipRequest, { markdown: true }),
+    title: track.trackName,
+  });
+  log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
+  return {
+    url: `https://${tipRequest.contributor.account.network}.polkassembly.io/referenda/${referendumId.toString()}`,
+  };
 };

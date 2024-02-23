@@ -139,8 +139,3 @@ export function getChainConfig(network: TipNetwork): ChainConfig {
     }
   }
 }
-
-export function getTipUrl(network: TipNetwork): string {
-  const config = getChainConfig(network);
-  return `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(config.providerEndpoint)}#/referenda`;
-}
