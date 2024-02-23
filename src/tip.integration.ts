@@ -107,12 +107,17 @@ describe("tip", () => {
           const tipRequest = getTipRequest({ size: tipSize }, network);
 
           const api = network === "localrococo" ? rococoApi : westendApi;
-          const nextFreeReferendumId = new BN(await api.query.referenda.referendumCount());
+          const nextFreeReferendumId = (await api.query.referenda.referendumCount()).toNumber();
           const result = await tipUser(state, tipRequest);
 
           expect(result.success).toBeTruthy();
-          const tipUrl = result.success ? result.tipUrl : undefined;
-          expect(tipUrl).toBeDefined();
+          if (result.success) {
+            expect(result.blockHash).toBeDefined();
+            expect(result.referendumNumber).toBeDefined();
+            expect(result.referendumNumber).toEqual(nextFreeReferendumId);
+            expect(result.track).toBeDefined();
+            expect(result.value).toBeDefined();
+          }
 
           const referendum = await api.query.referenda.referendumInfoFor(nextFreeReferendumId);
           expect(referendum.isSome).toBeTruthy();

@@ -6,10 +6,13 @@ import { updateBalance } from "./balance";
 import { matrixNotifyOnFailure, matrixNotifyOnNewTip } from "./matrix";
 import { recordTip } from "./metrics";
 import { tipUser } from "./tip";
-import { GithubReactionType, State, TipRequest } from "./types";
+import { updatePolkassemblyPost } from "./tip-opengov";
+import { GithubReactionType, State, TipRequest, TipResult } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
-type OnIssueCommentResult = { success: true; message: string } | { success: false; errorMessage: string };
+type OnIssueCommentResult =
+  | { success: true; message: string; tipRequest: TipRequest; tipResult: Extract<TipResult, { success: true }> }
+  | { success: false; errorMessage: string };
 
 export const handleIssueCommentCreated = async (state: State, event: IssueCommentCreatedEvent): Promise<void> => {
   const [botMention] = event.comment.body.split(" ") as (string | undefined)[];
@@ -47,8 +50,9 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
 
   await githubEmojiReaction("eyes");
   await matrixNotifyOnNewTip(state.matrix, event);
+  let result: OnIssueCommentResult;
   try {
-    const result = await handleTipRequest(state, event, tipRequester, octokitInstance);
+    result = await handleTipRequest(state, event, tipRequester, octokitInstance);
     if (result.success) {
       await githubComment(result.message);
       await githubEmojiReaction("rocket");
@@ -64,6 +68,30 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     );
     await githubEmojiReaction("confused");
     await matrixNotifyOnFailure(state.matrix, event, { tagMaintainers: true });
+    return;
+  }
+
+  if (result.success && state.polkassembly && result.tipResult.referendumNumber) {
+    try {
+      const { url } = await updatePolkassemblyPost({
+        polkassembly: state.polkassembly,
+        referendumId: result.tipResult.referendumNumber,
+        tipRequest: result.tipRequest,
+        track: result.tipResult.track,
+        log: state.bot.log,
+      });
+      await githubComment(`The referendum has appeared on [Polkassembly](${url}).`);
+    } catch (e) {
+      state.bot.log.error("Failed to update the Polkasssembly metadata", {
+        referendumId: result.tipResult.referendumNumber,
+        tipRequest: JSON.stringify(result.tipRequest),
+      });
+      state.bot.log.error(e.message);
+      await matrixNotifyOnFailure(state.matrix, event, {
+        tagMaintainers: true,
+        failedItem: "Polkassembly post update",
+      });
+    }
   }
 };
 
@@ -139,13 +167,17 @@ export const handleTipRequest = async (
   })();
 
   if (tipResult.success) {
+    const numberInfo =
+      tipResult.referendumNumber !== null ? `Referendum number: **${tipResult.referendumNumber}**.` : "";
     return {
       success: true,
+      tipRequest,
+      tipResult,
       message: `@${tipRequester} A referendum for a ${formatTipSize(
         tipRequest,
       )} tip was successfully submitted for @${contributorLogin} (${contributorAccount.address} on ${
         contributorAccount.network
-      }). \n\n ${tipResult.tipUrl} ![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`,
+      }).\n\n${numberInfo}\n![tip](https://c.tenor.com/GdyQm7LX3h4AAAAi/mlady-fedora.gif)`,
     };
   } else {
     return { success: false, errorMessage: tipResult.errorMessage };
