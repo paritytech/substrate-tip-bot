@@ -30,9 +30,6 @@ runs:
     - name: Build Polkadot
       if: steps.polkadot-cache-restore.outputs.cache-hit != 'true'
       run: |
-        rustup update nightly
-        rustup update stable
-        rustup target add wasm32-unknown-unknown --toolchain nightly
         cargo build --release --locked --features=fast-runtime -p polkadot
       shell: bash
       working-directory: polkadot-sdk
