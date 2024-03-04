@@ -151,6 +151,15 @@ yarn test:e2e
 
 Go make a cup of tea, the tests take ~3 minutes (waiting for the various on-chain stages to pass).
 
+On CI, the E2E tests are running:
+
+- On every PR and commits pushed to `master`, against a fixed release of `polkadot-sdk`.
+- Periodically, against a most recent release of `polkadot-sdk`.
+
+The tests are running in a container specified by `E2E_TESTS_CONTAINER` [repository variable](https://docs.github.com/en/actions/learn-github-actions/variables#defining-configuration-variables-for-multiple-workflows).
+
+The container version should be kept in sync with the container used in [`polkadot-sdk` CI](https://github.com/paritytech/polkadot-sdk/blob/polkadot-v1.7.2/.github/workflows/fmt-check.yml#L18).
+
 ## Contributing
 
 If you have suggestions for how substrate-tip-bot could be improved, or want to report a bug, open
