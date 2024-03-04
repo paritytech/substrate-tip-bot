@@ -8,7 +8,7 @@ jobs:
   test-e2e-cron:
     runs-on: ubuntu-22.04
     timeout-minutes: 120
-    container: paritytech/ci-linux:production
+    container: docker.io/paritytech/ci-unified:bullseye-1.75.0-2024-01-22-v20240109
     steps:
       - name: Read latest polkadot tag
         id: read-tag
