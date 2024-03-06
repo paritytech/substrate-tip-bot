@@ -1,0 +1,38 @@
+name: E2E tests against most recent Polkadot release
+on:
+  schedule:
+    - cron: 0 3 * * SUN # Once a week on Sunday.
+  workflow_dispatch:
+
+jobs:
+  test-e2e-cron:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    container: "${{ vars.E2E_TESTS_CONTAINER }}"
+    steps:
+      - name: Read latest polkadot tag
+        id: read-tag
+        run: |
+          # Fetch all Polkadot release tags, get the last (newest) one, and parse its name from the output.
+          TAG=$(git ls-remote --refs --tags https://github.com/paritytech/polkadot-sdk.git 'polkadot-v*' \
+            | tail -1 \
+            | sed 's,[^r]*refs/tags/,,')
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+      - name: Announce version
+        run: echo "Running tests with Polkadot version ${{ steps.read-tag.outputs.tag }}"
+      - uses: actions/checkout@v3.3.0
+      - name: Start a local Polkadot node
+        uses: ./.github/actions/run-polkadot
+        with:
+          polkadot-version: "${{ steps.read-tag.outputs.tag }}"
+      - name: Wait for the node
+        run: |
+          until curl -s '127.0.0.1:9902'; do sleep 3; done
+        timeout-minutes: 1
+      - uses: actions/setup-node@v3.5.1
+        with:
+          node-version: "18.16"
+      - run: npm i -g yarn@1.22.19
+      - run: yarn --frozen-lockfile
+      - run: yarn test:e2e
+        timeout-minutes: 10

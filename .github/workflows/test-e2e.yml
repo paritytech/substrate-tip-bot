@@ -1,0 +1,29 @@
+name: E2E tests
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  test-e2e:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    container: "${{ vars.E2E_TESTS_CONTAINER }}"
+    steps:
+      - uses: actions/checkout@v3.3.0
+      - name: Start a local Polkadot node
+        uses: ./.github/actions/run-polkadot
+        with:
+          polkadot-version: polkadot-v1.7.1
+      - name: Wait for the node
+        run: |
+          until curl -s '127.0.0.1:9902'; do sleep 3; done
+        timeout-minutes: 1
+      - uses: actions/setup-node@v3.5.1
+        with:
+          node-version: "18.16"
+      - run: npm i -g yarn@1.22.19
+      - run: yarn --frozen-lockfile
+      - run: yarn test:e2e
+        timeout-minutes: 10
