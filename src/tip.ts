@@ -21,7 +21,7 @@ async function createApi(state: State, tipRequest: TipRequest) {
 
   bot.log(`You are connected to chain ${chain.toString()} using ${nodeName.toString()} v${nodeVersion.toString()}`);
 
-  return {api, provider}
+  return { api, provider };
 }
 
 /**
@@ -29,7 +29,7 @@ async function createApi(state: State, tipRequest: TipRequest) {
  * The bot will send the referendum creation transaction itself and pay for the fees.
  */
 export async function tipUser(state: State, tipRequest: TipRequest): Promise<TipResult> {
-  const {provider, api} = await createApi(state, tipRequest)
+  const { provider, api } = await createApi(state, tipRequest);
 
   try {
     return await tipOpenGov({ state, api, tipRequest });
@@ -43,19 +43,22 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
  * Prepare a referendum extrinsic, but do not actually send it to the chain.
  * Create a transaction creation link for the user.
  */
-export async function tipUserLink(state: State, tipRequest: TipRequest): Promise<{success: false, errorMessage: string} | {success: true, extrinsicCreationLink: string}> {
-  const {provider, api} = await createApi(state, tipRequest)
+export async function tipUserLink(
+  state: State,
+  tipRequest: TipRequest,
+): Promise<{ success: false; errorMessage: string } | { success: true; extrinsicCreationLink: string }> {
+  const { provider, api } = await createApi(state, tipRequest);
 
   try {
-    const preparedExtrinsic = await tipOpenGovReferendumExtrinsic({api, tipRequest});
+    const preparedExtrinsic = tipOpenGovReferendumExtrinsic({ api, tipRequest });
     if (!preparedExtrinsic.success) {
-      return preparedExtrinsic
+      return preparedExtrinsic;
     }
-    const transactionHex = preparedExtrinsic.referendumExtrinsic.method.toHex()
+    const transactionHex = preparedExtrinsic.referendumExtrinsic.method.toHex();
     const chainConfig = getChainConfig(tipRequest.contributor.account.network);
-    const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(chainConfig.providerEndpoint)}#/`
-    const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${transactionHex}`
-    return {success: true, extrinsicCreationLink}
+    const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(chainConfig.providerEndpoint)}#/`;
+    const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${transactionHex}`;
+    return { success: true, extrinsicCreationLink };
   } finally {
     await api.disconnect();
     await provider.disconnect();

@@ -6,7 +6,7 @@ import { updateBalance } from "./balance";
 import { matrixNotifyOnFailure, matrixNotifyOnNewTip } from "./matrix";
 import { recordTip } from "./metrics";
 import { tipUser, tipUserLink } from "./tip";
-import { tipOpenGovReferendumExtrinsic, updatePolkassemblyPost } from "./tip-opengov";
+import { updatePolkassemblyPost } from "./tip-opengov";
 import { GithubReactionType, State, TipRequest, TipResult } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
@@ -146,24 +146,25 @@ export const handleTipRequest = async (
       { octokitInstance },
     ))
   ) {
-    let createReferendumLink: string | undefined = undefined
+    let createReferendumLink: string | undefined = undefined;
     try {
-      const tipLink = await tipUserLink(state, tipRequest)
+      const tipLink = await tipUserLink(state, tipRequest);
       if (!tipLink.success) {
-        throw new Error(tipLink.errorMessage)
+        throw new Error(tipLink.errorMessage);
       }
-      createReferendumLink = tipLink.extrinsicCreationLink
+      createReferendumLink = tipLink.extrinsicCreationLink;
     } catch (e) {
-      bot.log.error("Failed to encode and create a link to tip referendum creation.")
-      bot.log.error(e.message)
+      bot.log.error("Failed to encode and create a link to tip referendum creation.");
+      bot.log.error(e.message);
     }
-    
-    let message = `Only members of \`${allowedGitHubOrg}/${allowedGitHubTeam}\` `
-    + `have permission to request the creation of the tip referendum from the bot.\n\n`
-    message += `However, you can create the tip referendum yourself using [Polkassembly](https://wiki.polkadot.network/docs/learn-polkadot-opengov-treasury#submit-treasury-proposal-via-polkassembly)`
+
+    let message =
+      `Only members of \`${allowedGitHubOrg}/${allowedGitHubTeam}\` ` +
+      `have permission to request the creation of the tip referendum from the bot.\n\n`;
+    message += `However, you can create the tip referendum yourself using [Polkassembly](https://wiki.polkadot.network/docs/learn-polkadot-opengov-treasury#submit-treasury-proposal-via-polkassembly)`;
     return {
       success: true,
-      message: createReferendumLink ? (message + ` or [PolkadotJS Apps](${createReferendumLink}).`) : (message + '.')
+      message: createReferendumLink ? message + ` or [PolkadotJS Apps](${createReferendumLink}).` : message + ".",
     };
   }
 
