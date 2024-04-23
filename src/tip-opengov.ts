@@ -8,17 +8,17 @@ import { Probot } from "probot";
 import { Polkassembly } from "./polkassembly/polkassembly";
 import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
 import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
+import type{ SubmittableExtrinsic } from "@polkadot/api/types";
+import type { BN } from "@polkadot/util";
 
 type ExtrinsicResult = { success: true; blockHash: string } | { success: false; errorMessage: string };
 
-export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
-  const {
-    state: { bot, botTipAccount },
-    api,
-    tipRequest,
-  } = opts;
-  const { contributor } = tipRequest;
-
+export function tipOpenGovReferendumExtrinsic(
+  opts: { api: ApiPromise; tipRequest: TipRequest }
+): |
+  Exclude<TipResult, {success: true}>
+  | {success: true, referendumExtrinsic: SubmittableExtrinsic<"promise", ISubmittableResult>, proposalByteSize: number, encodedProposal: string, track: { track: OpenGovTrack; value: BN }} {
+  const {api, tipRequest} = opts
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
     return { success: false, errorMessage: track.error };
@@ -30,6 +30,37 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   }
   const { encodedProposal, proposalByteSize } = encodeProposalResult;
 
+  const referendumExtrinsic = api.tx.referenda
+  .submit(
+    // TODO: There should be a way to set those types properly.
+    { Origins: track.track.trackName } as never,
+    { Inline: encodedProposal },
+    { after: 10 } as never,
+  )
+
+  return {
+    success: true,
+    referendumExtrinsic,
+    proposalByteSize,
+    encodedProposal,
+    track
+  }
+}
+
+export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
+  const {
+    state: { bot, botTipAccount },
+    api,
+    tipRequest,
+  } = opts;
+  const { contributor } = tipRequest;
+
+  const preparedExtrinsic = tipOpenGovReferendumExtrinsic({api, tipRequest})
+  if (!preparedExtrinsic.success) {
+    return preparedExtrinsic
+  }
+  const {proposalByteSize, referendumExtrinsic, encodedProposal, track} = preparedExtrinsic
+
   const nonce = (await api.rpc.system.accountNextIndex(botTipAccount.address)).toNumber();
   bot.log(
     `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
@@ -37,13 +68,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
 
   const extrinsicResult = await new Promise<ExtrinsicResult>(async (resolve, reject) => {
     try {
-      const proposalUnsubscribe = await api.tx.referenda
-        .submit(
-          // TODO: There should be a way to set those types properly.
-          { Origins: track.track.trackName } as never,
-          { Inline: encodedProposal },
-          { after: 10 } as never,
-        )
+      const proposalUnsubscribe = await referendumExtrinsic
         .signAndSend(botTipAccount, async (refResult) => {
           await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
             .then(resolve)
