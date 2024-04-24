@@ -157,7 +157,7 @@ export const byteSize = (extrinsic: SubmittableExtrinsic): number =>
 export const encodeProposal = (
   api: ApiPromise,
   tipRequest: TipRequest,
-): { encodedProposal: string; proposalByteSize: number } | TipResult => {
+): { encodedProposal: string; proposalByteSize: number } | Exclude<TipResult, { success: true }> => {
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
     return { success: false, errorMessage: track.error };

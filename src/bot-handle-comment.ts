@@ -5,12 +5,13 @@ import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
 import { updateBalance } from "./balance";
 import { matrixNotifyOnFailure, matrixNotifyOnNewTip } from "./matrix";
 import { recordTip } from "./metrics";
-import { tipUser } from "./tip";
+import { tipUser, tipUserLink } from "./tip";
 import { updatePolkassemblyPost } from "./tip-opengov";
 import { GithubReactionType, State, TipRequest, TipResult } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
 
 type OnIssueCommentResult =
+  | { success: true; message: string }
   | { success: true; message: string; tipRequest: TipRequest; tipResult: Extract<TipResult, { success: true }> }
   | { success: false; errorMessage: string };
 
@@ -71,7 +72,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     return;
   }
 
-  if (result.success && state.polkassembly && result.tipResult.referendumNumber) {
+  if (result.success && state.polkassembly && "tipResult" in result && result.tipResult.referendumNumber) {
     try {
       const { url } = await updatePolkassemblyPost({
         polkassembly: state.polkassembly,
@@ -114,18 +115,6 @@ export const handleTipRequest = async (
     return { success: false, errorMessage: `@${tipRequester} Contributor and tipper cannot be the same person!` };
   }
 
-  if (
-    !(await github.isGithubTeamMember(
-      { org: allowedGitHubOrg, team: allowedGitHubTeam, username: tipRequester },
-      { octokitInstance },
-    ))
-  ) {
-    return {
-      success: false,
-      errorMessage: `@${tipRequester} You are not allowed to request a tip. Only members of ${allowedGitHubOrg}/${allowedGitHubTeam} are allowed.`,
-    };
-  }
-
   const userBio = (await octokitInstance.rest.users.getByUsername({ username: contributorLogin })).data.bio;
   const contributorAccount = parseContributorAccount([pullRequestBody, userBio]);
   if ("error" in contributorAccount) {
@@ -150,6 +139,34 @@ export const handleTipRequest = async (
       contributorAccount.network
     }) a ${formatTipSize(tipRequest)} tip for pull request ${pullRequestUrl}.`,
   );
+
+  if (
+    !(await github.isGithubTeamMember(
+      { org: allowedGitHubOrg, team: allowedGitHubTeam, username: tipRequester },
+      { octokitInstance },
+    ))
+  ) {
+    let createReferendumLink: string | undefined = undefined;
+    try {
+      const tipLink = await tipUserLink(state, tipRequest);
+      if (!tipLink.success) {
+        throw new Error(tipLink.errorMessage);
+      }
+      createReferendumLink = tipLink.extrinsicCreationLink;
+    } catch (e) {
+      bot.log.error("Failed to encode and create a link to tip referendum creation.");
+      bot.log.error(e.message);
+    }
+
+    let message =
+      `Only members of \`${allowedGitHubOrg}/${allowedGitHubTeam}\` ` +
+      `have permission to request the creation of the tip referendum from the bot.\n\n`;
+    message += `However, you can create the tip referendum yourself using [Polkassembly](https://wiki.polkadot.network/docs/learn-polkadot-opengov-treasury#submit-treasury-proposal-via-polkassembly)`;
+    return {
+      success: true,
+      message: createReferendumLink ? message + ` or [PolkadotJS Apps](${createReferendumLink}).` : message + ".",
+    };
+  }
 
   const tipResult = await tipUser(state, tipRequest);
 
