@@ -1,0 +1,48 @@
+common:
+  fullnameOverride: "substrate-tip-bot"
+  extraLabels:
+    team: "opstooling"
+  serviceAccount:
+    create: false
+  image:
+     # tag is set in ci https://github.com/paritytech/substrate-tip-bot/blob/72a5a0228c0405e211f6ff768cfd4010b3323658/.gitlab-ci.yml#L152
+    repository: paritytech/substrate-tip-bot
+  envFrom:
+    - secretRef:
+        name: substrate-tip-bot
+  service:
+    ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-dns01
+      kubernetes.io/ingress.class: traefik-external
+      traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+  livenessProbe:
+   httpGet:
+     path: /tip-bot/health
+     port: http
+   initialDelaySeconds: 60
+   periodSeconds: 5
+  readinessProbe:
+   httpGet:
+     path: /tip-bot/health
+     port: http
+   initialDelaySeconds: 60
+   periodSeconds: 5
+  serviceMonitor:
+    enabled: true
+    endpoints:
+      - port: http
+        path: /tip-bot/metrics
+        interval: 1m
+        scheme: http
+        scrapeTimeout: 30s
+        honorLabels: true
+    targetLabels:
+      - team
