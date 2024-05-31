@@ -16,7 +16,7 @@ jobs:
           # Fetch all Polkadot release tags, get the last (newest) one, and parse its name from the output.
           TAG=$(git ls-remote --refs --tags https://github.com/paritytech/polkadot-sdk.git 'polkadot-v*' \
             | sed 's,[^r]*refs/tags/,,' \
-            | sort --version-sort
+            | sort --version-sort \
             | tail -1)
             echo "tag=$TAG" >> $GITHUB_OUTPUT
       - name: Announce version
