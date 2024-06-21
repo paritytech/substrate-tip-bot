@@ -22,8 +22,7 @@ jobs:
         timeout-minutes: 1
       - uses: actions/setup-node@v3.5.1
         with:
-          node-version: "18.16"
-      - run: npm i -g yarn@1.22.19
-      - run: yarn --frozen-lockfile
+          node-version: "22"
+      - run: yarn --immutable
       - run: yarn test:e2e
         timeout-minutes: 10

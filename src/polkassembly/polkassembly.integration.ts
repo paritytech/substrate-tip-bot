@@ -2,8 +2,7 @@ import "@polkadot/api-augment";
 import { Keyring } from "@polkadot/api";
 import type { KeyringPair } from "@polkadot/keyring/types";
 import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
-
-import { logMock } from "src/testUtil";
+import { logMock } from "#src/testUtil";
 
 import { Polkassembly } from "./polkassembly";
 

@@ -2,7 +2,7 @@ import { envVar } from "@eng-automation/js";
 import { Keyring } from "@polkadot/api";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { createClient } from "matrix-js-sdk";
-import { ApplicationFunction, Probot } from "probot";
+import { ApplicationFunction, Context, Probot } from "probot";
 
 import { updateAllBalances } from "./balance";
 import { handleIssueCommentCreated } from "./bot-handle-comment";
@@ -48,7 +48,7 @@ export const botInitialize: AsyncApplicationFunction = async (bot: Probot, { get
 
   bot.log.info("Tip bot was loaded!");
 
-  bot.on("issue_comment.created", async (context) => {
+  bot.on("issue_comment.created", async (context: Context<"issue_comment.created">) => {
     await handleIssueCommentCreated(state, context.payload);
   });
 
