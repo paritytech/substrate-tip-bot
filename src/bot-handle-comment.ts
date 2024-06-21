@@ -1,4 +1,5 @@
 import { github } from "@eng-automation/integrations";
+import { GitHubInstance } from "@eng-automation/integrations/dist/github/types";
 import { envVar } from "@eng-automation/js";
 import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
 
@@ -28,7 +29,10 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     await github.getRepoInstallation({ owner: event.repository.owner.login, repo: event.repository.name })
   ).id;
 
-  const octokitInstance = await github.getInstance({
+  // The "Unsafe assignment of an error typed value" error here goes deep into octokit types, that are full of `any`s
+  // I wasn't able to get around it
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const octokitInstance: GitHubInstance = await github.getInstance({
     authType: "installation",
     appId: envVar("GITHUB_APP_ID"),
     installationId: String(installationId),

@@ -1,7 +1,6 @@
 import { KeyringPair } from "@polkadot/keyring/types";
 import { stringToU8a } from "@polkadot/util";
 import { Wallet } from "ethers";
-import fetch from "node-fetch";
 import type { Probot } from "probot";
 
 const headers = { "Content-Type": "application/json" };
@@ -128,8 +127,7 @@ export class Polkassembly {
       if ((e as Error).message.includes("Please sign up")) {
         await this.signup(network);
       } else {
-        this.log.error("loginOrSignup to Polkassembly failed.");
-        this.log.error(e.message);
+        this.log.error(e, "loginOrSignup to Polkassembly failed.");
         throw e;
       }
     }

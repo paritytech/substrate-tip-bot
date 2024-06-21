@@ -1,8 +1,7 @@
 import "@polkadot/api-augment";
+import { logMock } from "#src/testUtil";
+import { formatReason } from "#src/util";
 import { Wallet } from "ethers";
-
-import { logMock } from "src/testUtil";
-import { formatReason } from "src/util";
 
 import { Polkassembly } from "./polkassembly";
 

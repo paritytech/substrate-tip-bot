@@ -1,4 +1,16 @@
-FROM node:18-alpine
+FROM node:22-alpine as builder
+
+WORKDIR /usr/src/app
+
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn/ ./.yarn/
+RUN yarn install --immutable
+COPY tsconfig.json ./
+COPY src/ ./src
+
+RUN yarn build
+
+FROM node:22-slim
 
 # metadata
 ARG VCS_REF=master
@@ -15,20 +27,11 @@ LABEL io.parity.image.authors="cicd-team@parity.io" \
     io.parity.image.revision="${VCS_REF}" \
     io.parity.image.created="${BUILD_DATE}"
 
-RUN apk -U upgrade --no-cache && apk add --no-cache git
-
 WORKDIR /usr/src/app
 
-COPY package.json ./
-COPY yarn.lock ./
-RUN yarn install --frozen-lockfile
-COPY tsconfig.json ./
-COPY src/ ./src
-
-RUN yarn build
-
-# Purge the devDeps required for building
-RUN yarn install --production
+COPY --from=builder /usr/src/app/package.json ./
+COPY --from=builder /usr/src/app/dist ./dist/
+COPY --from=builder /usr/src/app/node_modules ./node_modules/
 
 ENV NODE_ENV="production"
 

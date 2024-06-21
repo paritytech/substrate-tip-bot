@@ -96,7 +96,7 @@ check-linting:
   <<:                              *common-refs
   <<:                              *kubernetes-env
   script:
-    - yarn --frozen-lockfile
+    - yarn --immutable
     - yarn lint
 
 test-unit:
@@ -104,7 +104,7 @@ test-unit:
   <<:                              *common-refs
   <<:                              *kubernetes-env
   script:
-    - yarn --frozen-lockfile
+    - yarn --immutable
     - yarn test
 
 build-docker-bot:

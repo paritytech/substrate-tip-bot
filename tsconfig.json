@@ -8,16 +8,20 @@
     "allowJs": true,
     "moduleResolution": "node",
     "module": "commonjs",
-    "target": "ES2021",
-    "lib": ["ES2021"],
+    "target": "ES2022",
+    "lib": ["ES2022"],
     "strict": true,
+    "noEmitOnError": true,
     "noImplicitAny": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "useUnknownInCatchVariables": false,
     "types": ["node", "jest"],
-    "typeRoots": ["./node_modules/@types", "./src"]
+    "typeRoots": ["./node_modules/@types", "./src"],
+    "paths": {
+      "#src/*": ["./src/*"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules/**/*"]
