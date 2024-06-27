@@ -21,7 +21,9 @@
     "build": "rimraf dist; tsc",
     "test": "jest",
     "test:integration": "jest -c jest.integration.config.js",
-    "test:e2e": "jest -c jest.e2e.config.js"
+    "test:e2e": "jest -c jest.e2e.config.js",
+    "papi": "papi generate",
+    "postinstall": "yarn papi"
   },
   "imports": {
     "#src/*": "./src/*.js"
