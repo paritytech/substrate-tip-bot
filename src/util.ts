@@ -1,10 +1,11 @@
-import { ApiPromise } from "@polkadot/api";
+import { MultiAddress } from "@polkadot-api/descriptors";
 import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
 import type { ApiDecoration } from "@polkadot/api/types";
-import { BN } from "@polkadot/util";
+import { BN, nToBigInt } from "@polkadot/util";
 import assert from "assert";
 
 import { getChainConfig } from "./chain-config";
+import { API } from "./tip";
 import {
   BigTipperTrack,
   ContributorAccount,
@@ -155,7 +156,7 @@ export const byteSize = (extrinsic: SubmittableExtrinsic): number =>
   extrinsic.method.toU8a().length * Uint8Array.BYTES_PER_ELEMENT;
 
 export const encodeProposal = (
-  api: ApiPromise,
+  api: API,
   tipRequest: TipRequest,
 ): { encodedProposal: string; proposalByteSize: number } | Exclude<TipResult, { success: true }> => {
   const track = tipSizeToOpenGovTrack(tipRequest);
@@ -164,7 +165,10 @@ export const encodeProposal = (
   }
   const contributorAddress = tipRequest.contributor.account.address;
 
-  const proposalTx = api.tx.treasury.spendLocal(track.value.toString(), contributorAddress);
+  const beneficiary = MultiAddress.Id(contributorAddress);
+  const proposalTx = api.tx.Treasury.spend_local({ amount: nToBigInt(track.value), beneficiary });
+  // const proposalTx = api.tx.treasury.spendLocal(track.value.toString(), contributorAddress);
+  // TODO: Calculate the byte size
   const encodedProposal = proposalTx.method.toHex();
   const proposalByteSize = byteSize(proposalTx);
   if (proposalByteSize >= 128) {

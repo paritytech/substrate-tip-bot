@@ -1,17 +1,27 @@
-import { ApiPromise, WsProvider } from "@polkadot/api";
-
+import { polkadot } from "@polkadot-api/descriptors";
+import { PolkadotClient, TypedApi, createClient } from "polkadot-api";
+import { WebSocketProvider } from "polkadot-api/ws-provider/node";
 import { getChainConfig } from "./chain-config";
 import { tipOpenGov, tipOpenGovReferendumExtrinsic } from "./tip-opengov";
 import { State, TipRequest, TipResult } from "./types";
 
-async function createApi(state: State, tipRequest: TipRequest) {
+export type API = TypedApi<typeof polkadot>;
+
+async function createApi(state: State, tipRequest: TipRequest): Promise<{ api: API; provider: PolkadotClient }> {
   const { bot } = state;
+
   const chainConfig = getChainConfig(tipRequest.contributor.account.network);
-  const provider = new WsProvider(chainConfig.providerEndpoint);
+  const jsonRpcProvider = WebSocketProvider(chainConfig.providerEndpoint);
+  const client = createClient(jsonRpcProvider);
 
-  const api = await ApiPromise.create({ provider, throwOnConnect: true });
-  await api.isReadyOrError;
+  // Check that it works
+  await client.getFinalizedBlock();
 
+  // Set up the types
+  const polkadotClient: TypedApi<typeof polkadot> = client.getTypedApi(polkadot);
+
+  // TODO: Replace this with papi's
+  /*
   // Get general information about the node we are connected to
   const [chain, nodeName, nodeVersion] = await Promise.all([
     api.rpc.system.chain(),
@@ -20,8 +30,9 @@ async function createApi(state: State, tipRequest: TipRequest) {
   ]);
 
   bot.log(`You are connected to chain ${chain.toString()} using ${nodeName.toString()} v${nodeVersion.toString()}`);
+  */
 
-  return { api, provider };
+  return { api: polkadotClient, provider: client };
 }
 
 /**
@@ -34,8 +45,7 @@ export async function tipUser(state: State, tipRequest: TipRequest): Promise<Tip
   try {
     return await tipOpenGov({ state, api, tipRequest });
   } finally {
-    await api.disconnect();
-    await provider.disconnect();
+    provider.destroy();
   }
 }
 

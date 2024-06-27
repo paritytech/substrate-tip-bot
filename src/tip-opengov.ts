@@ -8,12 +8,13 @@ import type { BN } from "@polkadot/util";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
+import { API } from "./tip";
 import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
 import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
 
 type ExtrinsicResult = { success: true; blockHash: string } | { success: false; errorMessage: string };
 
-export function tipOpenGovReferendumExtrinsic(opts: { api: ApiPromise; tipRequest: TipRequest }):
+export function tipOpenGovReferendumExtrinsic(opts: { api: API; tipRequest: TipRequest }):
   | Exclude<TipResult, { success: true }>
   | {
       success: true;
@@ -44,7 +45,7 @@ export function tipOpenGovReferendumExtrinsic(opts: { api: ApiPromise; tipReques
   return { success: true, referendumExtrinsic, proposalByteSize, encodedProposal, track };
 }
 
-export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
+export async function tipOpenGov(opts: { state: State; api: API; tipRequest: TipRequest }): Promise<TipResult> {
   const {
     state: { bot, botTipAccount },
     api,
@@ -127,7 +128,7 @@ async function signAndSendCallback(
 }
 
 const tryGetReferendumId = async (
-  api: ApiPromise,
+  api: API,
   blockHash: string,
   encodedProposal: string,
   log: Probot["log"],
