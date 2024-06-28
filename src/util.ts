@@ -16,6 +16,7 @@ import {
   TipResult,
   TipSize,
 } from "./types";
+import { Binary } from "polkadot-api";
 
 const validTipSizes: { [key: string]: TipSize } = { small: "small", medium: "medium", large: "large" } as const;
 const validNetworks: { [key: string]: TipNetwork } = {
@@ -152,13 +153,12 @@ export const formatTipSize = (tipRequest: TipRequest): string => {
 export const teamMatrixHandles =
   process.env.NODE_ENV === "development" ? [] : ["@przemek", "@mak", "@yuri", "@bullrich"]; // Don't interrupt other people when testing.
 
-export const byteSize = (extrinsic: SubmittableExtrinsic): number =>
-  extrinsic.method.toU8a().length * Uint8Array.BYTES_PER_ELEMENT;
+export const byteSize = (extrinsic: Uint8Array): number => extrinsic.length * Uint8Array.BYTES_PER_ELEMENT;
 
-export const encodeProposal = (
+export const encodeProposal = async (
   api: API,
   tipRequest: TipRequest,
-): { encodedProposal: string; proposalByteSize: number } | Exclude<TipResult, { success: true }> => {
+): Promise<{ encodedProposal: Binary; proposalByteSize: number } | Exclude<TipResult, { success: true }>> => {
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
     return { success: false, errorMessage: track.error };
@@ -169,8 +169,9 @@ export const encodeProposal = (
   const proposalTx = api.tx.Treasury.spend_local({ amount: nToBigInt(track.value), beneficiary });
   // const proposalTx = api.tx.treasury.spendLocal(track.value.toString(), contributorAddress);
   // TODO: Calculate the byte size
-  const encodedProposal = proposalTx.method.toHex();
-  const proposalByteSize = byteSize(proposalTx);
+
+  const encodedProposal = await proposalTx.getEncodedData();
+  const proposalByteSize = byteSize(encodedProposal.asBytes());
   if (proposalByteSize >= 128) {
     return {
       success: false,
