@@ -20,7 +20,7 @@ async function createApi(state: State, tipRequest: TipRequest): Promise<{ api: A
   await client.getFinalizedBlock();
 
   // Set up the types
-  const polkadotClient: TypedApi<typeof polkadot> = client.getTypedApi(polkadot);
+  const polkadotClient: API = client.getTypedApi(polkadot);
 
   // TODO: Find all the equivalent to the other method
   const version = await polkadotClient.constants.System.Version();

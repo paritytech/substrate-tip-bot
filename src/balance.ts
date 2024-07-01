@@ -41,7 +41,7 @@ export const updateBalance = async (opts: { network: TipNetwork; tipBotAddress: 
 
   try {
     const { data: balances } = await polkadotClient.query.System.Account.getValue(tipBotAddress);
-    const balance = new BN(balances.free.toString()).div(new BN(10 ** config.decimals)).toNumber();
+    const balance = Number(balances.free / 10n ** BigInt(config.decimals));
     balanceGauge.set({ network }, balance);
   } finally {
     client.destroy();
