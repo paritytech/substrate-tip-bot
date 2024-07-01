@@ -1,12 +1,13 @@
 import { until } from "@eng-automation/js";
 import { PolkadotRuntimeOriginCaller, PreimagesBounded, TraitsScheduleDispatchTime } from "@polkadot-api/descriptors";
+import { getPolkadotSigner } from "@polkadot-api/signer";
 import "@polkadot/api-augment";
 import "@polkadot/types-augment";
 import { ISubmittableResult } from "@polkadot/types/types";
 import type { BN } from "@polkadot/util";
+import { Binary, TxPromise } from "polkadot-api";
 import { Probot } from "probot";
 
-import { Binary, TxPromise } from "polkadot-api";
 import { Polkassembly } from "./polkassembly/polkassembly";
 import { API } from "./tip";
 import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
@@ -76,11 +77,17 @@ export async function tipOpenGov(opts: { state: State; api: API; tipRequest: Tip
   const extrinsicResult = await new Promise<ExtrinsicResult>(async (resolve, reject) => {
     try {
       // TODO: Convert this method
-      const proposalUnsubscribe = await referendumExtrinsic.signAndSubmit(botTipAccount, async (refResult) => {
-        await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
+      const signer = getPolkadotSigner(botTipAccount.publicKey, "Sr25519", (input) =>
+        signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, input)
           .then(resolve)
-          .catch(reject);
-      });
+          .catch(reject),
+      );
+      const proposalUnsubscribe = await referendumExtrinsic.signAndSubmit(signer);
+      // const proposalUnsubscribe = await referendumExtrinsic.signAndSubmit(botTipAccount, async (refResult) => {
+      //   await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
+      //     .then(resolve)
+      //     .catch(reject);
+      // });
     } catch (e) {
       reject(e);
     }
