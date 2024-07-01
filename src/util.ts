@@ -1,8 +1,7 @@
-import { MultiAddress } from "@polkadot-api/descriptors";
-import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
-import type { ApiDecoration } from "@polkadot/api/types";
 import { BN, nToBigInt } from "@polkadot/util";
+import { MultiAddress } from "@polkadot-api/descriptors";
 import assert from "assert";
+import { Binary } from "polkadot-api";
 
 import { getChainConfig } from "./chain-config";
 import { API } from "./tip";
@@ -16,7 +15,6 @@ import {
   TipResult,
   TipSize,
 } from "./types";
-import { Binary } from "polkadot-api";
 
 const validTipSizes: { [key: string]: TipSize } = { small: "small", medium: "medium", large: "large" } as const;
 const validNetworks: { [key: string]: TipNetwork } = {
@@ -186,19 +184,12 @@ export const encodeProposal = async (
  * @param encodedProposal - Encoded proposal of the referendum - aka inlined preimage.
  */
 export const getReferendumId = async (
-  apiAtBlock: ApiDecoration<"promise">,
+  api: API,
+  blockHash: string,
   encodedProposal: string,
 ): Promise<undefined | number> => {
-  // https://github.com/paritytech/substrate/blob/63246b699d7e2645c8b12aae46f8f0765c682183/frame/referenda/src/lib.rs#L271-L278
-  // [index, track, proposal]
-  type ReferendumSubmittedData = [number, number, Record<string, unknown>];
-
-  const events = await apiAtBlock.query.system.events();
-  const referendumEvent = events.find(
-    (record) =>
-      record.event.section === "referenda" &&
-      record.event.method === "Submitted" &&
-      (record.event.data.toJSON() as ReferendumSubmittedData)[2].inline === encodedProposal,
-  );
-  return (referendumEvent?.event.data.toJSON() as ReferendumSubmittedData)?.[0];
+  const referendums = await api.event.Referenda.Submitted.pull();
+  const referendum = referendums.filter((r) => r.meta.block.hash === blockHash);
+  // TODO: Find a way to check that the referendum is the same as the encoded proposal
+  return referendum.length > 0 ? referendum[0].payload.track : undefined;
 };

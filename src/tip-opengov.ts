@@ -3,9 +3,8 @@ import { PolkadotRuntimeOriginCaller, PreimagesBounded, TraitsScheduleDispatchTi
 import { getPolkadotSigner } from "@polkadot-api/signer";
 import "@polkadot/api-augment";
 import "@polkadot/types-augment";
-import { ISubmittableResult } from "@polkadot/types/types";
 import type { BN } from "@polkadot/util";
-import { Binary, TxPromise } from "polkadot-api";
+import { Binary, TxFinalizedPayload, TxPromise } from "polkadot-api";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
@@ -77,17 +76,9 @@ export async function tipOpenGov(opts: { state: State; api: API; tipRequest: Tip
   const extrinsicResult = await new Promise<ExtrinsicResult>(async (resolve, reject) => {
     try {
       // TODO: Convert this method
-      const signer = getPolkadotSigner(botTipAccount.publicKey, "Sr25519", (input) =>
-        signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, input)
-          .then(resolve)
-          .catch(reject),
-      );
-      const proposalUnsubscribe = await referendumExtrinsic.signAndSubmit(signer);
-      // const proposalUnsubscribe = await referendumExtrinsic.signAndSubmit(botTipAccount, async (refResult) => {
-      //   await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
-      //     .then(resolve)
-      //     .catch(reject);
-      // });
+      const signer = getPolkadotSigner(botTipAccount.publicKey, "Sr25519", (input) => botTipAccount.sign(input));
+      const result = await referendumExtrinsic.signAndSubmit(signer);
+      await signAndSendCallback(bot, contributor.account, "referendum", result).then(resolve).catch(reject);
     } catch (e) {
       reject(e);
     }
@@ -110,36 +101,28 @@ async function signAndSendCallback(
   bot: Probot,
   contributor: ContributorAccount,
   type: "preimage" | "referendum",
-  unsubscribe: () => void,
-  result: ISubmittableResult,
+  result: TxFinalizedPayload,
 ): Promise<ExtrinsicResult> {
   return await new Promise((resolve, reject) => {
-    const resolveSuccess = (blockHash: string) => {
-      unsubscribe();
-      resolve({ success: true, blockHash });
-    };
-    if (result.status.isInBlock) {
-      const blockHash = result.status.asInBlock.toString();
+    if (result.ok) {
+      const blockHash = result.block.hash;
       bot.log(`${type} for ${contributor.address} included at blockHash ${blockHash}`);
       if (process.env.NODE_ENV === "test") {
         // Don't have to wait for block finalization in a test environment.
-        resolveSuccess(blockHash);
+        resolve({ success: true, blockHash });
       }
-    } else if (result.status.isFinalized) {
-      const blockHash = result.status.asFinalized.toString();
-      bot.log(`Tip for ${contributor.address} ${type} finalized at blockHash ${blockHash}`);
-      resolveSuccess(blockHash);
-    } else if (result.isError) {
-      bot.log(`status to string`, result.status.toString());
-      bot.log(`result.toHuman`, result.toHuman());
+    } else if (!result.ok) {
+      bot.log(`status to string`, result.events);
+      bot.log(`result.json`, JSON.stringify(result));
       bot.log(`result`, result);
 
-      const msg = `Tip for ${contributor.address} ${type} status is 👎: ${result.status.type}`;
-      bot.log(msg, result.status);
-      unsubscribe();
+      const lastEvent = result.events[result.events.length - 1];
+
+      const msg = `Tip for ${contributor.address} ${type} status is 👎: ${lastEvent.value.type}: ${lastEvent.value.value}`;
+      bot.log(msg, result.events);
       reject({ success: false, errorMessage: msg });
     } else {
-      bot.log(`Tip for ${contributor.address} ${type} status: ${result.status.type}`);
+      bot.log(`Tip for ${contributor.address} ${type} status: ${result.events[result.events.length - 1].type}`);
     }
   });
 }
@@ -151,8 +134,7 @@ const tryGetReferendumId = async (
   log: Probot["log"],
 ): Promise<null | number> => {
   try {
-    // TODO: Convert
-    const referendumId = await getReferendumId(await api.at(blockHash), encodedProposal);
+    const referendumId = await getReferendumId(api, blockHash, encodedProposal);
     if (referendumId === undefined) {
       log.error(
         `Could not find referendumId in block ${blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,
