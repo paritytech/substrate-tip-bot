@@ -1,6 +1,6 @@
-import { GovernanceOrigin } from "@polkadot-api/descriptors";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { BN } from "@polkadot/util";
+import { GovernanceOrigin } from "@polkadot-api/descriptors";
 import type { MatrixClient } from "matrix-js-sdk";
 import { Probot } from "probot";
 

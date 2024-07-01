@@ -1,10 +1,11 @@
 import { polkadot } from "@polkadot-api/descriptors";
-import { PolkadotClient, TypedApi, createClient } from "polkadot-api";
+import { getPolkadotSigner } from "@polkadot-api/signer";
+import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
 import { WebSocketProvider } from "polkadot-api/ws-provider/node";
+
 import { getChainConfig } from "./chain-config";
 import { tipOpenGov, tipOpenGovReferendumExtrinsic } from "./tip-opengov";
 import { State, TipRequest, TipResult } from "./types";
-import { getPolkadotSigner } from "@polkadot-api/signer";
 
 export type API = TypedApi<typeof polkadot>;
 

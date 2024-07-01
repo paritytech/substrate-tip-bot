@@ -1,6 +1,6 @@
-import { polkadot } from "@polkadot-api/descriptors";
 import { BN } from "@polkadot/util";
-import { TypedApi, createClient } from "polkadot-api";
+import { polkadot } from "@polkadot-api/descriptors";
+import { createClient, TypedApi } from "polkadot-api";
 import { WebSocketProvider } from "polkadot-api/ws-provider/node";
 import type { Probot } from "probot";
 

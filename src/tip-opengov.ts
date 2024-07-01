@@ -1,9 +1,9 @@
-import { until } from "@eng-automation/js";
-import { PolkadotRuntimeOriginCaller, PreimagesBounded, TraitsScheduleDispatchTime } from "@polkadot-api/descriptors";
-import { getPolkadotSigner } from "@polkadot-api/signer";
 import "@polkadot/api-augment";
 import "@polkadot/types-augment";
+import { until } from "@eng-automation/js";
 import type { BN } from "@polkadot/util";
+import { PolkadotRuntimeOriginCaller, PreimagesBounded, TraitsScheduleDispatchTime } from "@polkadot-api/descriptors";
+import { getPolkadotSigner } from "@polkadot-api/signer";
 import { Binary, TxFinalizedPayload, TxPromise } from "polkadot-api";
 import { Probot } from "probot";
 
