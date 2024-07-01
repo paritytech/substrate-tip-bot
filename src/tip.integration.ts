@@ -147,7 +147,7 @@ describe("tip", () => {
           throw new Error("Encoding the proposal failed.");
         }
         const { encodedProposal } = encodeProposalResult;
-        const nextFreeReferendumId = new BN(await api.query.referenda.referendumCount());
+        const nextFreeReferendumId = new BN((await api.query.referenda.referendumCount()).toNumber());
 
         // We surround our tip with two "decoys" to make sure that we find the proper one.
         await tipUser(state, tipRequest); // Will occupy nextFreeReferendumId
