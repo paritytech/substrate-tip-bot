@@ -20,7 +20,10 @@ async function createApi(state: State, tipRequest: TipRequest): Promise<{ api: A
   // Set up the types
   const polkadotClient: TypedApi<typeof polkadot> = client.getTypedApi(polkadot);
 
-  // TODO: Replace this with papi's
+  // TODO: Find all the equivalent to the other method
+  const version = await polkadotClient.constants.System.Version();
+  bot.log(`You are connected using the version ${version.authoring_version}`);
+
   /*
   // Get general information about the node we are connected to
   const [chain, nodeName, nodeVersion] = await Promise.all([
@@ -29,8 +32,8 @@ async function createApi(state: State, tipRequest: TipRequest): Promise<{ api: A
     api.rpc.system.version(),
   ]);
 
-  bot.log(`You are connected to chain ${chain.toString()} using ${nodeName.toString()} v${nodeVersion.toString()}`);
-  */
+  bot.log(`You are connected to chain ${chain.toString()} using ${version.authoring_version} v${nodeVersion.toString()}`);
+  //*/
 
   return { api: polkadotClient, provider: client };
 }
@@ -60,7 +63,7 @@ export async function tipUserLink(
   const { provider, api } = await createApi(state, tipRequest);
 
   try {
-    const preparedExtrinsic = tipOpenGovReferendumExtrinsic({ api, tipRequest });
+    const preparedExtrinsic = await tipOpenGovReferendumExtrinsic({ api, tipRequest });
     if (!preparedExtrinsic.success) {
       return preparedExtrinsic;
     }
