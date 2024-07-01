@@ -7,6 +7,7 @@ all the way to completing the referendum.
 import "@polkadot/api-augment";
 import { until } from "@eng-automation/js";
 import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
+import type { SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { BN } from "@polkadot/util";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
@@ -24,6 +25,22 @@ const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 const treasuryAccount = "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB"; // https://wiki.polkadot.network/docs/learn-account-advanced#system-accounts
 
 const network = "localrococo";
+
+const signAndSend = (signer: KeyringPair, extrinsic: SubmittableExtrinsic<"promise">) =>
+  new Promise<void>(async (resolve, reject) => {
+    try {
+      await extrinsic.signAndSend(signer, { nonce: -1 }, (result) => {
+        if (result.isError) {
+          reject(result.status.toString());
+        }
+        if (result.isInBlock) {
+          resolve();
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
 
 describe("E2E opengov tip", () => {
   let state: State;
@@ -69,9 +86,7 @@ describe("E2E opengov tip", () => {
     alice = keyring.addFromUri("//Alice");
 
     // In some local dev chains, treasury is broke, so we fund it.
-    await api.tx.balances
-      .transferKeepAlive(treasuryAccount, new BN("10000000000000"))
-      .signAndSend(alice, { nonce: -1 });
+    await signAndSend(alice, api.tx.balances.transferKeepAlive(treasuryAccount, new BN("10000000000000")));
   });
 
   test("Small OpenGov tip", async () => {
@@ -90,10 +105,13 @@ describe("E2E opengov tip", () => {
     expect(result.success).toBeTruthy();
 
     // Alice votes "aye" on the referendum.
-    await api.tx.referenda.placeDecisionDeposit(referendumId).signAndSend(alice, { nonce: -1 });
-    await api.tx.convictionVoting
-      .vote(referendumId, { Standard: { balance: new BN(1_000_000), vote: { aye: true, conviction: 1 } } })
-      .signAndSend(alice, { nonce: -1 });
+    await signAndSend(alice, api.tx.referenda.placeDecisionDeposit(referendumId));
+    await signAndSend(
+      alice,
+      api.tx.convictionVoting.vote(referendumId, {
+        Standard: { balance: new BN(1_000_000), vote: { aye: true, conviction: 1 } },
+      }),
+    );
 
     // Waiting for the referendum voting, enactment, and treasury spend period.
     await until(async () => (await getUserBalance(tipRequest.contributor.account.address)).gtn(0), 5000, 50);

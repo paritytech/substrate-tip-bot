@@ -41,6 +41,6 @@ runs:
         key: ${{ runner.os }}-${{ inputs.polkadot-version }}-${{ hashFiles('substrate-tip-bot/polkadot.e2e.patch') }}
     - name: Run a local Rococo node
       run: |
-        polkadot-sdk/target/release/polkadot --rpc-external --no-prometheus --no-telemetry --chain=rococo-dev --tmp --alice --execution Native --rpc-port 9902 &
+        polkadot-sdk/target/release/polkadot --rpc-external --no-prometheus --no-telemetry --chain=rococo-dev --tmp --alice --execution Native --unsafe-force-node-key-generation --rpc-port 9902 &
         until curl -s '127.0.0.1:9902'; do sleep 3; done
       shell: bash
