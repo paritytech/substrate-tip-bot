@@ -165,8 +165,6 @@ export const encodeProposal = async (
 
   const beneficiary = MultiAddress.Id(contributorAddress);
   const proposalTx = api.tx.Treasury.spend_local({ amount: nToBigInt(track.value), beneficiary });
-  // const proposalTx = api.tx.treasury.spendLocal(track.value.toString(), contributorAddress);
-  // TODO: Calculate the byte size
 
   const encodedProposal = await proposalTx.getEncodedData();
   const proposalByteSize = byteSize(encodedProposal.asBytes());

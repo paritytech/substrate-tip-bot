@@ -24,7 +24,6 @@ export const botInitialize: AsyncApplicationFunction = async (bot: Probot, { get
   }
 
   await cryptoWaitReady();
-  // TODO: Should I replace this?
   const keyring = new Keyring({ type: "sr25519" });
   const botTipAccount = keyring.addFromUri(envVar("ACCOUNT_SEED"));
   const state: State = {

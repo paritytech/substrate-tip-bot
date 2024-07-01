@@ -75,7 +75,6 @@ export async function tipOpenGov(opts: { state: State; api: API; tipRequest: Tip
 
   const extrinsicResult = await new Promise<ExtrinsicResult>(async (resolve, reject) => {
     try {
-      // TODO: Convert this method
       const signer = getPolkadotSigner(botTipAccount.publicKey, "Sr25519", (input) => botTipAccount.sign(input));
       const result = await referendumExtrinsic.signAndSubmit(signer);
       await signAndSendCallback(bot, contributor.account, "referendum", result).then(resolve).catch(reject);
