@@ -4,6 +4,7 @@ import { WebSocketProvider } from "polkadot-api/ws-provider/node";
 import { getChainConfig } from "./chain-config";
 import { tipOpenGov, tipOpenGovReferendumExtrinsic } from "./tip-opengov";
 import { State, TipRequest, TipResult } from "./types";
+import { getPolkadotSigner } from "@polkadot-api/signer";
 
 export type API = TypedApi<typeof polkadot>;
 
@@ -67,10 +68,14 @@ export async function tipUserLink(
     if (!preparedExtrinsic.success) {
       return preparedExtrinsic;
     }
-    const transactionHex = preparedExtrinsic.referendumExtrinsic.method.toHex();
+
+    const { botTipAccount } = state;
+
+    const signer = getPolkadotSigner(botTipAccount.publicKey, "Sr25519", (input) => botTipAccount.sign(input));
+    const { txHash } = await preparedExtrinsic.referendumExtrinsic.signAndSubmit(signer);
     const chainConfig = getChainConfig(tipRequest.contributor.account.network);
     const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(chainConfig.providerEndpoint)}#/`;
-    const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${transactionHex}`;
+    const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${txHash}`;
     return { success: true, extrinsicCreationLink };
   } finally {
     provider.destroy();
