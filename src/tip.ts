@@ -70,7 +70,6 @@ export async function tipUserLink(
     const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${transactionHex}`;
     return { success: true, extrinsicCreationLink };
   } finally {
-    await api.disconnect();
-    await provider.disconnect();
+    provider.destroy();
   }
 }
