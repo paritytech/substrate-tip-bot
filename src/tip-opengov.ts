@@ -1,50 +1,60 @@
 import "@polkadot/api-augment";
 import "@polkadot/types-augment";
 import { until } from "@eng-automation/js";
-import { ApiPromise } from "@polkadot/api";
-import type { SubmittableExtrinsic } from "@polkadot/api/types";
-import { ISubmittableResult } from "@polkadot/types/types";
 import type { BN } from "@polkadot/util";
+import { PolkadotRuntimeOriginCaller, PreimagesBounded, TraitsScheduleDispatchTime } from "@polkadot-api/descriptors";
+import { getPolkadotSigner } from "@polkadot-api/signer";
+import { Binary, TxFinalizedPayload, TxPromise } from "polkadot-api";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
+import { API } from "./tip";
 import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
 import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
 
 type ExtrinsicResult = { success: true; blockHash: string } | { success: false; errorMessage: string };
 
-export function tipOpenGovReferendumExtrinsic(opts: { api: ApiPromise; tipRequest: TipRequest }):
+export async function tipOpenGovReferendumExtrinsic(opts: { api: API; tipRequest: TipRequest }): Promise<
   | Exclude<TipResult, { success: true }>
   | {
       success: true;
-      referendumExtrinsic: SubmittableExtrinsic<"promise">;
+      referendumExtrinsic: { signAndSubmit: TxPromise<"promise"> };
       proposalByteSize: number;
-      encodedProposal: string;
+      encodedProposal: Binary;
       track: { track: OpenGovTrack; value: BN };
-    } {
+    }
+> {
   const { api, tipRequest } = opts;
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
     return { success: false, errorMessage: track.error };
   }
 
-  const encodeProposalResult = encodeProposal(api, tipRequest);
+  const encodeProposalResult = await encodeProposal(api, tipRequest);
   if ("success" in encodeProposalResult) {
     return encodeProposalResult;
   }
   const { encodedProposal, proposalByteSize } = encodeProposalResult;
 
-  const referendumExtrinsic = api.tx.referenda.submit(
-    // TODO: There should be a way to set those types properly.
-    { Origins: track.track.trackName } as never,
-    { Inline: encodedProposal },
-    { after: 10 } as never,
-  );
+  const proposal = PreimagesBounded.Inline(encodedProposal);
+  const proposalOrigin = PolkadotRuntimeOriginCaller.Origins(track.track.trackName);
+  const enactMoment = TraitsScheduleDispatchTime.After(10);
+  const referendumExtrinsic = api.tx.Referenda.submit({
+    proposal,
+    proposal_origin: proposalOrigin,
+    enactment_moment: enactMoment,
+  });
 
-  return { success: true, referendumExtrinsic, proposalByteSize, encodedProposal, track };
+  return {
+    success: true,
+    referendumExtrinsic,
+    proposalByteSize,
+    encodedProposal,
+    track,
+  };
 }
 
-export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipRequest: TipRequest }): Promise<TipResult> {
+export async function tipOpenGov(opts: { state: State; api: API; tipRequest: TipRequest }): Promise<TipResult> {
   const {
     state: { bot, botTipAccount },
     api,
@@ -52,24 +62,22 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
   } = opts;
   const { contributor } = tipRequest;
 
-  const preparedExtrinsic = tipOpenGovReferendumExtrinsic({ api, tipRequest });
+  const preparedExtrinsic = await tipOpenGovReferendumExtrinsic({ api, tipRequest });
   if (!preparedExtrinsic.success) {
     return preparedExtrinsic;
   }
   const { proposalByteSize, referendumExtrinsic, encodedProposal, track } = preparedExtrinsic;
 
-  const nonce = (await api.rpc.system.accountNextIndex(botTipAccount.address)).toNumber();
+  const nonce = await api.apis.AccountNonceApi.account_nonce(botTipAccount.address);
   bot.log(
     `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
   );
 
   const extrinsicResult = await new Promise<ExtrinsicResult>(async (resolve, reject) => {
     try {
-      const proposalUnsubscribe = await referendumExtrinsic.signAndSend(botTipAccount, async (refResult) => {
-        await signAndSendCallback(bot, contributor.account, "referendum", proposalUnsubscribe, refResult)
-          .then(resolve)
-          .catch(reject);
-      });
+      const signer = getPolkadotSigner(botTipAccount.publicKey, "Sr25519", (input) => botTipAccount.sign(input));
+      const result = await referendumExtrinsic.signAndSubmit(signer);
+      await signAndSendCallback(bot, contributor.account, "referendum", result).then(resolve).catch(reject);
     } catch (e) {
       reject(e);
     }
@@ -81,7 +89,7 @@ export async function tipOpenGov(opts: { state: State; api: ApiPromise; tipReque
 
   return {
     success: extrinsicResult.success,
-    referendumNumber: await tryGetReferendumId(api, extrinsicResult.blockHash, encodedProposal, bot.log),
+    referendumNumber: await tryGetReferendumId(api, extrinsicResult.blockHash, encodedProposal.asHex(), bot.log),
     blockHash: extrinsicResult.blockHash,
     track: track.track,
     value: track.value,
@@ -92,48 +100,38 @@ async function signAndSendCallback(
   bot: Probot,
   contributor: ContributorAccount,
   type: "preimage" | "referendum",
-  unsubscribe: () => void,
-  result: ISubmittableResult,
+  result: TxFinalizedPayload,
 ): Promise<ExtrinsicResult> {
   return await new Promise((resolve, reject) => {
-    const resolveSuccess = (blockHash: string) => {
-      unsubscribe();
-      resolve({ success: true, blockHash });
-    };
-    if (result.status.isInBlock) {
-      const blockHash = result.status.asInBlock.toString();
+    if (result.ok) {
+      const blockHash = result.block.hash;
       bot.log(`${type} for ${contributor.address} included at blockHash ${blockHash}`);
       if (process.env.NODE_ENV === "test") {
         // Don't have to wait for block finalization in a test environment.
-        resolveSuccess(blockHash);
+        resolve({ success: true, blockHash });
       }
-    } else if (result.status.isFinalized) {
-      const blockHash = result.status.asFinalized.toString();
-      bot.log(`Tip for ${contributor.address} ${type} finalized at blockHash ${blockHash}`);
-      resolveSuccess(blockHash);
-    } else if (result.isError) {
-      bot.log(`status to string`, result.status.toString());
-      bot.log(`result.toHuman`, result.toHuman());
+    } else {
+      bot.log(`status to string`, result.events);
+      bot.log(`result.json`, JSON.stringify(result));
       bot.log(`result`, result);
 
-      const msg = `Tip for ${contributor.address} ${type} status is 👎: ${result.status.type}`;
-      bot.log(msg, result.status);
-      unsubscribe();
+      const lastEvent = result.events[result.events.length - 1];
+
+      const msg = `Tip for ${contributor.address} ${type} status is 👎: ${lastEvent.value.type}: ${lastEvent.value.value}`;
+      bot.log(msg, result.events);
       reject({ success: false, errorMessage: msg });
-    } else {
-      bot.log(`Tip for ${contributor.address} ${type} status: ${result.status.type}`);
     }
   });
 }
 
 const tryGetReferendumId = async (
-  api: ApiPromise,
+  api: API,
   blockHash: string,
   encodedProposal: string,
   log: Probot["log"],
 ): Promise<null | number> => {
   try {
-    const referendumId = await getReferendumId(await api.at(blockHash), encodedProposal);
+    const referendumId = await getReferendumId(api, blockHash, encodedProposal);
     if (referendumId === undefined) {
       log.error(
         `Could not find referendumId in block ${blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,
@@ -173,7 +171,7 @@ export const updatePolkassemblyPost = async (opts: {
     postId: referendumId,
     proposalType: "referendums_v2",
     content: formatReason(tipRequest, { markdown: true }),
-    title: track.trackName,
+    title: track.trackName.type,
   });
   log.info(`Successfully updated Polkasssembly metadata for referendum ${referendumId.toString()}`);
   return {

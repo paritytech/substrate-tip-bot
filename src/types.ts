@@ -1,5 +1,6 @@
 import { KeyringPair } from "@polkadot/keyring/types";
 import { BN } from "@polkadot/util";
+import { GovernanceOrigin } from "@polkadot-api/descriptors";
 import type { MatrixClient } from "matrix-js-sdk";
 import { Probot } from "probot";
 
@@ -16,9 +17,9 @@ export type TipNetwork =
   | "westend";
 
 export type TipSize = "small" | "medium" | "large";
-export type OpenGovTrack = { trackNo: number; trackName: string };
-export const SmallTipperTrack: OpenGovTrack = { trackNo: 30, trackName: "SmallTipper" };
-export const BigTipperTrack: OpenGovTrack = { trackNo: 31, trackName: "BigTipper" };
+export type OpenGovTrack = { trackNo: number; trackName: GovernanceOrigin };
+export const SmallTipperTrack: OpenGovTrack = { trackNo: 30, trackName: GovernanceOrigin.SmallTipper() };
+export const BigTipperTrack: OpenGovTrack = { trackNo: 31, trackName: GovernanceOrigin.BigTipper() };
 
 export type ChainConfig = {
   providerEndpoint: string;

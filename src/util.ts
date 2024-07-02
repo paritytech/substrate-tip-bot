@@ -1,10 +1,10 @@
-import { ApiPromise } from "@polkadot/api";
-import { SubmittableExtrinsic } from "@polkadot/api/promise/types";
-import type { ApiDecoration } from "@polkadot/api/types";
-import { BN } from "@polkadot/util";
+import { BN, nToBigInt } from "@polkadot/util";
+import { MultiAddress } from "@polkadot-api/descriptors";
 import assert from "assert";
+import { Binary } from "polkadot-api";
 
 import { getChainConfig } from "./chain-config";
+import { API } from "./tip";
 import {
   BigTipperTrack,
   ContributorAccount,
@@ -151,22 +151,23 @@ export const formatTipSize = (tipRequest: TipRequest): string => {
 export const teamMatrixHandles =
   process.env.NODE_ENV === "development" ? [] : ["@przemek", "@mak", "@yuri", "@bullrich"]; // Don't interrupt other people when testing.
 
-export const byteSize = (extrinsic: SubmittableExtrinsic): number =>
-  extrinsic.method.toU8a().length * Uint8Array.BYTES_PER_ELEMENT;
+export const byteSize = (extrinsic: Uint8Array): number => extrinsic.length * Uint8Array.BYTES_PER_ELEMENT;
 
-export const encodeProposal = (
-  api: ApiPromise,
+export const encodeProposal = async (
+  api: API,
   tipRequest: TipRequest,
-): { encodedProposal: string; proposalByteSize: number } | Exclude<TipResult, { success: true }> => {
+): Promise<{ encodedProposal: Binary; proposalByteSize: number } | Exclude<TipResult, { success: true }>> => {
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
     return { success: false, errorMessage: track.error };
   }
   const contributorAddress = tipRequest.contributor.account.address;
 
-  const proposalTx = api.tx.treasury.spendLocal(track.value.toString(), contributorAddress);
-  const encodedProposal = proposalTx.method.toHex();
-  const proposalByteSize = byteSize(proposalTx);
+  const beneficiary = MultiAddress.Id(contributorAddress);
+  const proposalTx = api.tx.Treasury.spend_local({ amount: nToBigInt(track.value), beneficiary });
+
+  const encodedProposal = await proposalTx.getEncodedData();
+  const proposalByteSize = byteSize(encodedProposal.asBytes());
   if (proposalByteSize >= 128) {
     return {
       success: false,
@@ -181,19 +182,18 @@ export const encodeProposal = (
  * @param encodedProposal - Encoded proposal of the referendum - aka inlined preimage.
  */
 export const getReferendumId = async (
-  apiAtBlock: ApiDecoration<"promise">,
+  api: API,
+  blockHash: string,
   encodedProposal: string,
 ): Promise<undefined | number> => {
-  // https://github.com/paritytech/substrate/blob/63246b699d7e2645c8b12aae46f8f0765c682183/frame/referenda/src/lib.rs#L271-L278
-  // [index, track, proposal]
-  type ReferendumSubmittedData = [number, number, Record<string, unknown>];
-
-  const events = await apiAtBlock.query.system.events();
-  const referendumEvent = events.find(
-    (record) =>
-      record.event.section === "referenda" &&
-      record.event.method === "Submitted" &&
-      (record.event.data.toJSON() as ReferendumSubmittedData)[2].inline === encodedProposal,
-  );
-  return (referendumEvent?.event.data.toJSON() as ReferendumSubmittedData)?.[0];
+  const referendums = await api.event.Referenda.Submitted.pull();
+  for (const referendum of referendums) {
+    if (referendum.meta.block.hash === blockHash) {
+      const proposal = referendum.payload.proposal.value;
+      const proposalHex = (proposal instanceof Binary ? proposal : proposal.hash).asHex();
+      if (proposalHex === encodedProposal) {
+        return referendum.payload.index;
+      }
+    }
+  }
 };

@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 120
     container: "${{ vars.E2E_TESTS_CONTAINER }}"
     steps:
-      - uses: actions/checkout@v3.3.0
+      - uses: actions/checkout@v4
       - name: Start a local Polkadot node
         uses: ./.github/actions/run-polkadot
         with:
@@ -20,7 +20,7 @@ jobs:
         run: |
           until curl -s '127.0.0.1:9902'; do sleep 3; done
         timeout-minutes: 1
-      - uses: actions/setup-node@v3.5.1
+      - uses: actions/setup-node@v4
         with:
           node-version: "22"
       - run: yarn --immutable

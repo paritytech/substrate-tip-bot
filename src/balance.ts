@@ -1,5 +1,6 @@
-import { ApiPromise, WsProvider } from "@polkadot/api";
-import { BN } from "@polkadot/util";
+import { polkadot } from "@polkadot-api/descriptors";
+import { createClient, TypedApi } from "polkadot-api";
+import { WebSocketProvider } from "polkadot-api/ws-provider/node";
 import type { Probot } from "probot";
 
 import { getChainConfig } from "./chain-config";
@@ -28,19 +29,20 @@ export const updateBalance = async (opts: { network: TipNetwork; tipBotAddress: 
   const { network, tipBotAddress } = opts;
   const config = getChainConfig(network);
 
-  const provider = new WsProvider(config.providerEndpoint);
-  const api = await ApiPromise.create({ provider, throwOnConnect: true });
-  await api.isReady;
+  const jsonRpcProvider = WebSocketProvider(config.providerEndpoint);
+  const client = createClient(jsonRpcProvider);
+
+  // Check that it works
+  await client.getFinalizedBlock();
+
+  // Set up the types
+  const polkadotClient: TypedApi<typeof polkadot> = client.getTypedApi(polkadot);
 
   try {
-    const { data: balances } = await api.query.system.account(tipBotAddress);
-    const balance = balances.free
-      .toBn()
-      .div(new BN(10 ** config.decimals))
-      .toNumber();
+    const { data: balances } = await polkadotClient.query.System.Account.getValue(tipBotAddress);
+    const balance = Number(balances.free / 10n ** BigInt(config.decimals));
     balanceGauge.set({ network }, balance);
   } finally {
-    await api.disconnect();
-    await provider.disconnect();
+    client.destroy();
   }
 };
