@@ -189,5 +189,5 @@ export const getReferendumId = async (
   const referendums = await api.event.Referenda.Submitted.pull();
   const referendum = referendums.filter((r) => r.meta.block.hash === blockHash);
   // TODO: Find a way to check that the referendum is the same as the encoded proposal
-  return referendum.length > 0 ? referendum[0].payload.track : undefined;
+  return referendum.length > 0 ? referendum[0].payload.index : undefined;
 };
