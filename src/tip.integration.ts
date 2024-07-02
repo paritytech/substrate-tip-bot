@@ -7,17 +7,20 @@ they execute the tipping functions directly.
 */
 
 import "@polkadot/api-augment";
-import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
+import { Keyring } from "@polkadot/api";
 import { BN } from "@polkadot/util";
 import { cryptoWaitReady } from "@polkadot/util-crypto";
+import { polkadot } from "@polkadot-api/descriptors";
 import assert from "assert";
+import { createClient, PolkadotClient } from "polkadot-api";
+import { WebSocketProvider } from "polkadot-api/ws-provider/node";
 import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 
 import { getChainConfig } from "./chain-config";
 import { logMock, randomAddress } from "./testUtil";
-import { tipUser } from "./tip";
+import { API, tipUser } from "./tip";
 import { State, TipRequest } from "./types";
-import { encodeProposal, getReferendumId } from "./util";
+import { encodeProposal } from "./util";
 
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
@@ -39,9 +42,11 @@ const commonDockerArgs =
 describe("tip", () => {
   let state: State;
   let rococoContainer: StartedTestContainer;
-  let rococoApi: ApiPromise;
+  let rococoClient: PolkadotClient;
+  let rococoApi: API;
   let westendContainer: StartedTestContainer;
-  let westendApi: ApiPromise;
+  let westendClient: PolkadotClient;
+  let westendApi: API;
 
   beforeAll(async () => {
     rococoContainer = await new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
@@ -49,39 +54,35 @@ describe("tip", () => {
       .withWaitStrategy(Wait.forListeningPorts())
       .withCommand(("--chain rococo-dev " + commonDockerArgs).split(" "))
       .start();
-    rococoApi = new ApiPromise({
-      provider: new WsProvider(getChainConfig("localrococo").providerEndpoint),
-      types: { Address: "AccountId", LookupSource: "AccountId" },
-    });
+    rococoClient = createClient(WebSocketProvider(getChainConfig("localrococo").providerEndpoint));
+    rococoApi = rococoClient.getTypedApi(polkadot);
     westendContainer = await new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
       .withExposedPorts({ container: 9945, host: 9903 }) // Corresponds to chain-config.ts
       .withWaitStrategy(Wait.forListeningPorts())
       .withCommand(("--chain westend-dev " + commonDockerArgs).split(" "))
       .start();
-    westendApi = new ApiPromise({
-      provider: new WsProvider(getChainConfig("localwestend").providerEndpoint),
-      types: { Address: "AccountId", LookupSource: "AccountId" },
-    });
+    westendClient = createClient(WebSocketProvider(getChainConfig("localwestend").providerEndpoint));
+    westendApi = westendClient.getTypedApi(polkadot);
   });
 
   afterAll(async () => {
-    await rococoApi.disconnect();
-    await westendApi.disconnect();
+    rococoClient.destroy();
+    westendClient.destroy();
     await rococoContainer.stop();
     await westendContainer.stop();
   });
 
-  const getUserBalance = async (api: ApiPromise, userAddress: string) => {
-    const { data } = await api.query.system.account(userAddress);
-    return data.free.toBn();
+  const getUserBalance = async (api: API, userAddress: string) => {
+    const { data } = await api.query.System.Account.getValue(userAddress);
+    return data.free;
   };
 
   beforeAll(async () => {
     await cryptoWaitReady();
     const keyring = new Keyring({ type: "sr25519" });
     try {
-      await rococoApi.isReadyOrError;
-      await westendApi.isReadyOrError;
+      await rococoClient.getFinalizedBlock();
+      await westendClient.getFinalizedBlock();
     } catch (e) {
       throw new Error(
         `For these integrations tests, we're expecting local Rococo on ${
@@ -90,8 +91,8 @@ describe("tip", () => {
       );
     }
 
-    assert((await getUserBalance(rococoApi, tipperAccount)).gtn(0));
-    assert((await getUserBalance(westendApi, tipperAccount)).gtn(0));
+    assert(Number(await getUserBalance(rococoApi, tipperAccount)) > 0);
+    assert(Number(await getUserBalance(westendApi, tipperAccount)) > 0);
     state = {
       allowedGitHubOrg: "test",
       allowedGitHubTeam: "test",
@@ -107,7 +108,7 @@ describe("tip", () => {
           const tipRequest = getTipRequest({ size: tipSize }, network);
 
           const api = network === "localrococo" ? rococoApi : westendApi;
-          const nextFreeReferendumId = (await api.query.referenda.referendumCount()).toNumber();
+          const nextFreeReferendumId = await api.query.Referenda.ReferendumCount.getValue();
           const result = await tipUser(state, tipRequest);
 
           expect(result.success).toBeTruthy();
@@ -119,9 +120,8 @@ describe("tip", () => {
             expect(result.value).toBeDefined();
           }
 
-          const referendum = await api.query.referenda.referendumInfoFor(nextFreeReferendumId);
-          expect(referendum.isSome).toBeTruthy();
-          expect(referendum.value.isOngoing).toBeTruthy();
+          const referendum = await api.query.Referenda.ReferendumInfoFor.getValue(nextFreeReferendumId);
+          expect(referendum?.type).toEqual("Ongoing");
         });
       }
 
@@ -142,12 +142,13 @@ describe("tip", () => {
       test(`getReferendumId in ${network}`, async () => {
         const api = network === "localrococo" ? rococoApi : westendApi;
         const tipRequest = getTipRequest({ size: new BN("1") }, network);
-        const encodeProposalResult = encodeProposal(api, tipRequest);
+        const encodeProposalResult = await encodeProposal(api, tipRequest);
         if ("success" in encodeProposalResult) {
           throw new Error("Encoding the proposal failed.");
         }
-        const { encodedProposal } = encodeProposalResult;
-        const nextFreeReferendumId = new BN((await api.query.referenda.referendumCount()).toNumber());
+        // TODO: Find way to compare
+        // const { encodedProposal } = encodeProposalResult;
+        const nextFreeReferendumId = await api.query.Referenda.ReferendumCount.getValue();
 
         // We surround our tip with two "decoys" to make sure that we find the proper one.
         await tipUser(state, tipRequest); // Will occupy nextFreeReferendumId
@@ -158,12 +159,17 @@ describe("tip", () => {
           throw new Error("Tipping unsuccessful.");
         }
 
-        const apiAtBlock = await api.at(result.blockHash);
-        const id = await getReferendumId(apiAtBlock, encodedProposal);
+        const referendums = await api.event.Referenda.Submitted.pull();
+        const referendum = referendums.filter((r) => r.meta.block.hash === result.blockHash);
+        if (referendum.length === 0) {
+          throw new Error("No referendums found for blockhash");
+        }
+
+        const id = referendum[0].payload.index;
 
         expect(id).toBeDefined();
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        expect(new BN(id!).eq(nextFreeReferendumId.addn(1))).toBeTruthy();
+        expect(id).toEqual(nextFreeReferendumId + 1);
       });
     });
   }
