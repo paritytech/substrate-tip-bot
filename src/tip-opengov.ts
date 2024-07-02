@@ -110,7 +110,7 @@ async function signAndSendCallback(
         // Don't have to wait for block finalization in a test environment.
         resolve({ success: true, blockHash });
       }
-    } else if (!result.ok) {
+    } else {
       bot.log(`status to string`, result.events);
       bot.log(`result.json`, JSON.stringify(result));
       bot.log(`result`, result);
@@ -120,8 +120,6 @@ async function signAndSendCallback(
       const msg = `Tip for ${contributor.address} ${type} status is 👎: ${lastEvent.value.type}: ${lastEvent.value.value}`;
       bot.log(msg, result.events);
       reject({ success: false, errorMessage: msg });
-    } else {
-      bot.log(`Tip for ${contributor.address} ${type} status: ${result.events[result.events.length - 1].type}`);
     }
   });
 }
