@@ -184,7 +184,7 @@ export const encodeProposal = async (
 export const getReferendumId = async (
   api: API,
   blockHash: string,
-  encodedProposal: string,
+  _encodedProposal: string,
 ): Promise<undefined | number> => {
   const referendums = await api.event.Referenda.Submitted.pull();
   const referendum = referendums.filter((r) => r.meta.block.hash === blockHash);

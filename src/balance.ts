@@ -1,4 +1,3 @@
-import { BN } from "@polkadot/util";
 import { polkadot } from "@polkadot-api/descriptors";
 import { createClient, TypedApi } from "polkadot-api";
 import { WebSocketProvider } from "polkadot-api/ws-provider/node";
