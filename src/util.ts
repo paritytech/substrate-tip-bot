@@ -184,10 +184,16 @@ export const encodeProposal = async (
 export const getReferendumId = async (
   api: API,
   blockHash: string,
-  _encodedProposal: string,
+  encodedProposal: string,
 ): Promise<undefined | number> => {
   const referendums = await api.event.Referenda.Submitted.pull();
-  const referendum = referendums.filter((r) => r.meta.block.hash === blockHash);
-  // TODO: Find a way to check that the referendum is the same as the encoded proposal
-  return referendum.length > 0 ? referendum[0].payload.index : undefined;
+  for (const referendum of referendums) {
+    if (referendum.meta.block.hash === blockHash) {
+      const proposal = referendum.payload.proposal.value;
+      const proposalHex = (proposal instanceof Binary ? proposal : proposal.hash).asHex();
+      if (proposalHex === encodedProposal) {
+        return referendum.payload.index;
+      }
+    }
+  }
 };
