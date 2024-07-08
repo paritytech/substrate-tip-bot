@@ -143,6 +143,12 @@ cargo build --release --locked --features=fast-runtime -p polkadot
 
 You might need to fund the treasury (`13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB`) if it is broke.
 
+#### Patch
+
+The `polkadot-sdk` code is patched (see the line doing `git apply`) - that's why we have to build the code from source, instead of using a released binary or docker image.
+
+The patch involves changing the timelines around OpenGov mechanics, so that we can test the whole flow in a reasonable amount of time.
+
 ### Running the E2E tests
 
 ```bash
