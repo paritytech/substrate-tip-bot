@@ -5,6 +5,7 @@ import type { MatrixClient } from "matrix-js-sdk";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
+import { PolkadotSigner } from "polkadot-api";
 
 export type TipNetwork =
   | "localkusama"
@@ -43,7 +44,7 @@ export type Contributor = {
 export type State = {
   allowedGitHubOrg: string;
   allowedGitHubTeam: string;
-  botTipAccount: KeyringPair;
+  botTipAccount: PolkadotSigner;
   bot: Probot;
   polkassembly?: Polkassembly | undefined;
   matrix?:

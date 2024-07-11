@@ -11,6 +11,7 @@ import { Polkassembly } from "./polkassembly/polkassembly";
 import { API } from "./tip";
 import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
 import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
+import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 
 type ExtrinsicResult = { success: true; blockHash: string } | { success: false; errorMessage: string };
 
@@ -68,7 +69,8 @@ export async function tipOpenGov(opts: { state: State; api: API; tipRequest: Tip
   }
   const { proposalByteSize, referendumExtrinsic, encodedProposal, track } = preparedExtrinsic;
 
-  const nonce = await api.apis.AccountNonceApi.account_nonce(botTipAccount.address);
+  const address = ss58Address(botTipAccount.publicKey);
+  const nonce = await api.apis.AccountNonceApi.account_nonce(address);
   bot.log(
     `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
   );

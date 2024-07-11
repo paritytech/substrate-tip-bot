@@ -1902,6 +1902,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@noble/curves@npm:^1.4.0":
+  version: 1.4.2
+  resolution: "@noble/curves@npm:1.4.2"
+  dependencies:
+    "@noble/hashes": "npm:1.4.0"
+  checksum: 10c0/65620c895b15d46e8087939db6657b46a1a15cd4e0e4de5cd84b97a0dfe0af85f33a431bb21ac88267e3dc508618245d4cb564213959d66a84d690fe18a63419
+  languageName: node
+  linkType: hard
+
 "@noble/hashes@npm:1.3.1":
   version: 1.3.1
   resolution: "@noble/hashes@npm:1.3.1"
@@ -1909,7 +1918,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@noble/hashes@npm:1.4.0, @noble/hashes@npm:^1.3.1, @noble/hashes@npm:^1.3.3":
+"@noble/hashes@npm:1.4.0, @noble/hashes@npm:^1.3.1, @noble/hashes@npm:^1.3.3, @noble/hashes@npm:^1.4.0":
   version: 1.4.0
   resolution: "@noble/hashes@npm:1.4.0"
   checksum: 10c0/8c3f005ee72e7b8f9cff756dfae1241485187254e3f743873e22073d63906863df5d4f13d441b7530ea614b7a093f0d889309f28b59850f33b66cb26a779a4a5
@@ -2787,6 +2796,36 @@ __metadata:
     "@polkadot-api/json-rpc-provider-proxy": "npm:0.1.0"
     ws: "npm:^8.14.2"
   checksum: 10c0/661e37cd42bfd8f0f37f56b863abca4ee2509c38d6d7dfdd1b07e6f5deb7e3b72e6bb074fdda95e0355036f6e71ae62b4a4d276d60a94ae45f93115cdbdb1e27
+  languageName: node
+  linkType: hard
+
+"@polkadot-labs/hdkd-helpers@npm:0.0.6, @polkadot-labs/hdkd-helpers@npm:^0.0.6":
+  version: 0.0.6
+  resolution: "@polkadot-labs/hdkd-helpers@npm:0.0.6"
+  dependencies:
+    "@noble/curves": "npm:^1.4.0"
+    "@noble/hashes": "npm:^1.4.0"
+    "@polkadot-labs/schnorrkel-wasm": "npm:0.0.5"
+    "@scure/base": "npm:^1.1.5"
+    scale-ts: "npm:^1.6.0"
+  checksum: 10c0/66b7f7dc00833848681f040bad2b17a43b95ebecc470a563e36a6c9a6fef419f0e7f39991a75745446ca7af0bf8ec919514e54f3b2bf3952e447f1ec4053bf4d
+  languageName: node
+  linkType: hard
+
+"@polkadot-labs/hdkd@npm:^0.0.6":
+  version: 0.0.6
+  resolution: "@polkadot-labs/hdkd@npm:0.0.6"
+  dependencies:
+    "@polkadot-labs/hdkd-helpers": "npm:0.0.6"
+    "@polkadot-labs/schnorrkel-wasm": "npm:0.0.5"
+  checksum: 10c0/bf9da91bdc8a629bd247426393b4e0d81dbf2e116a5f641c579a6264a51e1fa5b9493bb7a596769bbeb1c0fe2f7130549e09080d03455d6b683c72bbd399eb6a
+  languageName: node
+  linkType: hard
+
+"@polkadot-labs/schnorrkel-wasm@npm:0.0.5":
+  version: 0.0.5
+  resolution: "@polkadot-labs/schnorrkel-wasm@npm:0.0.5"
+  checksum: 10c0/d0dcb873ad1078b6aab2a073eb13a6605561decba65fb6b9f65d0ad58549f7cc4ffafa7b5128da51a7e96a4f7b0e4468e7d30e9a1b23d15abe7402fccfb5be03
   languageName: node
   linkType: hard
 
@@ -3756,6 +3795,8 @@ __metadata:
     "@eng-automation/integrations": "npm:^4.4.0"
     "@eng-automation/js": "npm:^2.2.0"
     "@eng-automation/js-style": "npm:^3.1.0"
+    "@polkadot-labs/hdkd": "npm:^0.0.6"
+    "@polkadot-labs/hdkd-helpers": "npm:^0.0.6"
     "@polkadot/api": "npm:^12.0.2"
     "@polkadot/keyring": "npm:^12.3.2"
     "@polkadot/util": "npm:^12.3.2"

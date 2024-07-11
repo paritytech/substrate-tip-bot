@@ -72,8 +72,7 @@ export async function tipUserLink(
 
     const { botTipAccount } = state;
 
-    const signer = getPolkadotSigner(botTipAccount.publicKey, "Sr25519", (input) => botTipAccount.sign(input));
-    const { txHash } = await preparedExtrinsic.referendumExtrinsic.signAndSubmit(signer);
+    const { txHash } = await preparedExtrinsic.referendumExtrinsic.signAndSubmit(botTipAccount);
     const chainConfig = getChainConfig(tipRequest.contributor.account.network);
     const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(chainConfig.providerEndpoint)}#/`;
     const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${txHash}`;

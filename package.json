@@ -31,6 +31,8 @@
   "dependencies": {
     "@eng-automation/integrations": "^4.4.0",
     "@eng-automation/js": "^2.2.0",
+    "@polkadot-labs/hdkd": "^0.0.6",
+    "@polkadot-labs/hdkd-helpers": "^0.0.6",
     "@polkadot/api": "^12.0.2",
     "@polkadot/util": "^12.3.2",
     "@polkadot/util-crypto": "^12.3.2",
