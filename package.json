@@ -52,7 +52,7 @@
     "typescript": "^5.4.5"
   },
   "engines": {
-    "node": "^22"
+    "node": "^22 && !22.5.0"
   },
   "packageManager": "yarn@4.3.0"
 }
