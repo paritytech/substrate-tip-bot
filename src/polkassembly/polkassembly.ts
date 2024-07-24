@@ -187,7 +187,7 @@ export class Polkassembly {
     if (this.signer.type === "ethereum") {
       return await this.signer.wallet.signMessage(message);
     }
-    const signedMessage = this.signer.keyringPair.sign(messageInUint8Array);
+    const signedMessage = await this.signer.keyringPair.sign(messageInUint8Array);
     return "0x" + Buffer.from(signedMessage).toString("hex");
   }
 }

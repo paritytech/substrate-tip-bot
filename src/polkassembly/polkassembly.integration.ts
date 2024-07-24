@@ -5,11 +5,13 @@ import { cryptoWaitReady, randomAsU8a } from "@polkadot/util-crypto";
 import { logMock } from "#src/testUtil";
 
 import { Polkassembly } from "./polkassembly";
+import { generateSigner } from "#src/bot-initialize";
+import { PolkadotSigner } from "polkadot-api";
 
 const network = "moonbase";
 
 describe("Polkassembly with a test endpoint", () => {
-  let keyringPair: KeyringPair;
+  let keyringPair: PolkadotSigner;
   let polkassembly: Polkassembly;
 
   beforeAll(async () => {
@@ -19,7 +21,7 @@ describe("Polkassembly with a test endpoint", () => {
   beforeEach(() => {
     const keyring = new Keyring({ type: "sr25519" });
     // A random account for every test.
-    keyringPair = keyring.addFromSeed(randomAsU8a(32));
+    keyringPair = generateSigner(new TextDecoder().decode(randomAsU8a(32)));
     polkassembly = new Polkassembly("https://test.polkassembly.io/api/v1/", { type: "polkadot", keyringPair }, logMock);
   });
 
