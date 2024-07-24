@@ -10,6 +10,7 @@ import { tipUser, tipUserLink } from "./tip";
 import { updatePolkassemblyPost } from "./tip-opengov";
 import { GithubReactionType, State, TipRequest, TipResult } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
+import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 
 type OnIssueCommentResult =
   | { success: true; message: string }
@@ -180,7 +181,7 @@ export const handleTipRequest = async (
       recordTip({ tipRequest, tipResult });
       await updateBalance({
         network: tipRequest.contributor.account.network,
-        tipBotAddress: state.botTipAccount.address,
+        tipBotAddress: ss58Address(state.botTipAccount.publicKey),
       });
     } catch (e) {
       bot.log.error(e.message);

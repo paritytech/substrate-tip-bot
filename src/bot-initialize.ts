@@ -18,7 +18,7 @@ type AsyncApplicationFunction = (
   ...params: Parameters<ApplicationFunction>
 ) => Promise<ReturnType<ApplicationFunction>>;
 
-const generateSigner = (accountSeed: string): PolkadotSigner => {
+export const generateSigner = (accountSeed: string): PolkadotSigner => {
   const suri = parseSuri(accountSeed);
 
   const entropy = mnemonicToEntropy(suri.phrase);

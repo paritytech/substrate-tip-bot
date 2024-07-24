@@ -17,6 +17,8 @@ import { getChainConfig, rococoConstants } from "./chain-config";
 import { randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
+import { generateSigner } from "./bot-initialize";
+import { PolkadotSigner } from "polkadot-api";
 
 const logMock: any = console.log.bind(console); // eslint-disable-line @typescript-eslint/no-explicit-any
 logMock.error = console.error.bind(console);
@@ -26,7 +28,7 @@ const treasuryAccount = "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB"; // h
 
 const network = "localrococo";
 
-const signAndSend = (signer: KeyringPair, extrinsic: SubmittableExtrinsic<"promise">) =>
+const signAndSend = (signer: PolkadotSigner, extrinsic: SubmittableExtrinsic<"promise">) =>
   new Promise<void>(async (resolve, reject) => {
     try {
       await extrinsic.signAndSend(signer, { nonce: -1 }, (result) => {
@@ -45,7 +47,7 @@ const signAndSend = (signer: KeyringPair, extrinsic: SubmittableExtrinsic<"promi
 describe("E2E opengov tip", () => {
   let state: State;
   let api: ApiPromise;
-  let alice: KeyringPair;
+  let alice: PolkadotSigner;
 
   beforeAll(() => {
     api = new ApiPromise({
@@ -80,10 +82,10 @@ describe("E2E opengov tip", () => {
     state = {
       allowedGitHubOrg: "test",
       allowedGitHubTeam: "test",
-      botTipAccount: keyring.addFromUri("//Bob"),
+      botTipAccount: generateSigner("//Bob"),
       bot: { log: logMock } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     };
-    alice = keyring.addFromUri("//Alice");
+    alice = generateSigner("//Alice");
 
     // In some local dev chains, treasury is broke, so we fund it.
     await signAndSend(alice, api.tx.balances.transferKeepAlive(treasuryAccount, new BN("10000000000000")));

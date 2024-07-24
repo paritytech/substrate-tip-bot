@@ -1,6 +1,8 @@
+import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { stringToU8a } from "@polkadot/util";
 import { Wallet } from "ethers";
+import { PolkadotSigner } from "polkadot-api";
 import type { Probot } from "probot";
 
 const headers = { "Content-Type": "application/json" };
@@ -16,7 +18,7 @@ export class Polkassembly {
 
   constructor(
     private endpoint: string,
-    private signer: { type: "polkadot"; keyringPair: KeyringPair } | { type: "ethereum"; wallet: Wallet }, // Ethereum type is used for EVM chains.
+    private signer: { type: "polkadot"; keyringPair: PolkadotSigner } | { type: "ethereum"; wallet: Wallet }, // Ethereum type is used for EVM chains.
     private log: Probot["log"],
   ) {}
 
@@ -25,7 +27,9 @@ export class Polkassembly {
   }
 
   public get address(): string {
-    return this.signer.type === "polkadot" ? this.signer.keyringPair.address : this.signer.wallet.address;
+    return this.signer.type === "polkadot"
+      ? ss58Address(this.signer.keyringPair.publicKey)
+      : this.signer.wallet.address;
   }
 
   public async signup(network: string): Promise<void> {

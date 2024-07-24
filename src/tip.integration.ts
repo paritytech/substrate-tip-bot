@@ -21,6 +21,7 @@ import { logMock, randomAddress } from "./testUtil";
 import { API, tipUser } from "./tip";
 import { State, TipRequest } from "./types";
 import { encodeProposal } from "./util";
+import { generateSigner } from "./bot-initialize";
 
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
@@ -96,7 +97,7 @@ describe("tip", () => {
     state = {
       allowedGitHubOrg: "test",
       allowedGitHubTeam: "test",
-      botTipAccount: keyring.addFromUri("//Bob"),
+      botTipAccount: generateSigner("//Bob"),
       bot: { log: logMock } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     };
   });
