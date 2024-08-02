@@ -6,22 +6,18 @@ These tests do not cover the part with GitHub interaction,
 they execute the tipping functions directly.
 */
 
-import "@polkadot/api-augment";
-import { Keyring } from "@polkadot/api";
-import { BN } from "@polkadot/util";
-import { cryptoWaitReady } from "@polkadot/util-crypto";
-import { polkadot } from "@polkadot-api/descriptors";
+import { localrococo, localwestend } from "@polkadot-api/descriptors";
 import assert from "assert";
-import { createClient, PolkadotClient } from "polkadot-api";
+import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
 import { WebSocketProvider } from "polkadot-api/ws-provider/node";
 import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 
+import { generateSigner } from "./bot-initialize";
 import { getChainConfig } from "./chain-config";
 import { logMock, randomAddress } from "./testUtil";
-import { API, tipUser } from "./tip";
+import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
 import { encodeProposal } from "./util";
-import { generateSigner } from "./bot-initialize";
 
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
@@ -34,9 +30,9 @@ const getTipRequest = (tip: TipRequest["tip"], network: "localrococo" | "localwe
   };
 };
 
-const POLKADOT_VERSION = "v1.7.1";
+const POLKADOT_VERSION = "v1.14.1";
 const networks = ["localrococo", "localwestend"] as const;
-const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", new BN("1"), new BN("3")];
+const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", 1n, 3n];
 const commonDockerArgs =
   "--tmp --alice --execution Native --rpc-port 9945 --rpc-external --no-prometheus --no-telemetry --rpc-cors all";
 
@@ -44,10 +40,10 @@ describe("tip", () => {
   let state: State;
   let rococoContainer: StartedTestContainer;
   let rococoClient: PolkadotClient;
-  let rococoApi: API;
+  let rococoApi: TypedApi<typeof localrococo>;
   let westendContainer: StartedTestContainer;
   let westendClient: PolkadotClient;
-  let westendApi: API;
+  let westendApi: TypedApi<typeof localwestend>;
 
   beforeAll(async () => {
     rococoContainer = await new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
@@ -56,14 +52,17 @@ describe("tip", () => {
       .withCommand(("--chain rococo-dev " + commonDockerArgs).split(" "))
       .start();
     rococoClient = createClient(WebSocketProvider(getChainConfig("localrococo").providerEndpoint));
-    rococoApi = rococoClient.getTypedApi(polkadot);
+    rococoApi = rococoClient.getTypedApi(localrococo);
+    await rococoApi.query.System.Number.getValue();
+
     westendContainer = await new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
       .withExposedPorts({ container: 9945, host: 9903 }) // Corresponds to chain-config.ts
       .withWaitStrategy(Wait.forListeningPorts())
       .withCommand(("--chain westend-dev " + commonDockerArgs).split(" "))
       .start();
     westendClient = createClient(WebSocketProvider(getChainConfig("localwestend").providerEndpoint));
-    westendApi = westendClient.getTypedApi(polkadot);
+    westendApi = westendClient.getTypedApi(localwestend);
+    await westendApi.query.System.Number.getValue();
   });
 
   afterAll(async () => {
@@ -73,25 +72,12 @@ describe("tip", () => {
     await westendContainer.stop();
   });
 
-  const getUserBalance = async (api: API, userAddress: string) => {
+  const getUserBalance = async (api: TypedApi<typeof localrococo | typeof localwestend>, userAddress: string) => {
     const { data } = await api.query.System.Account.getValue(userAddress);
     return data.free;
   };
 
   beforeAll(async () => {
-    await cryptoWaitReady();
-    const keyring = new Keyring({ type: "sr25519" });
-    try {
-      await rococoClient.getFinalizedBlock();
-      await westendClient.getFinalizedBlock();
-    } catch (e) {
-      throw new Error(
-        `For these integrations tests, we're expecting local Rococo on ${
-          getChainConfig("localrococo").providerEndpoint
-        } and local Westend on ${getChainConfig("localwestend").providerEndpoint}. Please refer to the Readme.`,
-      );
-    }
-
     assert(Number(await getUserBalance(rococoApi, tipperAccount)) > 0);
     assert(Number(await getUserBalance(westendApi, tipperAccount)) > 0);
     state = {
@@ -127,7 +113,7 @@ describe("tip", () => {
       }
 
       test(`huge tip in ${network}`, async () => {
-        const tipRequest = getTipRequest({ size: new BN("1001") }, network);
+        const tipRequest = getTipRequest({ size: 1001n }, network);
 
         const result = await tipUser(state, tipRequest);
 
@@ -142,8 +128,10 @@ describe("tip", () => {
 
       test(`getReferendumId in ${network}`, async () => {
         const api = network === "localrococo" ? rococoApi : westendApi;
-        const tipRequest = getTipRequest({ size: new BN("1") }, network);
-        const encodeProposalResult = await encodeProposal(api, tipRequest);
+        const client = network === "localrococo" ? rococoClient : westendClient;
+
+        const tipRequest = getTipRequest({ size: 1n }, network);
+        const encodeProposalResult = await encodeProposal(client, tipRequest);
         if ("success" in encodeProposalResult) {
           throw new Error("Encoding the proposal failed.");
         }

@@ -1,50 +1,70 @@
-import "@polkadot/api-augment";
-import "@polkadot/types-augment";
 import { until } from "@eng-automation/js";
-import type { BN } from "@polkadot/util";
-import { PolkadotRuntimeOriginCaller, PreimagesBounded, TraitsScheduleDispatchTime } from "@polkadot-api/descriptors";
-import { getPolkadotSigner } from "@polkadot-api/signer";
-import { Binary, TxFinalizedPayload, TxPromise } from "polkadot-api";
+import {
+  GovernanceOrigin,
+  PolkadotRuntimeOriginCaller,
+  PreimagesBounded,
+  TraitsScheduleDispatchTime,
+  WestendRuntimeGovernanceOriginsPalletCustomOriginsOrigin,
+  WestendRuntimeOriginCaller,
+} from "@polkadot-api/descriptors";
+import { ss58Address } from "@polkadot-labs/hdkd-helpers";
+import { getDescriptor } from "#src/chain-config";
+import { Binary, PolkadotClient, TxFinalizedPayload, TxPromise } from "polkadot-api";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
-import { API } from "./tip";
-import { ContributorAccount, OpenGovTrack, State, TipRequest, TipResult } from "./types";
+import { ContributorAccount, OpenGovTrack, State, TipNetwork, TipRequest, TipResult } from "./types";
 import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
-import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 
 type ExtrinsicResult = { success: true; blockHash: string } | { success: false; errorMessage: string };
 
-export async function tipOpenGovReferendumExtrinsic(opts: { api: API; tipRequest: TipRequest }): Promise<
+export async function tipOpenGovReferendumExtrinsic(opts: { client: PolkadotClient; tipRequest: TipRequest }): Promise<
   | Exclude<TipResult, { success: true }>
   | {
       success: true;
       referendumExtrinsic: { signAndSubmit: TxPromise<"promise"> };
       proposalByteSize: number;
       encodedProposal: Binary;
-      track: { track: OpenGovTrack; value: BN };
+      track: { track: OpenGovTrack; value: bigint };
     }
 > {
-  const { api, tipRequest } = opts;
+  const { client, tipRequest } = opts;
   const track = tipSizeToOpenGovTrack(tipRequest);
   if ("error" in track) {
     return { success: false, errorMessage: track.error };
   }
 
-  const encodeProposalResult = await encodeProposal(api, tipRequest);
+  const encodeProposalResult = await encodeProposal(client, tipRequest);
   if ("success" in encodeProposalResult) {
     return encodeProposalResult;
   }
   const { encodedProposal, proposalByteSize } = encodeProposalResult;
 
   const proposal = PreimagesBounded.Inline(encodedProposal);
-  const proposalOrigin = PolkadotRuntimeOriginCaller.Origins(track.track.trackName);
+
   const enactMoment = TraitsScheduleDispatchTime.After(10);
-  const referendumExtrinsic = api.tx.Referenda.submit({
-    proposal,
-    proposal_origin: proposalOrigin,
-    enactment_moment: enactMoment,
-  });
+
+  let referendumExtrinsic: { signAndSubmit: TxPromise<"promise"> };
+  const network: TipNetwork = tipRequest.contributor.account.network;
+  if (network === "westend" || network === "localwestend" || network === "rococo" || network === "localrococo") {
+    const api = client.getTypedApi(getDescriptor(network));
+    const proposalOrigin = WestendRuntimeOriginCaller.Origins(
+      track.track.trackName as WestendRuntimeGovernanceOriginsPalletCustomOriginsOrigin,
+    );
+    referendumExtrinsic = api.tx.Referenda.submit({
+      proposal,
+      proposal_origin: proposalOrigin,
+      enactment_moment: enactMoment,
+    });
+  } else {
+    const api = client.getTypedApi(getDescriptor(network));
+    const proposalOrigin = PolkadotRuntimeOriginCaller.Origins(track.track.trackName as GovernanceOrigin);
+    referendumExtrinsic = api.tx.Referenda.submit({
+      proposal,
+      proposal_origin: proposalOrigin,
+      enactment_moment: enactMoment,
+    });
+  }
 
   return {
     success: true,
@@ -55,21 +75,27 @@ export async function tipOpenGovReferendumExtrinsic(opts: { api: API; tipRequest
   };
 }
 
-export async function tipOpenGov(opts: { state: State; api: API; tipRequest: TipRequest }): Promise<TipResult> {
+export async function tipOpenGov(opts: {
+  state: State;
+  client: PolkadotClient;
+  tipRequest: TipRequest;
+}): Promise<TipResult> {
   const {
     state: { bot, botTipAccount },
-    api,
+    client,
     tipRequest,
   } = opts;
   const { contributor } = tipRequest;
+  const network = tipRequest.contributor.account.network;
 
-  const preparedExtrinsic = await tipOpenGovReferendumExtrinsic({ api, tipRequest });
+  const preparedExtrinsic = await tipOpenGovReferendumExtrinsic({ client, tipRequest });
   if (!preparedExtrinsic.success) {
     return preparedExtrinsic;
   }
   const { proposalByteSize, referendumExtrinsic, encodedProposal, track } = preparedExtrinsic;
 
   const address = ss58Address(botTipAccount.publicKey);
+  const api = client.getTypedApi(getDescriptor(network));
   const nonce = await api.apis.AccountNonceApi.account_nonce(address);
   bot.log(
     `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
@@ -77,8 +103,7 @@ export async function tipOpenGov(opts: { state: State; api: API; tipRequest: Tip
 
   const extrinsicResult = await new Promise<ExtrinsicResult>(async (resolve, reject) => {
     try {
-      const signer = getPolkadotSigner(botTipAccount.publicKey, "Sr25519", (input) => botTipAccount.sign(input));
-      const result = await referendumExtrinsic.signAndSubmit(signer);
+      const result = await referendumExtrinsic.signAndSubmit(botTipAccount);
       await signAndSendCallback(bot, contributor.account, "referendum", result).then(resolve).catch(reject);
     } catch (e) {
       reject(e);
@@ -91,7 +116,13 @@ export async function tipOpenGov(opts: { state: State; api: API; tipRequest: Tip
 
   return {
     success: extrinsicResult.success,
-    referendumNumber: await tryGetReferendumId(api, extrinsicResult.blockHash, encodedProposal.asHex(), bot.log),
+    referendumNumber: await tryGetReferendumId(
+      client,
+      network,
+      extrinsicResult.blockHash,
+      encodedProposal.asHex(),
+      bot.log,
+    ),
     blockHash: extrinsicResult.blockHash,
     track: track.track,
     value: track.value,
@@ -127,13 +158,14 @@ async function signAndSendCallback(
 }
 
 const tryGetReferendumId = async (
-  api: API,
+  client: PolkadotClient,
+  network: TipNetwork,
   blockHash: string,
   encodedProposal: string,
   log: Probot["log"],
 ): Promise<null | number> => {
   try {
-    const referendumId = await getReferendumId(api, blockHash, encodedProposal);
+    const referendumId = await getReferendumId(client, network, blockHash, encodedProposal);
     if (referendumId === undefined) {
       log.error(
         `Could not find referendumId in block ${blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,

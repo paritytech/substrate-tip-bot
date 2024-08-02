@@ -1,11 +1,9 @@
-import { KeyringPair } from "@polkadot/keyring/types";
-import { BN } from "@polkadot/util";
 import { GovernanceOrigin } from "@polkadot-api/descriptors";
 import type { MatrixClient } from "matrix-js-sdk";
+import { PolkadotSigner } from "polkadot-api";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
-import { PolkadotSigner } from "polkadot-api";
 
 export type TipNetwork =
   | "localkusama"
@@ -18,17 +16,19 @@ export type TipNetwork =
   | "westend";
 
 export type TipSize = "small" | "medium" | "large";
-export type OpenGovTrack = { trackNo: number; trackName: GovernanceOrigin };
+
+// explicitly narrowing values to "SmallTipper" | "BigTipper", in order to get around network differences
+export type OpenGovTrack = { trackNo: number; trackName: { type: "SmallTipper" | "BigTipper" } };
 export const SmallTipperTrack: OpenGovTrack = { trackNo: 30, trackName: GovernanceOrigin.SmallTipper() };
 export const BigTipperTrack: OpenGovTrack = { trackNo: 31, trackName: GovernanceOrigin.BigTipper() };
 
 export type ChainConfig = {
   providerEndpoint: string;
-  decimals: number;
+  decimals: bigint;
   currencySymbol: string;
   smallTipperMaximum: number;
   bigTipperMaximum: number;
-  namedTips: Record<TipSize, number>;
+  namedTips: Record<TipSize, bigint>;
 };
 
 export type ContributorAccount = {
@@ -60,7 +60,7 @@ export type TipRequest = {
   pullRequestNumber: number;
   pullRequestRepo: string;
   tip: {
-    size: TipSize | BN;
+    size: TipSize | bigint;
   };
 };
 
@@ -70,7 +70,7 @@ export type TipResult =
       referendumNumber: number | null;
       blockHash: string;
       track: OpenGovTrack;
-      value: BN;
+      value: bigint;
     }
   | { success: false; errorMessage: string };
 

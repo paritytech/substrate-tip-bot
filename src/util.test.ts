@@ -1,5 +1,3 @@
-import "@polkadot/api-augment";
-
 import { randomAddress } from "./testUtil";
 import { parseContributorAccount } from "./util";
 

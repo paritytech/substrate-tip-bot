@@ -1,7 +1,9 @@
 import { envVar } from "@eng-automation/js";
-import { Keyring } from "@polkadot/api";
-import { cryptoWaitReady } from "@polkadot/util-crypto";
+import { sr25519CreateDerive } from "@polkadot-labs/hdkd";
+import { entropyToMiniSecret, mnemonicToEntropy, parseSuri, ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { createClient } from "matrix-js-sdk";
+import { PolkadotSigner } from "polkadot-api";
+import { getPolkadotSigner } from "polkadot-api/signer";
 import { ApplicationFunction, Context, Probot } from "probot";
 
 import { updateAllBalances } from "./balance";
@@ -9,10 +11,6 @@ import { handleIssueCommentCreated } from "./bot-handle-comment";
 import { addMetricsRoute } from "./metrics";
 import { Polkassembly } from "./polkassembly/polkassembly";
 import { State } from "./types";
-import { sr25519CreateDerive } from "@polkadot-labs/hdkd";
-import { entropyToMiniSecret, mnemonicToEntropy, parseSuri, ss58Address } from "@polkadot-labs/hdkd-helpers";
-import { getPolkadotSigner } from "polkadot-api/signer";
-import { PolkadotSigner } from "polkadot-api";
 
 type AsyncApplicationFunction = (
   ...params: Parameters<ApplicationFunction>
@@ -25,8 +23,7 @@ export const generateSigner = (accountSeed: string): PolkadotSigner => {
   const miniSecret = entropyToMiniSecret(entropy);
   const hdkdKeyPair = sr25519CreateDerive(miniSecret)(suri.paths);
 
-  const signer = getPolkadotSigner(hdkdKeyPair.publicKey, "Sr25519", (input) => hdkdKeyPair.sign(input));
-  return signer;
+  return getPolkadotSigner(hdkdKeyPair.publicKey, "Sr25519", (input) => hdkdKeyPair.sign(input));
 };
 
 export const botInitialize: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {

@@ -1,0 +1,46 @@
+{
+  "version": 0,
+  "descriptorPath": ".papi/descriptors",
+  "entries": {
+    "localpolkadot": {
+      "wsUrl": "ws://127.0.0.1:9900",
+      "chain": "polkadot",
+      "metadata": ".papi/metadata/polkadot.scale"
+    },
+    "localkusama": {
+      "wsUrl": "ws://127.0.0.1:9901",
+      "chain": "ksmcc3",
+      "metadata": ".papi/metadata/kusama.scale"
+    },
+    "localwestend": {
+      "wsUrl": "ws://127.0.0.1:9903",
+      "chain": "westend2",
+      "metadata": ".papi/metadata/westend.scale"
+    },
+    "localrococo": {
+      "wsUrl": "ws://127.0.0.1:9902",
+      "chain": "rococo_v2_2",
+      "metadata": ".papi/metadata/rococo.scale"
+    },
+    "polkadot": {
+      "wsUrl": "wss://rpc.polkadot.io",
+      "chain": "polkadot",
+      "metadata": ".papi/metadata/polkadot.scale"
+    },
+    "kusama": {
+      "wsUrl": "wss://kusama-rpc.polkadot.io",
+      "chain": "ksmcc3",
+      "metadata": ".papi/metadata/kusama.scale"
+    },
+    "westend": {
+      "wsUrl": "wss://westend-rpc.polkadot.io",
+      "chain": "westend2",
+      "metadata": ".papi/metadata/westend.scale"
+    },
+    "rococo": {
+      "wsUrl": "wss://rococo-rpc.polkadot.io",
+      "chain": "rococo_v2_2",
+      "metadata": ".papi/metadata/rococo.scale"
+    }
+  }
+}

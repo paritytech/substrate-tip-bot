@@ -1,6 +1,0 @@
-{
-  "polkadot": {
-    "wsUrl": "wss://rpc.polkadot.io",
-    "metadata": "polkadot.scale"
-  }
-}

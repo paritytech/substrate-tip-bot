@@ -135,7 +135,7 @@ For the E2E tests, we need a modified Rococo node in a way that speeds up the re
 ```bash
 git clone https://github.com/paritytech/polkadot-sdk.git
 cd polkadot-sdk
-git checkout polkadot-v1.7.1
+git checkout polkadot-v1.14.1
 git apply ../polkadot.e2e.patch
 cargo build --release --locked --features=fast-runtime -p polkadot
 ./target/release/polkadot --rpc-external --no-prometheus --no-telemetry --chain=rococo-dev --tmp --alice --execution Native --rpc-port 9902

@@ -46,13 +46,13 @@ index 3765569f183..ed226f4ef65 100644
  			min_support: SUP_BIG_TIPPER,
  		},
 diff --git a/polkadot/runtime/rococo/src/lib.rs b/polkadot/runtime/rococo/src/lib.rs
-index 03e96ab388b..f4a58d1792c 100644
+index c34b6119261..ad14cfc58d8 100644
 --- a/polkadot/runtime/rococo/src/lib.rs
 +++ b/polkadot/runtime/rococo/src/lib.rs
-@@ -451,7 +451,7 @@ parameter_types! {
- 	pub const ProposalBond: Permill = Permill::from_percent(5);
- 	pub const ProposalBondMinimum: Balance = 2000 * CENTS;
- 	pub const ProposalBondMaximum: Balance = 1 * GRAND;
+@@ -477,7 +477,7 @@ parameter_types! {
+ }
+ 
+ parameter_types! {
 -	pub const SpendPeriod: BlockNumber = 6 * DAYS;
 +	pub const SpendPeriod: BlockNumber = 1;
  	pub const Burn: Permill = Permill::from_perthousand(2);
@@ -106,13 +106,13 @@ index 3765569f183..ed226f4ef65 100644
  			min_support: SUP_BIG_TIPPER,
  		},
 diff --git a/polkadot/runtime/westend/src/lib.rs b/polkadot/runtime/westend/src/lib.rs
-index bbb010f60bf..ab0a6569482 100644
+index bfe2426ff8a..35cbb60e04c 100644
 --- a/polkadot/runtime/westend/src/lib.rs
 +++ b/polkadot/runtime/westend/src/lib.rs
-@@ -711,7 +711,7 @@ parameter_types! {
- 	pub const ProposalBond: Permill = Permill::from_percent(5);
- 	pub const ProposalBondMinimum: Balance = 2000 * CENTS;
- 	pub const ProposalBondMaximum: Balance = 1 * GRAND;
+@@ -666,7 +666,7 @@ impl pallet_fast_unstake::Config for Runtime {
+ }
+ 
+ parameter_types! {
 -	pub const SpendPeriod: BlockNumber = 6 * DAYS;
 +	pub const SpendPeriod: BlockNumber = 1;
  	pub const Burn: Permill = Permill::from_perthousand(2);

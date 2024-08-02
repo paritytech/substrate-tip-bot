@@ -1,6 +1,4 @@
 import { ss58Address } from "@polkadot-labs/hdkd-helpers";
-import { KeyringPair } from "@polkadot/keyring/types";
-import { stringToU8a } from "@polkadot/util";
 import { Wallet } from "ethers";
 import { PolkadotSigner } from "polkadot-api";
 import type { Probot } from "probot";
@@ -9,9 +7,11 @@ const headers = { "Content-Type": "application/json" };
 
 export class Polkassembly {
   private loggedInData: { token: string; network: string } | undefined = undefined;
+
   private get token(): string | undefined {
     return this.loggedInData?.token;
   }
+
   private get network(): string | undefined {
     return this.loggedInData?.network;
   }
@@ -183,11 +183,11 @@ export class Polkassembly {
   }
 
   public async signMessage(message: string): Promise<string> {
-    const messageInUint8Array = stringToU8a(message);
+    const messageInUint8Array: Uint8Array = Buffer.from(message);
     if (this.signer.type === "ethereum") {
       return await this.signer.wallet.signMessage(message);
     }
-    const signedMessage = await this.signer.keyringPair.sign(messageInUint8Array);
+    const signedMessage: Uint8Array = await this.signer.keyringPair.signBytes(messageInUint8Array);
     return "0x" + Buffer.from(signedMessage).toString("hex");
   }
 }

@@ -2,6 +2,7 @@ import { github } from "@eng-automation/integrations";
 import { GitHubInstance } from "@eng-automation/integrations/dist/github/types";
 import { envVar } from "@eng-automation/js";
 import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
+import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 
 import { updateBalance } from "./balance";
 import { matrixNotifyOnFailure, matrixNotifyOnNewTip } from "./matrix";
@@ -10,7 +11,6 @@ import { tipUser, tipUserLink } from "./tip";
 import { updatePolkassemblyPost } from "./tip-opengov";
 import { GithubReactionType, State, TipRequest, TipResult } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
-import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 
 type OnIssueCommentResult =
   | { success: true; message: string }

@@ -1,10 +1,8 @@
-import { BN, nToBigInt } from "@polkadot/util";
 import { MultiAddress } from "@polkadot-api/descriptors";
 import assert from "assert";
-import { Binary } from "polkadot-api";
+import { Binary, PolkadotClient } from "polkadot-api";
 
-import { getChainConfig } from "./chain-config";
-import { API } from "./tip";
+import { getChainConfig, getDescriptor } from "./chain-config";
 import {
   BigTipperTrack,
   ContributorAccount,
@@ -32,14 +30,14 @@ const validNetworks: { [key: string]: TipNetwork } = {
     : {}),
 } as const;
 
-export function getTipSize(tipSizeInput: string | undefined): TipSize | BN | { error: string } {
+export function getTipSize(tipSizeInput: string | undefined): TipSize | bigint | { error: string } {
   if (tipSizeInput === undefined || tipSizeInput.length === 0) {
     return { error: "Tip size not specified" };
   }
 
   try {
     // See if the input specifies an explicit numeric tip value.
-    return new BN(tipSizeInput);
+    return BigInt(tipSizeInput);
   } catch {}
 
   if (!tipSizeInput || !(tipSizeInput in validTipSizes)) {
@@ -49,16 +47,20 @@ export function getTipSize(tipSizeInput: string | undefined): TipSize | BN | { e
   return validTipSizes[tipSizeInput];
 }
 
-export function tipSizeToOpenGovTrack(tipRequest: TipRequest): { track: OpenGovTrack; value: BN } | { error: string } {
+export function tipSizeToOpenGovTrack(tipRequest: TipRequest):
+  | { track: OpenGovTrack; value: bigint }
+  | {
+      error: string;
+    } {
   const chainConfig = getChainConfig(tipRequest.contributor.account.network);
-  const decimalPower = new BN(10).pow(new BN(chainConfig.decimals));
+  const decimalPower = 10n ** chainConfig.decimals;
   const tipSize = tipRequest.tip.size;
-  const tipValue = BN.isBN(tipSize) ? tipSize : new BN(chainConfig.namedTips[tipSize]);
-  const tipValueWithDecimals = tipValue.mul(decimalPower);
-  if (tipValue.ltn(chainConfig.smallTipperMaximum)) {
+  const tipValue = typeof tipSize === "bigint" ? tipSize : chainConfig.namedTips[tipSize];
+  const tipValueWithDecimals = tipValue * decimalPower;
+  if (tipValue <= chainConfig.smallTipperMaximum) {
     return { track: SmallTipperTrack, value: tipValueWithDecimals };
   }
-  if (tipValue.ltn(chainConfig.bigTipperMaximum)) {
+  if (tipValue <= chainConfig.bigTipperMaximum) {
     return { track: BigTipperTrack, value: tipValueWithDecimals };
   }
   return {
@@ -134,7 +136,7 @@ export const formatReason = (tipRequest: TipRequest, opts: { markdown: boolean }
 export const formatTipSize = (tipRequest: TipRequest): string => {
   const tipSize = tipRequest.tip.size;
   const chainConfig = getChainConfig(tipRequest.contributor.account.network);
-  if (BN.isBN(tipSize)) {
+  if (typeof tipSize === "bigint") {
     // e.g. "13 KSM"
     return `${tipSize.toString()} ${chainConfig.currencySymbol}`;
   }
@@ -154,7 +156,7 @@ export const teamMatrixHandles =
 export const byteSize = (extrinsic: Uint8Array): number => extrinsic.length * Uint8Array.BYTES_PER_ELEMENT;
 
 export const encodeProposal = async (
-  api: API,
+  client: PolkadotClient,
   tipRequest: TipRequest,
 ): Promise<{ encodedProposal: Binary; proposalByteSize: number } | Exclude<TipResult, { success: true }>> => {
   const track = tipSizeToOpenGovTrack(tipRequest);
@@ -164,7 +166,9 @@ export const encodeProposal = async (
   const contributorAddress = tipRequest.contributor.account.address;
 
   const beneficiary = MultiAddress.Id(contributorAddress);
-  const proposalTx = api.tx.Treasury.spend_local({ amount: nToBigInt(track.value), beneficiary });
+
+  const api = client.getTypedApi(getDescriptor(tipRequest.contributor.account.network));
+  const proposalTx = api.tx.Treasury.spend_local({ amount: track.value, beneficiary });
 
   const encodedProposal = await proposalTx.getEncodedData();
   const proposalByteSize = byteSize(encodedProposal.asBytes());
@@ -178,14 +182,17 @@ export const encodeProposal = async (
 };
 
 /**
+ * FIXME: actual docs
  * @param apiAtBlock - The ApiPromise should be pointing at the block hash that is expected to contain the referendum.
  * @param encodedProposal - Encoded proposal of the referendum - aka inlined preimage.
  */
 export const getReferendumId = async (
-  api: API,
+  client: PolkadotClient,
+  network: TipNetwork,
   blockHash: string,
   encodedProposal: string,
 ): Promise<undefined | number> => {
+  const api = client.getTypedApi(getDescriptor(network));
   const referendums = await api.event.Referenda.Submitted.pull();
   for (const referendum of referendums) {
     if (referendum.meta.block.hash === blockHash) {
