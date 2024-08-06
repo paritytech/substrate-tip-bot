@@ -180,27 +180,3 @@ export const encodeProposal = async (
   }
   return { encodedProposal, proposalByteSize };
 };
-
-/**
- * FIXME: actual docs
- * @param apiAtBlock - The ApiPromise should be pointing at the block hash that is expected to contain the referendum.
- * @param encodedProposal - Encoded proposal of the referendum - aka inlined preimage.
- */
-export const getReferendumId = async (
-  client: PolkadotClient,
-  network: TipNetwork,
-  blockHash: string,
-  encodedProposal: string,
-): Promise<undefined | number> => {
-  const api = client.getTypedApi(getDescriptor(network));
-  const referendums = await api.event.Referenda.Submitted.pull();
-  for (const referendum of referendums) {
-    if (referendum.meta.block.hash === blockHash) {
-      const proposal = referendum.payload.proposal.value;
-      const proposalHex = (proposal instanceof Binary ? proposal : proposal.hash).asHex();
-      if (proposalHex === encodedProposal) {
-        return referendum.payload.index;
-      }
-    }
-  }
-};

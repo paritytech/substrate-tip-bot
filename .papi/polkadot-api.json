@@ -14,13 +14,11 @@
     },
     "localwestend": {
       "wsUrl": "ws://127.0.0.1:9903",
-      "chain": "westend2",
-      "metadata": ".papi/metadata/westend.scale"
+      "metadata": ".papi/metadata/localwestend.scale"
     },
     "localrococo": {
       "wsUrl": "ws://127.0.0.1:9902",
-      "chain": "rococo_v2_2",
-      "metadata": ".papi/metadata/rococo.scale"
+      "metadata": ".papi/metadata/localrococo.scale"
     },
     "polkadot": {
       "wsUrl": "wss://rpc.polkadot.io",

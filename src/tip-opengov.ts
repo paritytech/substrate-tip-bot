@@ -9,14 +9,12 @@ import {
 } from "@polkadot-api/descriptors";
 import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { getDescriptor } from "#src/chain-config";
-import { Binary, PolkadotClient, TxFinalizedPayload, TxPromise } from "polkadot-api";
+import { Binary, PolkadotClient, TxPromise } from "polkadot-api";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
-import { ContributorAccount, OpenGovTrack, State, TipNetwork, TipRequest, TipResult } from "./types";
-import { encodeProposal, formatReason, getReferendumId, tipSizeToOpenGovTrack } from "./util";
-
-type ExtrinsicResult = { success: true; blockHash: string } | { success: false; errorMessage: string };
+import { OpenGovTrack, State, TipNetwork, TipRequest, TipResult } from "./types";
+import { encodeProposal, formatReason, tipSizeToOpenGovTrack } from "./util";
 
 export async function tipOpenGovReferendumExtrinsic(opts: { client: PolkadotClient; tipRequest: TipRequest }): Promise<
   | Exclude<TipResult, { success: true }>
@@ -101,86 +99,36 @@ export async function tipOpenGov(opts: {
     `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
   );
 
-  const extrinsicResult = await new Promise<ExtrinsicResult>(async (resolve, reject) => {
-    try {
-      const result = await referendumExtrinsic.signAndSubmit(botTipAccount);
-      await signAndSendCallback(bot, contributor.account, "referendum", result).then(resolve).catch(reject);
-    } catch (e) {
-      reject(e);
-    }
-  });
+  let referendumNumber = 0;
 
-  if (extrinsicResult.success === false) {
-    return extrinsicResult;
-  }
-
-  return {
-    success: extrinsicResult.success,
-    referendumNumber: await tryGetReferendumId(
-      client,
-      network,
-      extrinsicResult.blockHash,
-      encodedProposal.asHex(),
-      bot.log,
-    ),
-    blockHash: extrinsicResult.blockHash,
-    track: track.track,
-    value: track.value,
-  };
-}
-
-async function signAndSendCallback(
-  bot: Probot,
-  contributor: ContributorAccount,
-  type: "preimage" | "referendum",
-  result: TxFinalizedPayload,
-): Promise<ExtrinsicResult> {
-  return await new Promise((resolve, reject) => {
-    if (result.ok) {
-      const blockHash = result.block.hash;
-      bot.log(`${type} for ${contributor.address} included at blockHash ${blockHash}`);
-      if (process.env.NODE_ENV === "test") {
-        // Don't have to wait for block finalization in a test environment.
-        resolve({ success: true, blockHash });
-      }
-    } else {
-      bot.log(`status to string`, result.events);
-      bot.log(`result.json`, JSON.stringify(result));
-      bot.log(`result`, result);
-
-      const lastEvent = result.events[result.events.length - 1];
-
-      const msg = `Tip for ${contributor.address} ${type} status is 👎: ${lastEvent.value.type}: ${lastEvent.value.value}`;
-      bot.log(msg, result.events);
-      reject({ success: false, errorMessage: msg });
-    }
-  });
-}
-
-const tryGetReferendumId = async (
-  client: PolkadotClient,
-  network: TipNetwork,
-  blockHash: string,
-  encodedProposal: string,
-  log: Probot["log"],
-): Promise<null | number> => {
   try {
-    const referendumId = await getReferendumId(client, network, blockHash, encodedProposal);
-    if (referendumId === undefined) {
-      log.error(
-        `Could not find referendumId in block ${blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,
-      );
-      return null;
+    const result = await referendumExtrinsic.signAndSubmit(botTipAccount);
+    bot.log(`referendum for ${contributor.account.address} included at blockHash ${result.block.hash}`);
+
+    const referendumEvents = api.event.Referenda.Submitted.filter(result.events).filter((event) => {
+      const proposal = event.proposal.value;
+      const proposalHex = (proposal instanceof Binary ? proposal : proposal.hash).asHex();
+      return proposalHex === encodedProposal.asHex();
+    });
+    if (referendumEvents.length === 0) {
+      return {
+        success: false,
+        errorMessage: `Transaction ${result.txHash} was submitted, but no "Referenda.Submitted" events were produced`,
+      };
     }
-    return referendumId;
+
+    return {
+      success: true,
+      referendumNumber: referendumEvents[0].index,
+      blockHash: result.block.hash,
+      track: track.track,
+      value: track.value,
+    };
   } catch (e) {
-    log.error(
-      `Error when trying to find referendumId in block ${blockHash}. EncodedProposal="${encodedProposal}". Polkassembly post will NOT be updated.`,
-    );
-    log.error(e.message);
-    return null;
+    const msg = `Tip for ${contributor.account.address} referendum status is 👎: ${e}`;
+    return { success: false, errorMessage: msg };
   }
-};
+}
 
 export const updatePolkassemblyPost = async (opts: {
   polkassembly: Polkassembly;
