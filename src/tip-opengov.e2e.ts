@@ -6,6 +6,7 @@ all the way to completing the referendum.
 
 import { until } from "@eng-automation/js";
 import { ConvictionVotingVoteAccountVote, localrococo, MultiAddress } from "@polkadot-api/descriptors";
+import { DEV_PHRASE } from "@polkadot-labs/hdkd-helpers";
 import assert from "assert";
 import { createClient, PolkadotClient, PolkadotSigner, TypedApi } from "polkadot-api";
 import { WebSocketProvider } from "polkadot-api/ws-provider/node";
@@ -15,6 +16,7 @@ import { papiConfig, rococoConstants } from "./chain-config";
 import { randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
+import { filter, firstValueFrom, mergeMap, pairwise, race, skip, throwError } from "rxjs";
 
 const logMock: any = console.log.bind(console); // eslint-disable-line @typescript-eslint/no-explicit-any
 logMock.error = console.error.bind(console);
@@ -23,6 +25,24 @@ const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 const treasuryAccount = "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB"; // https://wiki.polkadot.network/docs/learn-account-advanced#system-accounts
 
 const network = "localrococo";
+
+const aliceMnemonic = `${DEV_PHRASE}//Alice`;
+const bobMnemonic = `${DEV_PHRASE}//Bob`;
+
+const expectBalanceIncrease = async (useraddress: string, api: TypedApi<typeof localrococo>, blocksNum: number) =>
+  await firstValueFrom(
+    race([
+      api.query.System.Account.watchValue(useraddress, "best")
+        .pipe(pairwise())
+        .pipe(filter(([oldValue, newValue]) => newValue.data.free > oldValue.data.free)),
+      api.query.System.Number.watchValue("best").pipe(
+        skip(blocksNum),
+        mergeMap(() =>
+          throwError(() => new Error(`Balance of ${useraddress} did not increase in ${blocksNum} blocks`)),
+        ),
+      ),
+    ]),
+  );
 
 describe("E2E opengov tip", () => {
   let state: State;
@@ -41,7 +61,8 @@ describe("E2E opengov tip", () => {
   });
 
   const getUserBalance = async (userAddress: string): Promise<bigint> => {
-    const { data } = await api.query.System.Account.getValue(userAddress);
+    const wat = await api.constants.Referenda.Tracks();
+    const { data } = await api.query.System.Account.getValue(userAddress, { at: "best" });
     return data.free;
   };
 
@@ -60,10 +81,10 @@ describe("E2E opengov tip", () => {
     state = {
       allowedGitHubOrg: "test",
       allowedGitHubTeam: "test",
-      botTipAccount: generateSigner("//Bob"),
+      botTipAccount: generateSigner(bobMnemonic),
       bot: { log: logMock } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     };
-    alice = generateSigner("//Alice");
+    alice = generateSigner(aliceMnemonic);
 
     // In some local dev chains, treasury is broke, so we fund it.
     await api.tx.Balances.transfer_keep_alive({
@@ -95,7 +116,7 @@ describe("E2E opengov tip", () => {
     }).signAndSubmit(alice);
 
     // Waiting for the referendum voting, enactment, and treasury spend period.
-    await until(async () => (await getUserBalance(tipRequest.contributor.account.address)) >= 0n, 5000, 50);
+    await expectBalanceIncrease(tipRequest.contributor.account.address, api, 9);
 
     // At the end, the balance of the contributor should increase by the KSM small tip amount.
     const expectedTip = BigInt(rococoConstants.namedTips.small) * 10n ** BigInt(rococoConstants.decimals);

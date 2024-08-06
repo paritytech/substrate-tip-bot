@@ -2571,9 +2571,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@polkadot-api/descriptors@portal:./.papi/descriptors::locator=%40substrate%2Fsubstrate-tip-bot%40workspace%3A.":
+"@polkadot-api/descriptors@portal:.papi/descriptors::locator=%40substrate%2Fsubstrate-tip-bot%40workspace%3A.":
   version: 0.0.0-use.local
-  resolution: "@polkadot-api/descriptors@portal:./.papi/descriptors::locator=%40substrate%2Fsubstrate-tip-bot%40workspace%3A."
+  resolution: "@polkadot-api/descriptors@portal:.papi/descriptors::locator=%40substrate%2Fsubstrate-tip-bot%40workspace%3A."
   peerDependencies:
     polkadot-api: "*"
   languageName: node
@@ -3848,6 +3848,7 @@ __metadata:
     probot: "npm:^12.2.8"
     prom-client: "npm:^14.2.0"
     rimraf: "npm:^3.0.2"
+    rxjs: "npm:^7.8.1"
     smee-client: "npm:^1.2.2"
     testcontainers: "npm:^10.2.1"
     ts-jest: "npm:^29.2.4"

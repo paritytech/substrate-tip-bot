@@ -1,5 +1,7 @@
 import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
 import { WebSocketProvider } from "polkadot-api/ws-provider/node";
+import { withLogsRecorder } from "polkadot-api/logs-provider";
+import fs from "fs";
 
 import { ChainDescriptor, getChainConfig, getDescriptor, papiConfig } from "./chain-config";
 import { tipOpenGov, tipOpenGovReferendumExtrinsic } from "./tip-opengov";
@@ -15,8 +17,8 @@ async function createApi(
 }> {
   const { bot } = state;
 
-  const jsonRpcProvider = WebSocketProvider(papiConfig.entries[network].wsUrl);
-  const client = createClient(jsonRpcProvider);
+  const provider = WebSocketProvider(papiConfig.entries[network].wsUrl);
+  const client = createClient(provider);
 
   // Check that it works
   await client.getFinalizedBlock();
