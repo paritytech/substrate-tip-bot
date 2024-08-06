@@ -32,7 +32,7 @@ jobs:
         timeout-minutes: 1
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "22.5.1"
       - run: yarn --immutable
       - run: yarn test:e2e
         timeout-minutes: 10

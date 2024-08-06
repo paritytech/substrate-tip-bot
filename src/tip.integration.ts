@@ -30,7 +30,7 @@ const getTipRequest = (tip: TipRequest["tip"], network: "localrococo" | "localwe
   };
 };
 
-const POLKADOT_VERSION = "v1.14.1";
+const POLKADOT_VERSION = "v1.15.0";
 const networks = ["localrococo", "localwestend"] as const;
 const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", 1n, 3n];
 const commonDockerArgs =

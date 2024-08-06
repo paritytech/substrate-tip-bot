@@ -46,7 +46,7 @@ index 3765569f183..ed226f4ef65 100644
  			min_support: SUP_BIG_TIPPER,
  		},
 diff --git a/polkadot/runtime/rococo/src/lib.rs b/polkadot/runtime/rococo/src/lib.rs
-index c34b6119261..ad14cfc58d8 100644
+index 7309eeead31..35d75fc49cd 100644
 --- a/polkadot/runtime/rococo/src/lib.rs
 +++ b/polkadot/runtime/rococo/src/lib.rs
 @@ -477,7 +477,7 @@ parameter_types! {
@@ -106,7 +106,7 @@ index 3765569f183..ed226f4ef65 100644
  			min_support: SUP_BIG_TIPPER,
  		},
 diff --git a/polkadot/runtime/westend/src/lib.rs b/polkadot/runtime/westend/src/lib.rs
-index bfe2426ff8a..35cbb60e04c 100644
+index 369fd308272..733ec32f581 100644
 --- a/polkadot/runtime/westend/src/lib.rs
 +++ b/polkadot/runtime/westend/src/lib.rs
 @@ -666,7 +666,7 @@ impl pallet_fast_unstake::Config for Runtime {
