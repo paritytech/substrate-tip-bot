@@ -1,9 +1,8 @@
-import { polkadot } from "@polkadot-api/descriptors";
-import { createClient, TypedApi } from "polkadot-api";
+import { createClient } from "polkadot-api";
 import { WebSocketProvider } from "polkadot-api/ws-provider/node";
 import type { Probot } from "probot";
 
-import { getChainConfig } from "./chain-config";
+import { getChainConfig, getDescriptor, papiConfig } from "./chain-config";
 import { balanceGauge } from "./metrics";
 import { TipNetwork } from "./types";
 
@@ -29,17 +28,12 @@ export const updateBalance = async (opts: { network: TipNetwork; tipBotAddress: 
   const { network, tipBotAddress } = opts;
   const config = getChainConfig(network);
 
-  const jsonRpcProvider = WebSocketProvider(config.providerEndpoint);
+  const jsonRpcProvider = WebSocketProvider(papiConfig.entries[network].wsUrl);
   const client = createClient(jsonRpcProvider);
-
-  // Check that it works
-  await client.getFinalizedBlock();
-
-  // Set up the types
-  const polkadotClient: TypedApi<typeof polkadot> = client.getTypedApi(polkadot);
+  const api = client.getTypedApi(getDescriptor(network));
 
   try {
-    const { data: balances } = await polkadotClient.query.System.Account.getValue(tipBotAddress);
+    const { data: balances } = await api.query.System.Account.getValue(tipBotAddress);
     const balance = Number(balances.free / 10n ** BigInt(config.decimals));
     balanceGauge.set({ network }, balance);
   } finally {

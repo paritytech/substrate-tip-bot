@@ -43,7 +43,6 @@
   },
   "devDependencies": {
     "@eng-automation/js-style": "^3.1.0",
-    "@polkadot/keyring": "^12.3.2",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.14.2",
     "dotenv": "^16.0.1",
@@ -53,7 +52,6 @@
     "smee-client": "^1.2.2",
     "testcontainers": "^10.2.1",
     "ts-jest": "^29.2.4",
-    "ts-jest-resolver": "^2.0.1",
     "typescript": "^5.4.5"
   },
   "engines": {

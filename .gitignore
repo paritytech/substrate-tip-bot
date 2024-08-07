@@ -2,7 +2,7 @@ node_modules/
 coverage/
 lib/
 dist/
-/e2e
+/integration_tests
 
 #IDE
 .idea

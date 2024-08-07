@@ -105,9 +105,20 @@ describe("E2E opengov tip", () => {
 
     // Alice votes "aye" on the referendum.
     await api.tx.Referenda.place_decision_deposit({ index: referendumId }).signAndSubmit(alice);
+
+    /**
+     * Weirdly enough, Vote struct is serialized in a special way, where first bit is a "aye" / "nay" bit,
+     * and the rest is conviction enum
+     *
+     * 0b1000_0000 (aye) + 1 (conviction1x) = 129
+     *
+     * @see https://github.com/paritytech/polkadot-sdk/blob/efdc1e9b1615c5502ed63ffc9683d99af6397263/substrate/frame/conviction-voting/src/vote.rs#L36-L53
+     * @see https://github.com/paritytech/polkadot-sdk/blob/efdc1e9b1615c5502ed63ffc9683d99af6397263/substrate/frame/conviction-voting/src/conviction.rs#L66-L95
+     */
+    const vote = 129;
     await api.tx.ConvictionVoting.vote({
       poll_index: referendumId,
-      vote: ConvictionVotingVoteAccountVote.Standard({ balance: 1_000_000n, vote: 1 }), // TODO: doublecheck {vote: 1}
+      vote: ConvictionVotingVoteAccountVote.Standard({ balance: 1_000_000n, vote }),
     }).signAndSubmit(alice);
 
     // Waiting for the referendum voting, enactment, and treasury spend period.

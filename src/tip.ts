@@ -1,7 +1,7 @@
 import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
 import { WebSocketProvider } from "polkadot-api/ws-provider/node";
 
-import { ChainDescriptor, getChainConfig, getDescriptor, papiConfig } from "./chain-config";
+import { ChainDescriptor, getDescriptor, papiConfig } from "./chain-config";
 import { tipOpenGov, tipOpenGovReferendumExtrinsic } from "./tip-opengov";
 import { State, TipNetwork, TipRequest, TipResult } from "./types";
 
@@ -24,20 +24,8 @@ async function createApi(
   // Set up the types
   const api = client.getTypedApi(getDescriptor(network));
 
-  // TODO: Find all the equivalent to the other method
   const version = await api.apis.Core.version();
-  bot.log(`You are connected to chain ${network} using the version ${version.authoring_version}`);
-
-  /*
-  // Get general information about the node we are connected to
-  const [chain, nodeName, nodeVersion] = await Promise.all([
-    api.rpc.system.chain(),
-    api.rpc.system.name(),
-    api.rpc.system.version(),
-  ]);
-
-  bot.log(`You are connected to chain ${chain.toString()} using ${version.authoring_version} v${nodeVersion.toString()}`);
-  //*/
+  bot.log(`You are connected to chain ${version.spec_name}#${version.spec_version}`);
 
   return { client: client };
 }
@@ -64,7 +52,8 @@ export async function tipUserLink(
   state: State,
   tipRequest: TipRequest,
 ): Promise<{ success: false; errorMessage: string } | { success: true; extrinsicCreationLink: string }> {
-  const { client } = await createApi(tipRequest.contributor.account.network, state);
+  const { network } = tipRequest.contributor.account;
+  const { client } = await createApi(network, state);
 
   try {
     const preparedExtrinsic = await tipOpenGovReferendumExtrinsic({ client, tipRequest });
@@ -75,8 +64,7 @@ export async function tipUserLink(
     const { botTipAccount } = state;
 
     const { txHash } = await preparedExtrinsic.referendumExtrinsic.signAndSubmit(botTipAccount);
-    const chainConfig = getChainConfig(tipRequest.contributor.account.network);
-    const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(chainConfig.providerEndpoint)}#/`;
+    const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${papiConfig.entries[network].wsUrl}#/`;
     const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${txHash}`;
     return { success: true, extrinsicCreationLink };
   } finally {

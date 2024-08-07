@@ -13,15 +13,15 @@ import fs from "fs/promises";
 import path from "path";
 import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
 import { WebSocketProvider } from "polkadot-api/ws-provider/node";
+import { filter, firstValueFrom } from "rxjs";
 import { Readable } from "stream";
 import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 
 import { generateSigner } from "./bot-initialize";
-import { getChainConfig } from "./chain-config";
+import { papiConfig } from "./chain-config";
 import { logMock, randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
-import { filter, firstValueFrom } from "rxjs";
 
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
@@ -34,7 +34,7 @@ const getTipRequest = (tip: TipRequest["tip"], network: "localrococo" | "localwe
   };
 };
 
-const containterLogsDir = path.join(process.cwd(), "e2e", "containter_logs");
+const containterLogsDir = path.join(process.cwd(), "integration_tests", "containter_logs");
 const start = Date.now();
 
 // Taking all output to e2e/*.container.log
@@ -43,9 +43,9 @@ function logConsumer(name: string): (stream: Readable) => Promise<void> {
     const logsfile = await fs.open(path.join(containterLogsDir, `${name}.log`), "w");
     stream.on("data", (line) => logsfile.write(`[${Date.now() - start}ms] ${line}`));
     stream.on("err", (line) => logsfile.write(`[${Date.now() - start}ms] ${line}`));
-    stream.on("end", () => {
-      logsfile.write("Stream closed\n");
-      logsfile.close();
+    stream.on("end", async () => {
+      await logsfile.write("Stream closed\n");
+      await logsfile.close();
     });
   };
 }
@@ -90,10 +90,10 @@ describe("tip", () => {
         .start(),
     ]);
 
-    rococoClient = createClient(WebSocketProvider(getChainConfig("localrococo").providerEndpoint));
+    rococoClient = createClient(WebSocketProvider(papiConfig.entries.localrococo.wsUrl));
     rococoApi = rococoClient.getTypedApi(localrococo);
 
-    westendClient = createClient(WebSocketProvider(getChainConfig("localwestend").providerEndpoint));
+    westendClient = createClient(WebSocketProvider(papiConfig.entries.localwestend.wsUrl));
     westendApi = westendClient.getTypedApi(localwestend);
 
     // ensure that the connection works

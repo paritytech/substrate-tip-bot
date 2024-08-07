@@ -99,8 +99,6 @@ export async function tipOpenGov(opts: {
     `Tip proposal for ${contributor.account.address}, encoded proposal byte size: ${proposalByteSize}, nonce: ${nonce}`,
   );
 
-  let referendumNumber = 0;
-
   try {
     const result = await referendumExtrinsic.signAndSubmit(botTipAccount);
     bot.log(`referendum for ${contributor.account.address} included at blockHash ${result.block.hash}`);

@@ -156,37 +156,21 @@ export const westendConstants: Constants = {
 
 export function getChainConfig(network: TipNetwork): ChainConfig {
   switch (network) {
+    case "kusama":
     case "localkusama": {
-      const providerEndpoint = "ws://127.0.0.1:9901";
-      return { providerEndpoint, ...kusamaConstants };
+      return kusamaConstants;
     }
-    case "localpolkadot": {
-      const providerEndpoint = "ws://127.0.0.1:9900";
-      return { providerEndpoint, ...polkadotConstants };
-    }
-    case "localrococo": {
-      const providerEndpoint = "ws://127.0.0.1:9902";
-      return { providerEndpoint, ...rococoConstants };
-    }
-    case "localwestend": {
-      const providerEndpoint = "ws://127.0.0.1:9903";
-      return { providerEndpoint, ...westendConstants };
-    }
+    case "localpolkadot":
     case "polkadot": {
-      const providerEndpoint = "wss://rpc.polkadot.io";
-      return { providerEndpoint, ...polkadotConstants };
+      return polkadotConstants;
     }
-    case "kusama": {
-      const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
-      return { providerEndpoint, ...kusamaConstants };
-    }
+    case "localrococo":
     case "rococo": {
-      const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
-      return { providerEndpoint, ...rococoConstants };
+      return rococoConstants;
     }
+    case "localwestend":
     case "westend": {
-      const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
-      return { providerEndpoint, ...westendConstants };
+      return westendConstants;
     }
     default: {
       const exhaustivenessCheck: never = network;

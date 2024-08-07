@@ -23,7 +23,6 @@ export const SmallTipperTrack: OpenGovTrack = { trackNo: 30, trackName: Governan
 export const BigTipperTrack: OpenGovTrack = { trackNo: 31, trackName: GovernanceOrigin.BigTipper() };
 
 export type ChainConfig = {
-  providerEndpoint: string;
   decimals: bigint;
   currencySymbol: string;
   smallTipperMaximum: number;
