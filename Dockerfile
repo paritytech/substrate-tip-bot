@@ -2,10 +2,10 @@ FROM node:22.5.1-alpine as builder
 
 WORKDIR /usr/src/app
 
-COPY package.json yarn.lock .yarnrc.yml ./
+COPY package.json yarn.lock .yarnrc.yml tsconfig.json ./
 COPY .yarn/ ./.yarn/
+COPY .papi/ ./.papi/
 RUN yarn install --immutable
-COPY tsconfig.json ./
 COPY src/ ./src
 
 RUN yarn build
@@ -32,6 +32,7 @@ WORKDIR /usr/src/app
 COPY --from=builder /usr/src/app/package.json ./
 COPY --from=builder /usr/src/app/dist ./dist/
 COPY --from=builder /usr/src/app/node_modules ./node_modules/
+COPY --from=builder /usr/src/app/.papi ./papi/
 
 ENV NODE_ENV="production"
 

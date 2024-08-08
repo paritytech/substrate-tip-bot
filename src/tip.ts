@@ -1,27 +1,33 @@
-import { ApiPromise, WsProvider } from "@polkadot/api";
+import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
+import { WebSocketProvider } from "polkadot-api/ws-provider/node";
 
-import { getChainConfig } from "./chain-config";
+import { ChainDescriptor, getDescriptor, papiConfig } from "./chain-config";
 import { tipOpenGov, tipOpenGovReferendumExtrinsic } from "./tip-opengov";
-import { State, TipRequest, TipResult } from "./types";
+import { State, TipNetwork, TipRequest, TipResult } from "./types";
 
-async function createApi(state: State, tipRequest: TipRequest) {
+export type API<T extends TipNetwork> = TypedApi<ChainDescriptor<T>>;
+
+async function createApi(
+  network: TipNetwork,
+  state: State,
+): Promise<{
+  client: PolkadotClient;
+}> {
   const { bot } = state;
-  const chainConfig = getChainConfig(tipRequest.contributor.account.network);
-  const provider = new WsProvider(chainConfig.providerEndpoint);
 
-  const api = await ApiPromise.create({ provider, throwOnConnect: true });
-  await api.isReadyOrError;
+  const provider = WebSocketProvider(papiConfig.entries[network].wsUrl);
+  const client = createClient(provider);
 
-  // Get general information about the node we are connected to
-  const [chain, nodeName, nodeVersion] = await Promise.all([
-    api.rpc.system.chain(),
-    api.rpc.system.name(),
-    api.rpc.system.version(),
-  ]);
+  // Check that it works
+  await client.getFinalizedBlock();
 
-  bot.log(`You are connected to chain ${chain.toString()} using ${nodeName.toString()} v${nodeVersion.toString()}`);
+  // Set up the types
+  const api = client.getTypedApi(getDescriptor(network));
 
-  return { api, provider };
+  const version = await api.apis.Core.version();
+  bot.log(`You are connected to chain ${version.spec_name}#${version.spec_version}`);
+
+  return { client: client };
 }
 
 /**
@@ -29,13 +35,12 @@ async function createApi(state: State, tipRequest: TipRequest) {
  * The bot will send the referendum creation transaction itself and pay for the fees.
  */
 export async function tipUser(state: State, tipRequest: TipRequest): Promise<TipResult> {
-  const { provider, api } = await createApi(state, tipRequest);
+  const { client } = await createApi(tipRequest.contributor.account.network, state);
 
   try {
-    return await tipOpenGov({ state, api, tipRequest });
+    return await tipOpenGov({ state, client, tipRequest });
   } finally {
-    await api.disconnect();
-    await provider.disconnect();
+    client.destroy();
   }
 }
 
@@ -47,20 +52,22 @@ export async function tipUserLink(
   state: State,
   tipRequest: TipRequest,
 ): Promise<{ success: false; errorMessage: string } | { success: true; extrinsicCreationLink: string }> {
-  const { provider, api } = await createApi(state, tipRequest);
+  const { network } = tipRequest.contributor.account;
+  const { client } = await createApi(network, state);
 
   try {
-    const preparedExtrinsic = tipOpenGovReferendumExtrinsic({ api, tipRequest });
+    const preparedExtrinsic = await tipOpenGovReferendumExtrinsic({ client, tipRequest });
     if (!preparedExtrinsic.success) {
       return preparedExtrinsic;
     }
-    const transactionHex = preparedExtrinsic.referendumExtrinsic.method.toHex();
-    const chainConfig = getChainConfig(tipRequest.contributor.account.network);
-    const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${encodeURIComponent(chainConfig.providerEndpoint)}#/`;
-    const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${transactionHex}`;
+
+    const { botTipAccount } = state;
+
+    const { txHash } = await preparedExtrinsic.referendumExtrinsic.signAndSubmit(botTipAccount);
+    const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${papiConfig.entries[network].wsUrl}#/`;
+    const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${txHash}`;
     return { success: true, extrinsicCreationLink };
   } finally {
-    await api.disconnect();
-    await provider.disconnect();
+    client.destroy();
   }
 }

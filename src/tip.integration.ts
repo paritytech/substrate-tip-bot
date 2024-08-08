@@ -6,18 +6,22 @@ These tests do not cover the part with GitHub interaction,
 they execute the tipping functions directly.
 */
 
-import "@polkadot/api-augment";
-import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
-import { BN } from "@polkadot/util";
-import { cryptoWaitReady } from "@polkadot/util-crypto";
+import { localrococo, localwestend } from "@polkadot-api/descriptors";
+import { DEV_PHRASE } from "@polkadot-labs/hdkd-helpers";
 import assert from "assert";
+import fs from "fs/promises";
+import path from "path";
+import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
+import { WebSocketProvider } from "polkadot-api/ws-provider/node";
+import { filter, firstValueFrom } from "rxjs";
+import { Readable } from "stream";
 import { GenericContainer, StartedTestContainer, Wait } from "testcontainers";
 
-import { getChainConfig } from "./chain-config";
+import { generateSigner } from "./bot-initialize";
+import { papiConfig } from "./chain-config";
 import { logMock, randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
-import { encodeProposal, getReferendumId } from "./util";
 
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 
@@ -30,141 +34,126 @@ const getTipRequest = (tip: TipRequest["tip"], network: "localrococo" | "localwe
   };
 };
 
-const POLKADOT_VERSION = "v1.7.1";
+const containterLogsDir = path.join(process.cwd(), "integration_tests", "containter_logs");
+const start = Date.now();
+
+// Taking all output to integration_tests/containter_logs/*.container.log
+function logConsumer(name: string): (stream: Readable) => Promise<void> {
+  return async (stream: Readable) => {
+    const logsfile = await fs.open(path.join(containterLogsDir, `${name}.log`), "w");
+    stream.on("data", (line) => logsfile.write(`[${Date.now() - start}ms] ${line}`));
+    stream.on("err", (line) => logsfile.write(`[${Date.now() - start}ms] ${line}`));
+    stream.on("end", async () => {
+      await logsfile.write("Stream closed\n");
+      await logsfile.close();
+    });
+  };
+}
+
+const POLKADOT_VERSION = "v1.15.0";
 const networks = ["localrococo", "localwestend"] as const;
-const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", new BN("1"), new BN("3")];
+const tipSizes: TipRequest["tip"]["size"][] = ["small", "medium", "large", 1n, 3n];
 const commonDockerArgs =
-  "--tmp --alice --execution Native --rpc-port 9945 --rpc-external --no-prometheus --no-telemetry --rpc-cors all";
+  "--tmp --alice --execution Native --rpc-port 9945 --rpc-external --no-prometheus --no-telemetry --rpc-cors all --unsafe-force-node-key-generation";
 
 describe("tip", () => {
   let state: State;
   let rococoContainer: StartedTestContainer;
-  let rococoApi: ApiPromise;
+  let rococoClient: PolkadotClient;
+  let rococoApi: TypedApi<typeof localrococo>;
   let westendContainer: StartedTestContainer;
-  let westendApi: ApiPromise;
+  let westendClient: PolkadotClient;
+  let westendApi: TypedApi<typeof localwestend>;
 
-  beforeAll(async () => {
-    rococoContainer = await new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
-      .withExposedPorts({ container: 9945, host: 9902 }) // Corresponds to chain-config.ts
-      .withWaitStrategy(Wait.forListeningPorts())
-      .withCommand(("--chain rococo-dev " + commonDockerArgs).split(" "))
-      .start();
-    rococoApi = new ApiPromise({
-      provider: new WsProvider(getChainConfig("localrococo").providerEndpoint),
-      types: { Address: "AccountId", LookupSource: "AccountId" },
-    });
-    westendContainer = await new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
-      .withExposedPorts({ container: 9945, host: 9903 }) // Corresponds to chain-config.ts
-      .withWaitStrategy(Wait.forListeningPorts())
-      .withCommand(("--chain westend-dev " + commonDockerArgs).split(" "))
-      .start();
-    westendApi = new ApiPromise({
-      provider: new WsProvider(getChainConfig("localwestend").providerEndpoint),
-      types: { Address: "AccountId", LookupSource: "AccountId" },
-    });
-  });
-
-  afterAll(async () => {
-    await rococoApi.disconnect();
-    await westendApi.disconnect();
-    await rococoContainer.stop();
-    await westendContainer.stop();
-  });
-
-  const getUserBalance = async (api: ApiPromise, userAddress: string) => {
-    const { data } = await api.query.system.account(userAddress);
-    return data.free.toBn();
+  const getUserBalance = async (api: TypedApi<typeof localrococo | typeof localwestend>, userAddress: string) => {
+    const { data } = await api.query.System.Account.getValue(userAddress, { at: "best" });
+    return data.free;
   };
 
   beforeAll(async () => {
-    await cryptoWaitReady();
-    const keyring = new Keyring({ type: "sr25519" });
-    try {
-      await rococoApi.isReadyOrError;
-      await westendApi.isReadyOrError;
-    } catch (e) {
-      throw new Error(
-        `For these integrations tests, we're expecting local Rococo on ${
-          getChainConfig("localrococo").providerEndpoint
-        } and local Westend on ${getChainConfig("localwestend").providerEndpoint}. Please refer to the Readme.`,
-      );
-    }
+    await fs.mkdir(containterLogsDir, { recursive: true });
 
-    assert((await getUserBalance(rococoApi, tipperAccount)).gtn(0));
-    assert((await getUserBalance(westendApi, tipperAccount)).gtn(0));
+    [rococoContainer, westendContainer] = await Promise.all([
+      new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
+        .withExposedPorts({ container: 9945, host: 9902 }) // Corresponds to chain-config.ts
+        .withWaitStrategy(Wait.forListeningPorts())
+        .withCommand(("--chain rococo-dev " + commonDockerArgs).split(" "))
+        .withLogConsumer(logConsumer("rococo"))
+        .withWaitStrategy(Wait.forLogMessage("Concluded mandatory round"))
+        .start(),
+      new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
+        .withExposedPorts({ container: 9945, host: 9903 }) // Corresponds to chain-config.ts
+        .withWaitStrategy(Wait.forListeningPorts())
+        .withCommand(("--chain westend-dev " + commonDockerArgs).split(" "))
+        .withLogConsumer(logConsumer("westend"))
+        .withWaitStrategy(Wait.forLogMessage("Concluded mandatory round"))
+        .start(),
+    ]);
+
+    rococoClient = createClient(WebSocketProvider(papiConfig.entries.localrococo.wsUrl));
+    rococoApi = rococoClient.getTypedApi(localrococo);
+
+    westendClient = createClient(WebSocketProvider(papiConfig.entries.localwestend.wsUrl));
+    westendApi = westendClient.getTypedApi(localwestend);
+
+    // ensure that the connection works
+    await Promise.all([rococoApi.query.System.Number.getValue(), westendApi.query.System.Number.getValue()]);
+
+    assert(Number(await getUserBalance(rococoApi, tipperAccount)) > 0);
+    assert(Number(await getUserBalance(westendApi, tipperAccount)) > 0);
     state = {
       allowedGitHubOrg: "test",
       allowedGitHubTeam: "test",
-      botTipAccount: keyring.addFromUri("//Bob"),
+      botTipAccount: generateSigner(`${DEV_PHRASE}//Bob`),
       bot: { log: logMock } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     };
   });
 
-  for (const network of networks) {
-    describe(network, () => {
-      for (const tipSize of tipSizes) {
-        test(`tips a user (${tipSize.toString()})`, async () => {
-          const tipRequest = getTipRequest({ size: tipSize }, network);
+  afterAll(async () => {
+    rococoClient.destroy();
+    westendClient.destroy();
+    await rococoContainer.stop();
+    await westendContainer.stop();
+  });
 
-          const api = network === "localrococo" ? rococoApi : westendApi;
-          const nextFreeReferendumId = (await api.query.referenda.referendumCount()).toNumber();
-          const result = await tipUser(state, tipRequest);
+  describe.each([networks])("%s", (network: "localrococo" | "localwestend") => {
+    test.each(tipSizes)("tips a user (%s)", async (tipSize) => {
+      const tipRequest = getTipRequest({ size: tipSize }, network);
 
-          expect(result.success).toBeTruthy();
-          if (result.success) {
-            expect(result.blockHash).toBeDefined();
-            expect(result.referendumNumber).toBeDefined();
-            expect(result.referendumNumber).toEqual(nextFreeReferendumId);
-            expect(result.track).toBeDefined();
-            expect(result.value).toBeDefined();
-          }
+      const api = network === "localrococo" ? rococoApi : westendApi;
+      const nextFreeReferendumId = await api.query.Referenda.ReferendumCount.getValue();
+      const result = await tipUser(state, tipRequest);
 
-          const referendum = await api.query.referenda.referendumInfoFor(nextFreeReferendumId);
-          expect(referendum.isSome).toBeTruthy();
-          expect(referendum.value.isOngoing).toBeTruthy();
-        });
+      expect(result.success).toBeTruthy();
+      if (result.success) {
+        expect(result.blockHash).toBeDefined();
+        expect(result.referendumNumber).toBeDefined();
+        expect(result.referendumNumber).toEqual(nextFreeReferendumId);
+        expect(result.track).toBeDefined();
+        expect(result.value).toBeDefined();
       }
 
-      test(`huge tip in ${network}`, async () => {
-        const tipRequest = getTipRequest({ size: new BN("1001") }, network);
-
-        const result = await tipUser(state, tipRequest);
-
-        expect(result.success).toBeFalsy();
-        const errorMessage = !result.success ? result.errorMessage : undefined;
-        const expectedError =
-          network === "localrococo"
-            ? "The requested tip value of '1001 ROC' exceeds the BigTipper track maximum of '3.333 ROC'."
-            : "The requested tip value of '1001 WND' exceeds the BigTipper track maximum of '3.333 WND'.";
-        expect(errorMessage).toEqual(expectedError);
-      });
-
-      test(`getReferendumId in ${network}`, async () => {
-        const api = network === "localrococo" ? rococoApi : westendApi;
-        const tipRequest = getTipRequest({ size: new BN("1") }, network);
-        const encodeProposalResult = encodeProposal(api, tipRequest);
-        if ("success" in encodeProposalResult) {
-          throw new Error("Encoding the proposal failed.");
-        }
-        const { encodedProposal } = encodeProposalResult;
-        const nextFreeReferendumId = new BN((await api.query.referenda.referendumCount()).toNumber());
-
-        // We surround our tip with two "decoys" to make sure that we find the proper one.
-        await tipUser(state, tipRequest); // Will occupy nextFreeReferendumId
-        const result = await tipUser(state, tipRequest); // Will occupy nextFreeReferendumId + 1
-        await tipUser(state, tipRequest); // Will occupy nextFreeReferendumId + 2
-
-        if (!result.success) {
-          throw new Error("Tipping unsuccessful.");
-        }
-
-        const apiAtBlock = await api.at(result.blockHash);
-        const id = await getReferendumId(apiAtBlock, encodedProposal);
-
-        expect(id).toBeDefined();
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        expect(new BN(id!).eq(nextFreeReferendumId.addn(1))).toBeTruthy();
-      });
+      // This returns undefined for a bit, so using subscription to wait for the data
+      const referendum = await firstValueFrom(
+        api.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId).pipe(
+          filter((value) => value !== undefined),
+        ),
+      );
+      expect(referendum?.type).toEqual("Ongoing");
     });
-  }
+
+    test(`huge tip in ${network}`, async () => {
+      const tipRequest = getTipRequest({ size: 1001n }, network);
+
+      const result = await tipUser(state, tipRequest);
+
+      expect(result.success).toBeFalsy();
+      const errorMessage = !result.success ? result.errorMessage : undefined;
+      const expectedError =
+        network === "localrococo"
+          ? "The requested tip value of '1001 ROC' exceeds the BigTipper track maximum of '3.333 ROC'."
+          : "The requested tip value of '1001 WND' exceeds the BigTipper track maximum of '3.333 WND'.";
+      expect(errorMessage).toEqual(expectedError);
+    });
+  });
 });

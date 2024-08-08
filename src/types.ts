@@ -1,6 +1,6 @@
-import { KeyringPair } from "@polkadot/keyring/types";
-import { BN } from "@polkadot/util";
+import { GovernanceOrigin } from "@polkadot-api/descriptors";
 import type { MatrixClient } from "matrix-js-sdk";
+import { PolkadotSigner } from "polkadot-api";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
@@ -16,17 +16,18 @@ export type TipNetwork =
   | "westend";
 
 export type TipSize = "small" | "medium" | "large";
-export type OpenGovTrack = { trackNo: number; trackName: string };
-export const SmallTipperTrack: OpenGovTrack = { trackNo: 30, trackName: "SmallTipper" };
-export const BigTipperTrack: OpenGovTrack = { trackNo: 31, trackName: "BigTipper" };
+
+// explicitly narrowing values to "SmallTipper" | "BigTipper", in order to get around network differences
+export type OpenGovTrack = { trackNo: number; trackName: { type: "SmallTipper" | "BigTipper" } };
+export const SmallTipperTrack: OpenGovTrack = { trackNo: 30, trackName: GovernanceOrigin.SmallTipper() };
+export const BigTipperTrack: OpenGovTrack = { trackNo: 31, trackName: GovernanceOrigin.BigTipper() };
 
 export type ChainConfig = {
-  providerEndpoint: string;
-  decimals: number;
+  decimals: bigint;
   currencySymbol: string;
   smallTipperMaximum: number;
   bigTipperMaximum: number;
-  namedTips: Record<TipSize, number>;
+  namedTips: Record<TipSize, bigint>;
 };
 
 export type ContributorAccount = {
@@ -42,7 +43,7 @@ export type Contributor = {
 export type State = {
   allowedGitHubOrg: string;
   allowedGitHubTeam: string;
-  botTipAccount: KeyringPair;
+  botTipAccount: PolkadotSigner;
   bot: Probot;
   polkassembly?: Polkassembly | undefined;
   matrix?:
@@ -58,7 +59,7 @@ export type TipRequest = {
   pullRequestNumber: number;
   pullRequestRepo: string;
   tip: {
-    size: TipSize | BN;
+    size: TipSize | bigint;
   };
 };
 
@@ -68,7 +69,7 @@ export type TipResult =
       referendumNumber: number | null;
       blockHash: string;
       track: OpenGovTrack;
-      value: BN;
+      value: bigint;
     }
   | { success: false; errorMessage: string };
 

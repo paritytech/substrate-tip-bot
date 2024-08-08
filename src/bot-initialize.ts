@@ -1,7 +1,9 @@
 import { envVar } from "@eng-automation/js";
-import { Keyring } from "@polkadot/api";
-import { cryptoWaitReady } from "@polkadot/util-crypto";
+import { sr25519CreateDerive } from "@polkadot-labs/hdkd";
+import { entropyToMiniSecret, mnemonicToEntropy, parseSuri, ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { createClient } from "matrix-js-sdk";
+import { PolkadotSigner } from "polkadot-api";
+import { getPolkadotSigner } from "polkadot-api/signer";
 import { ApplicationFunction, Context, Probot } from "probot";
 
 import { updateAllBalances } from "./balance";
@@ -14,6 +16,16 @@ type AsyncApplicationFunction = (
   ...params: Parameters<ApplicationFunction>
 ) => Promise<ReturnType<ApplicationFunction>>;
 
+export const generateSigner = (accountSeed: string): PolkadotSigner => {
+  const suri = parseSuri(accountSeed);
+
+  const entropy = mnemonicToEntropy(suri.phrase);
+  const miniSecret = entropyToMiniSecret(entropy);
+  const hdkdKeyPair = sr25519CreateDerive(miniSecret)(suri.paths);
+
+  return getPolkadotSigner(hdkdKeyPair.publicKey, "Sr25519", (input) => hdkdKeyPair.sign(input));
+};
+
 export const botInitialize: AsyncApplicationFunction = async (bot: Probot, { getRouter }) => {
   bot.log.info("Loading tip bot...");
   const router = getRouter?.("/tip-bot");
@@ -23,9 +35,7 @@ export const botInitialize: AsyncApplicationFunction = async (bot: Probot, { get
     bot.log.warn("No router received from the probot library, metrics were not added.");
   }
 
-  await cryptoWaitReady();
-  const keyring = new Keyring({ type: "sr25519" });
-  const botTipAccount = keyring.addFromUri(envVar("ACCOUNT_SEED"));
+  const botTipAccount = generateSigner(envVar("ACCOUNT_SEED"));
   const state: State = {
     bot,
     allowedGitHubOrg: envVar("APPROVERS_GH_ORG"),
@@ -54,7 +64,8 @@ export const botInitialize: AsyncApplicationFunction = async (bot: Probot, { get
 
   try {
     bot.log.info("Loading bot balances across all networks...");
-    await updateAllBalances(state.botTipAccount.address, bot.log);
+    const address = ss58Address(botTipAccount.publicKey);
+    await updateAllBalances(address, bot.log);
     bot.log.info("Updated bot balances across all networks!");
   } catch (e) {
     bot.log.error(e.message);

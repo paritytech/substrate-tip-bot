@@ -21,7 +21,9 @@
     "build": "rimraf dist; tsc",
     "test": "jest",
     "test:integration": "jest -c jest.integration.config.js",
-    "test:e2e": "jest -c jest.e2e.config.js"
+    "test:e2e": "jest -c jest.e2e.config.js",
+    "papi": "papi generate",
+    "postinstall": "yarn papi"
   },
   "imports": {
     "#src/*": "./src/*.js"
@@ -29,26 +31,27 @@
   "dependencies": {
     "@eng-automation/integrations": "^4.4.0",
     "@eng-automation/js": "^2.2.0",
-    "@polkadot/api": "^12.0.2",
-    "@polkadot/util": "^12.3.2",
-    "@polkadot/util-crypto": "^12.3.2",
+    "@polkadot-api/descriptors": "portal:.papi/descriptors",
+    "@polkadot-labs/hdkd": "^0.0.6",
+    "@polkadot-labs/hdkd-helpers": "^0.0.6",
     "concurrently": "^8.2.2",
     "ethers": "^5.7.2",
     "matrix-js-sdk": "^26.1.0",
+    "polkadot-api": "^0.12.0",
     "probot": "^12.2.8",
     "prom-client": "^14.2.0"
   },
   "devDependencies": {
     "@eng-automation/js-style": "^3.1.0",
-    "@polkadot/keyring": "^12.3.2",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.14.2",
     "dotenv": "^16.0.1",
     "jest": "^29.7.0",
     "rimraf": "^3.0.2",
+    "rxjs": "^7.8.1",
     "smee-client": "^1.2.2",
     "testcontainers": "^10.2.1",
-    "ts-jest": "^29.1.4",
+    "ts-jest": "^29.2.4",
     "typescript": "^5.4.5"
   },
   "engines": {

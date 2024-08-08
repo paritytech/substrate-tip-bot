@@ -1,8 +1,65 @@
+import {
+  kusama,
+  localkusama,
+  localpolkadot,
+  localrococo,
+  localwestend,
+  polkadot,
+  rococo,
+  westend,
+} from "@polkadot-api/descriptors";
+import { readFileSync } from "fs";
+
 import { ChainConfig, TipNetwork } from "./types";
+
+export const papiConfig = JSON.parse(readFileSync(".papi/polkadot-api.json", "utf-8")) as {
+  entries: {
+    [p in TipNetwork]: {
+      wsUrl: string;
+      chain: string;
+      metadata: string;
+    };
+  };
+};
+
+export type ChainDescriptor<Chain extends TipNetwork> = Chain extends "polkadot"
+  ? typeof polkadot
+  : Chain extends "localpolkadot"
+    ? typeof localpolkadot
+    : Chain extends "localpolkadot"
+      ? typeof localpolkadot
+      : Chain extends "kusama"
+        ? typeof kusama
+        : Chain extends "localkusama"
+          ? typeof localkusama
+          : Chain extends "rococo"
+            ? typeof rococo
+            : Chain extends "localrococo"
+              ? typeof localrococo
+              : Chain extends "westend"
+                ? typeof westend
+                : Chain extends "localwestend"
+                  ? typeof localwestend
+                  : never;
+
+export function getDescriptor<Chain extends TipNetwork>(network: Chain): ChainDescriptor<Chain> {
+  const networks: { [Key in TipNetwork]: ChainDescriptor<Key> } = {
+    polkadot,
+    localpolkadot,
+    kusama,
+    localkusama,
+    rococo,
+    localrococo,
+    westend,
+    localwestend,
+  };
+
+  return networks[network] as ChainDescriptor<Chain>;
+}
 
 type Constants = Omit<ChainConfig, "providerEndpoint">;
 export const kusamaConstants: Constants = {
-  decimals: 12,
+  decimals: 12n,
   currencySymbol: "KSM",
 
   /**
@@ -22,11 +79,11 @@ export const kusamaConstants: Constants = {
   /**
    * These are arbitrary values, can be changed at any time.
    */
-  namedTips: { small: 4, medium: 16, large: 30 },
+  namedTips: { small: 4n, medium: 16n, large: 30n },
 };
 
 export const polkadotConstants: Constants = {
-  decimals: 10,
+  decimals: 10n,
   currencySymbol: "DOT",
 
   /**
@@ -46,11 +103,11 @@ export const polkadotConstants: Constants = {
   /**
    * These are arbitrary values, can be changed at any time.
    */
-  namedTips: { small: 20, medium: 80, large: 150 },
+  namedTips: { small: 20n, medium: 80n, large: 150n },
 };
 
 export const rococoConstants: Constants = {
-  decimals: 12,
+  decimals: 12n,
   currencySymbol: "ROC",
 
   /**
@@ -70,11 +127,11 @@ export const rococoConstants: Constants = {
   /**
    * These are arbitrary values, can be changed at any time.
    */
-  namedTips: { small: 1, medium: 2, large: 3 },
+  namedTips: { small: 1n, medium: 2n, large: 3n },
 };
 
 export const westendConstants: Constants = {
-  decimals: 12,
+  decimals: 12n,
   currencySymbol: "WND",
 
   /**
@@ -94,41 +151,26 @@ export const westendConstants: Constants = {
   /**
    * These are arbitrary values, can be changed at any time.
    */
-  namedTips: { small: 1, medium: 2, large: 3 },
+  namedTips: { small: 1n, medium: 2n, large: 3n },
 };
+
 export function getChainConfig(network: TipNetwork): ChainConfig {
   switch (network) {
+    case "kusama":
     case "localkusama": {
-      const providerEndpoint = "ws://127.0.0.1:9901";
-      return { providerEndpoint, ...kusamaConstants };
+      return kusamaConstants;
     }
-    case "localpolkadot": {
-      const providerEndpoint = "ws://127.0.0.1:9900";
-      return { providerEndpoint, ...polkadotConstants };
-    }
-    case "localrococo": {
-      const providerEndpoint = "ws://127.0.0.1:9902";
-      return { providerEndpoint, ...rococoConstants };
-    }
-    case "localwestend": {
-      const providerEndpoint = "ws://127.0.0.1:9903";
-      return { providerEndpoint, ...westendConstants };
-    }
+    case "localpolkadot":
     case "polkadot": {
-      const providerEndpoint = "wss://rpc.polkadot.io";
-      return { providerEndpoint, ...polkadotConstants };
+      return polkadotConstants;
     }
-    case "kusama": {
-      const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
-      return { providerEndpoint, ...kusamaConstants };
-    }
+    case "localrococo":
     case "rococo": {
-      const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
-      return { providerEndpoint, ...rococoConstants };
+      return rococoConstants;
     }
+    case "localwestend":
     case "westend": {
-      const providerEndpoint = `wss://${network}-rpc.polkadot.io`;
-      return { providerEndpoint, ...westendConstants };
+      return westendConstants;
     }
     default: {
       const exhaustivenessCheck: never = network;
