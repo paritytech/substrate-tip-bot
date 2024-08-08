@@ -12,8 +12,6 @@ describe("Polkassembly with a test endpoint", () => {
   let keyringPair: PolkadotSigner;
   let polkassembly: Polkassembly;
 
-  beforeAll(async () => {});
-
   beforeEach(() => {
     // A random account for every test.
     keyringPair = generateSigner(entropyToMnemonic(crypto.randomBytes(32)));
