@@ -37,7 +37,7 @@ const getTipRequest = (tip: TipRequest["tip"], network: "localrococo" | "localwe
 const containterLogsDir = path.join(process.cwd(), "integration_tests", "containter_logs");
 const start = Date.now();
 
-// Taking all output to e2e/*.container.log
+// Taking all output to integration_tests/containter_logs/*.container.log
 function logConsumer(name: string): (stream: Readable) => Promise<void> {
   return async (stream: Readable) => {
     const logsfile = await fs.open(path.join(containterLogsDir, `${name}.log`), "w");
