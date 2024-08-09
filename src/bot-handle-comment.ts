@@ -2,6 +2,7 @@ import { github } from "@eng-automation/integrations";
 import { GitHubInstance } from "@eng-automation/integrations/dist/github/types";
 import { envVar } from "@eng-automation/js";
 import { IssueCommentCreatedEvent } from "@octokit/webhooks-types";
+import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 
 import { updateBalance } from "./balance";
 import { matrixNotifyOnFailure, matrixNotifyOnNewTip } from "./matrix";
@@ -180,7 +181,7 @@ export const handleTipRequest = async (
       recordTip({ tipRequest, tipResult });
       await updateBalance({
         network: tipRequest.contributor.account.network,
-        tipBotAddress: state.botTipAccount.address,
+        tipBotAddress: ss58Address(state.botTipAccount.publicKey),
       });
     } catch (e) {
       bot.log.error(e.message);

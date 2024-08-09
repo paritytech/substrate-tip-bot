@@ -4,16 +4,15 @@ from the point of creating a tip,
 all the way to completing the referendum.
  */
 
-import "@polkadot/api-augment";
-import { until } from "@eng-automation/js";
-import { ApiPromise, Keyring, WsProvider } from "@polkadot/api";
-import type { SubmittableExtrinsic } from "@polkadot/api/types";
-import { KeyringPair } from "@polkadot/keyring/types";
-import { BN } from "@polkadot/util";
-import { cryptoWaitReady } from "@polkadot/util-crypto";
+import { ConvictionVotingVoteAccountVote, localrococo, MultiAddress } from "@polkadot-api/descriptors";
+import { DEV_PHRASE } from "@polkadot-labs/hdkd-helpers";
 import assert from "assert";
+import { createClient, PolkadotClient, PolkadotSigner, TypedApi } from "polkadot-api";
+import { WebSocketProvider } from "polkadot-api/ws-provider/node";
+import { filter, firstValueFrom, mergeMap, pairwise, race, skip, throwError } from "rxjs";
 
-import { getChainConfig, rococoConstants } from "./chain-config";
+import { generateSigner } from "./bot-initialize";
+import { papiConfig, rococoConstants } from "./chain-config";
 import { randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
@@ -26,71 +25,71 @@ const treasuryAccount = "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB"; // h
 
 const network = "localrococo";
 
-const signAndSend = (signer: KeyringPair, extrinsic: SubmittableExtrinsic<"promise">) =>
-  new Promise<void>(async (resolve, reject) => {
-    try {
-      await extrinsic.signAndSend(signer, { nonce: -1 }, (result) => {
-        if (result.isError) {
-          reject(result.status.toString());
-        }
-        if (result.isInBlock) {
-          resolve();
-        }
-      });
-    } catch (e) {
-      reject(e);
-    }
-  });
+const expectBalanceIncrease = async (useraddress: string, api: TypedApi<typeof localrococo>, blocksNum: number) =>
+  await firstValueFrom(
+    race([
+      api.query.System.Account.watchValue(useraddress, "best")
+        .pipe(pairwise())
+        .pipe(filter(([oldValue, newValue]) => newValue.data.free > oldValue.data.free)),
+      api.query.System.Number.watchValue("best").pipe(
+        skip(blocksNum),
+        mergeMap(() =>
+          throwError(() => new Error(`Balance of ${useraddress} did not increase in ${blocksNum} blocks`)),
+        ),
+      ),
+    ]),
+  );
 
 describe("E2E opengov tip", () => {
   let state: State;
-  let api: ApiPromise;
-  let alice: KeyringPair;
+  let api: TypedApi<typeof localrococo>;
+  let alice: PolkadotSigner;
+  let client: PolkadotClient;
 
   beforeAll(() => {
-    api = new ApiPromise({
-      provider: new WsProvider(getChainConfig(network).providerEndpoint),
-      types: { Address: "AccountId", LookupSource: "AccountId" },
-    });
+    const jsonRpcProvider = WebSocketProvider(papiConfig.entries[network].wsUrl);
+    client = createClient(jsonRpcProvider);
+    api = client.getTypedApi(localrococo);
   });
 
-  afterAll(async () => {
-    await api.disconnect();
+  afterAll(() => {
+    client.destroy();
   });
 
-  const getUserBalance = async (userAddress: string) => {
-    const { data } = await api.query.system.account(userAddress);
-    return data.free.toBn();
+  const getUserBalance = async (userAddress: string): Promise<bigint> => {
+    const { data } = await api.query.System.Account.getValue(userAddress, { at: "best" });
+    return data.free;
   };
 
   beforeAll(async () => {
-    await cryptoWaitReady();
-    const keyring = new Keyring({ type: "sr25519" });
     try {
-      await api.isReadyOrError;
+      await client.getFinalizedBlock();
     } catch (e) {
       console.log(
         `For these integrations tests, we're expecting local Rococo on ${
-          getChainConfig(network).providerEndpoint
+          papiConfig.entries[network].wsUrl
         }. Please refer to the Readme.`,
       );
     }
 
-    assert((await getUserBalance(tipperAccount)).gtn(0));
+    assert((await getUserBalance(tipperAccount)) >= 0n);
     state = {
       allowedGitHubOrg: "test",
       allowedGitHubTeam: "test",
-      botTipAccount: keyring.addFromUri("//Bob"),
+      botTipAccount: generateSigner(`${DEV_PHRASE}//Bob`),
       bot: { log: logMock } as any, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
     };
-    alice = keyring.addFromUri("//Alice");
+    alice = generateSigner(`${DEV_PHRASE}//Alice`);
 
     // In some local dev chains, treasury is broke, so we fund it.
-    await signAndSend(alice, api.tx.balances.transferKeepAlive(treasuryAccount, new BN("10000000000000")));
+    await api.tx.Balances.transfer_keep_alive({
+      dest: MultiAddress.Id(treasuryAccount),
+      value: 10000000000000n,
+    }).signAndSubmit(alice);
   });
 
   test("Small OpenGov tip", async () => {
-    const referendumId = await api.query.referenda.referendumCount(); // The next free referendum index.
+    const referendumId = await api.query.Referenda.ReferendumCount.getValue(); // The next free referendum index.
     const tipRequest: TipRequest = {
       tip: { size: "small" },
       contributor: { githubUsername: "test", account: { address: randomAddress(), network } },
@@ -98,26 +97,35 @@ describe("E2E opengov tip", () => {
       pullRequestNumber: 1,
     };
     // It is a random new address, so we expect the balance to be zero initially.
-    expect((await getUserBalance(tipRequest.contributor.account.address)).eqn(0)).toBeTruthy();
+    expect(await getUserBalance(tipRequest.contributor.account.address)).toEqual(0n);
 
     // We place the tip proposal.
     const result = await tipUser(state, tipRequest);
     expect(result.success).toBeTruthy();
 
     // Alice votes "aye" on the referendum.
-    await signAndSend(alice, api.tx.referenda.placeDecisionDeposit(referendumId));
-    await signAndSend(
-      alice,
-      api.tx.convictionVoting.vote(referendumId, {
-        Standard: { balance: new BN(1_000_000), vote: { aye: true, conviction: 1 } },
-      }),
-    );
+    await api.tx.Referenda.place_decision_deposit({ index: referendumId }).signAndSubmit(alice);
+
+    /**
+     * Weirdly enough, Vote struct is serialized in a special way, where first bit is a "aye" / "nay" bit,
+     * and the rest is conviction enum
+     *
+     * 0b1000_0000 (aye) + 1 (conviction1x) = 129
+     *
+     * @see https://github.com/paritytech/polkadot-sdk/blob/efdc1e9b1615c5502ed63ffc9683d99af6397263/substrate/frame/conviction-voting/src/vote.rs#L36-L53
+     * @see https://github.com/paritytech/polkadot-sdk/blob/efdc1e9b1615c5502ed63ffc9683d99af6397263/substrate/frame/conviction-voting/src/conviction.rs#L66-L95
+     */
+    const vote = 129;
+    await api.tx.ConvictionVoting.vote({
+      poll_index: referendumId,
+      vote: ConvictionVotingVoteAccountVote.Standard({ balance: 1_000_000n, vote }),
+    }).signAndSubmit(alice);
 
     // Waiting for the referendum voting, enactment, and treasury spend period.
-    await until(async () => (await getUserBalance(tipRequest.contributor.account.address)).gtn(0), 5000, 50);
+    await expectBalanceIncrease(tipRequest.contributor.account.address, api, 9);
 
     // At the end, the balance of the contributor should increase by the KSM small tip amount.
-    const expectedTip = new BN(rococoConstants.namedTips.small).mul(new BN("10").pow(new BN(rococoConstants.decimals)));
-    expect((await getUserBalance(tipRequest.contributor.account.address)).eq(expectedTip)).toBeTruthy();
+    const expectedTip = BigInt(rococoConstants.namedTips.small) * 10n ** BigInt(rococoConstants.decimals);
+    expect(await getUserBalance(tipRequest.contributor.account.address)).toEqual(expectedTip);
   });
 });

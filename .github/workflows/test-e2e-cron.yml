@@ -21,7 +21,7 @@ jobs:
             echo "tag=$TAG" >> $GITHUB_OUTPUT
       - name: Announce version
         run: echo "Running tests with Polkadot version ${{ steps.read-tag.outputs.tag }}"
-      - uses: actions/checkout@v3.3.0
+      - uses: actions/checkout@v4
       - name: Start a local Polkadot node
         uses: ./.github/actions/run-polkadot
         with:
@@ -30,7 +30,7 @@ jobs:
         run: |
           until curl -s '127.0.0.1:9902'; do sleep 3; done
         timeout-minutes: 1
-      - uses: actions/setup-node@v3.5.1
+      - uses: actions/setup-node@v4
         with:
           node-version: "22.5.1"
       - run: yarn --immutable

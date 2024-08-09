@@ -10,9 +10,15 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3.3.0
-      - uses: actions/setup-node@v3.5.1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.5.1
       - run: yarn --immutable
       - run: yarn test:integration --verbose
+      - name: Debug rococo container logs
+        if: failure()
+        run: cat integration_tests/containter_logs/rococo.log
+      - name: Debug westend container logs
+        if: failure()
+        run: cat integration_tests/containter_logs/westend.log
