@@ -13,6 +13,37 @@ describe("Utility functions", () => {
       expect(result.address).toEqual(address);
     });
 
+    test("allows uppercase", () => {
+      const address = randomAddress();
+      const result = parseContributorAccount([`Kusama Address: ${address}`]);
+      if ("error" in result) {
+        throw new Error(result.error);
+      }
+      expect(result.network).toEqual("kusama");
+      expect(result.address).toEqual(address);
+    });
+
+    test("allows whitespace", () => {
+      const address = randomAddress();
+      const result = parseContributorAccount([`\nkusama Address: ${address}\n\n`]);
+      if ("error" in result) {
+        throw new Error(result.error);
+      }
+      expect(result.network).toEqual("kusama");
+      expect(result.address).toEqual(address);
+    });
+
+    // Some people naturally put backticks aronud the address.
+    test("allows backticks around the address", () => {
+      const address = randomAddress();
+      const result = parseContributorAccount([`Kusama Address: \`${address}\``]);
+      if ("error" in result) {
+        throw new Error(result.error);
+      }
+      expect(result.network).toEqual("kusama");
+      expect(result.address).toEqual(address);
+    });
+
     test("Returns error message when cannot parse", () => {
       const address = randomAddress();
       const result = parseContributorAccount([`kusama: ${address}`]);
