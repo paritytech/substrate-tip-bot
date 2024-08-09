@@ -17,7 +17,7 @@
     "fix:eslint": "npx eslint --fix",
     "fix:prettier": "npx prettier --write",
     "fix": "yarn fix:eslint '{*,**/*}.{js,ts}' && yarn fix:prettier '{*,**/*}.json'",
-    "start": "concurrently \"tsc -w\" \"node --watch dist/bot.js\"",
+    "start": "concurrently \"tsc -w\" \"node --env-file=.env --watch dist/bot.js\"",
     "build": "rimraf dist; tsc",
     "test": "jest",
     "test:integration": "jest -c jest.integration.config.js",
