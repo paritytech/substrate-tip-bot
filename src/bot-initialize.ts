@@ -2,6 +2,7 @@ import { envVar } from "@eng-automation/js";
 import { sr25519CreateDerive } from "@polkadot-labs/hdkd";
 import { entropyToMiniSecret, mnemonicToEntropy, parseSuri, ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { createClient } from "matrix-js-sdk";
+import * as process from "node:process";
 import { PolkadotSigner } from "polkadot-api";
 import { getPolkadotSigner } from "polkadot-api/signer";
 import { ApplicationFunction, Context, Probot } from "probot";
@@ -41,19 +42,33 @@ export const botInitialize: AsyncApplicationFunction = async (bot: Probot, { get
     allowedGitHubOrg: envVar("APPROVERS_GH_ORG"),
     allowedGitHubTeam: envVar("APPROVERS_GH_TEAM"),
     botTipAccount,
-    polkassembly: new Polkassembly(
-      envVar("POLKASSEMBLY_ENDPOINT"),
-      { type: "polkadot", keyringPair: botTipAccount },
-      bot.log,
-    ),
-    matrix: {
-      client: createClient({
-        accessToken: envVar("MATRIX_ACCESS_TOKEN"),
-        baseUrl: envVar("MATRIX_SERVER_URL"),
-        localTimeoutMs: 10000,
-      }),
-      roomId: envVar("MATRIX_ROOM_ID"),
-    },
+    polkassembly: (() => {
+      if (!process.env.POLKASSEMBLY_ENDPOINT) {
+        // convenient for local development, and tests
+        bot.log.warn("POLKASSEMBLY_ENDPOINT is not set; polkassembly integration is disabled");
+        return undefined;
+      }
+      return new Polkassembly(
+        envVar("POLKASSEMBLY_ENDPOINT"),
+        { type: "polkadot", keyringPair: botTipAccount },
+        bot.log,
+      );
+    })(),
+    matrix: (() => {
+      if (!process.env.MATRIX_ACCESS_TOKEN) {
+        // convenient for local development, and tests
+        bot.log.warn("MATRIX_ACCESS_TOKEN is not set; matrix notifications are disabled");
+        return undefined;
+      }
+      return {
+        client: createClient({
+          accessToken: envVar("MATRIX_ACCESS_TOKEN"),
+          baseUrl: envVar("MATRIX_SERVER_URL"),
+          localTimeoutMs: 10000,
+        }),
+        roomId: envVar("MATRIX_ROOM_ID"),
+      };
+    })(),
   };
 
   bot.log.info("Tip bot was loaded!");

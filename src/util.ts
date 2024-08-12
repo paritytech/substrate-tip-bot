@@ -20,7 +20,7 @@ const validNetworks: { [key: string]: TipNetwork } = {
   kusama: "kusama",
   rococo: "rococo",
   westend: "westend",
-  ...(process.env.NODE_ENV === "development"
+  ...(process.env.NODE_ENV === "development" || process.env.INTEGRATION_TEST
     ? {
         localpolkadot: "localpolkadot",
         localkusama: "localkusama",

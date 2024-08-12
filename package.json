@@ -11,19 +11,22 @@
     "github",
     "probot-app"
   ],
+  "main": "dist/src/bot.js",
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "lint": "npx eslint --quiet '{*,**/*}.{js,ts}' && npx prettier --check '{*,**/*}.json' && yarn typecheck",
+    "build": "rimraf dist; tsc",
+    "build:docker": "docker build -t substrate-tip-bot .",
+    "fix": "yarn fix:eslint '{*,**/*}.{js,ts}' && yarn fix:prettier '{*,**/*}.json'",
     "fix:eslint": "npx eslint --fix",
     "fix:prettier": "npx prettier --write",
-    "fix": "yarn fix:eslint '{*,**/*}.{js,ts}' && yarn fix:prettier '{*,**/*}.json'",
-    "start": "concurrently \"tsc -w\" \"node --watch dist/bot.js\"",
-    "build": "rimraf dist; tsc",
-    "test": "jest",
-    "test:integration": "jest -c jest.integration.config.js",
-    "test:e2e": "jest -c jest.e2e.config.js",
+    "lint": "npx eslint --quiet '{*,**/*}.{js,ts}' && npx prettier --check '{*,**/*}.json' && yarn typecheck",
     "papi": "papi generate",
-    "postinstall": "yarn papi"
+    "postinstall": "yarn papi",
+    "dev": "concurrently \"tsc -w\" \"node --watch --enable-source-maps dist/src/bot.js\"",
+    "start": "node --enable-source-maps dist/src/bot.js",
+    "test": "jest",
+    "test:e2e": "jest -c jest.e2e.config.js",
+    "test:integration": "jest -c jest.integration.config.js",
+    "typecheck": "tsc --noEmit"
   },
   "imports": {
     "#src/*": "./src/*.js"
@@ -43,6 +46,7 @@
   },
   "devDependencies": {
     "@eng-automation/js-style": "^3.1.0",
+    "@eng-automation/testing": "^1.5.0",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.14.2",
     "dotenv": "^16.0.1",

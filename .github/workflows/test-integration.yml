@@ -15,7 +15,11 @@ jobs:
         with:
           node-version: 22.5.1
       - run: yarn --immutable
+      - run: yarn build:docker
       - run: yarn test:integration --verbose
+      - name: Debug application container logs
+        if: failure()
+        run: cat integration_tests/containter_logs/application.log
       - name: Debug rococo container logs
         if: failure()
         run: cat integration_tests/containter_logs/rococo.log

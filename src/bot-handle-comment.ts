@@ -25,19 +25,34 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
     return;
   }
 
-  const tipRequester = event.comment.user.login;
-  const installationId = (
-    await github.getRepoInstallation({ owner: event.repository.owner.login, repo: event.repository.name })
-  ).id;
-
   // The "Unsafe assignment of an error typed value" error here goes deep into octokit types, that are full of `any`s
   // I wasn't able to get around it
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const appOctokitInstance: GitHubInstance = await github.getInstance({
+    authType: "app",
+    appId: envVar("GITHUB_APP_ID"),
+    privateKey: envVar("GITHUB_PRIVATE_KEY"),
+    ...(process.env.GITHUB_BASE_URL && { apiEndpoint: envVar("GITHUB_BASE_URL") }),
+  });
+
+  const tipRequester = event.comment.user.login;
+  const installationId = (
+    await github.getRepoInstallation(
+      {
+        owner: event.repository.owner.login,
+        repo: event.repository.name,
+      },
+      { octokitInstance: appOctokitInstance },
+    )
+  ).id;
+
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const octokitInstance: GitHubInstance = await github.getInstance({
     authType: "installation",
     appId: envVar("GITHUB_APP_ID"),
     installationId: String(installationId),
     privateKey: envVar("GITHUB_PRIVATE_KEY"),
+    ...(process.env.GITHUB_BASE_URL && { apiEndpoint: envVar("GITHUB_BASE_URL") }),
   });
 
   const respondParams = {
@@ -88,10 +103,10 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
       });
       await githubComment(`The referendum has appeared on [Polkassembly](${url}).`);
     } catch (e) {
-      state.bot.log.error("Failed to update the Polkasssembly metadata", {
-        referendumId: result.tipResult.referendumNumber,
-        tipRequest: JSON.stringify(result.tipRequest),
-      });
+      state.bot.log.error(
+        `Failed to update the Polkasssembly metadata; referendumId: ${result.tipResult.referendumNumber}`,
+        result.tipRequest,
+      );
       state.bot.log.error(e.message);
       await matrixNotifyOnFailure(state.matrix, event, {
         tagMaintainers: true,

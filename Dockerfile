@@ -1,4 +1,4 @@
-FROM node:22.5.1-alpine as builder
+FROM node:22.5.1-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -32,8 +32,8 @@ WORKDIR /usr/src/app
 COPY --from=builder /usr/src/app/package.json ./
 COPY --from=builder /usr/src/app/dist ./dist/
 COPY --from=builder /usr/src/app/node_modules ./node_modules/
-COPY --from=builder /usr/src/app/.papi ./papi/
+COPY --from=builder /usr/src/app/.papi ./.papi/
 
 ENV NODE_ENV="production"
 
-CMD [ "node", "dist/bot.js" ]
+CMD [ "node", "--enable-source-maps", "dist/src/bot.js" ]

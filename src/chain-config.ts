@@ -12,7 +12,12 @@ import { readFileSync } from "fs";
 
 import { ChainConfig, TipNetwork } from "./types";
 
-export const papiConfig = JSON.parse(readFileSync(".papi/polkadot-api.json", "utf-8")) as {
+export const papiConfig = JSON.parse(
+  readFileSync(
+    process.env.INTEGRATION_TEST ? ".papi/polkadot-api-integration.json" : ".papi/polkadot-api.json",
+    "utf-8",
+  ),
+) as {
   entries: {
     [p in TipNetwork]: {
       wsUrl: string;
