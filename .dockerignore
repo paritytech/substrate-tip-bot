@@ -10,3 +10,5 @@
 **/dist
 **/*.pem
 Dockerfile
+**/*.e2e.ts
+**/*.integration.ts
