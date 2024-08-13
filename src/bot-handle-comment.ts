@@ -127,7 +127,7 @@ export const handleTipRequest = async (
     return { success: false, errorMessage: `@${contributorLogin} ${contributorAccount.error}` };
   }
 
-  const tipSize = getTipSize(tipSizeInput);
+  const tipSize = getTipSize(tipSizeInput?.trim());
   if (typeof tipSize == "object" && "error" in tipSize) {
     return { success: false, errorMessage: `@${tipRequester} ${tipSize.error}` };
   }

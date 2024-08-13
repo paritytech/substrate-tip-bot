@@ -76,7 +76,7 @@ export function parseContributorAccount(bodys: (string | null)[]): ContributorAc
       typeof body === "string" &&
       body.match(
         // match "polkadot address: <ADDRESS>"
-        /(\S+)\s*address:\s*([a-z0-9]+)/i,
+        /(\S+)\s*address:\s*`?([a-z0-9]+)`?/i,
       );
 
     if (matches === false || matches === null || matches.length != 3) {
