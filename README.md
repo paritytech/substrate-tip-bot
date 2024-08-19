@@ -97,9 +97,7 @@ yarn test:integration
 
 ### Start a bot
 
-After registering and configuring the bot environment, we can run it. We use
-[Nodemon](https://nodemon.io/) for hot-reloading, the `probot` package
-automatically parses the relevant `.env` values.
+After registering and configuring the bot environment, we can run it.
 
 ```sh
 $ yarn start
