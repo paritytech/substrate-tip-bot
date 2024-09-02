@@ -77,6 +77,13 @@ The tests will spin up the local nodes automatically.
 
 To run the tests:
 
+Build the application image:
+```bash
+yarn build":docker
+```
+
+Then run the tests:
+
 ```bash
 yarn test:integration
 ```

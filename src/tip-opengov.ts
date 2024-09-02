@@ -9,7 +9,7 @@ import {
 } from "@polkadot-api/descriptors";
 import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { getDescriptor } from "#src/chain-config";
-import { Binary, PolkadotClient, TxPromise } from "polkadot-api";
+import { Binary, PolkadotClient, Transaction } from "polkadot-api";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
@@ -20,7 +20,7 @@ export async function tipOpenGovReferendumExtrinsic(opts: { client: PolkadotClie
   | Exclude<TipResult, { success: true }>
   | {
       success: true;
-      referendumExtrinsic: { signAndSubmit: TxPromise<"promise"> };
+      referendumExtrinsic: Transaction<object, "Referenda", "submit", unknown>;
       proposalByteSize: number;
       encodedProposal: Binary;
       track: { track: OpenGovTrack; value: bigint };
@@ -42,7 +42,7 @@ export async function tipOpenGovReferendumExtrinsic(opts: { client: PolkadotClie
 
   const enactMoment = TraitsScheduleDispatchTime.After(10);
 
-  let referendumExtrinsic: { signAndSubmit: TxPromise<"promise"> };
+  let referendumExtrinsic: Transaction<object, "Referenda", "submit", unknown>;
   const network: TipNetwork = tipRequest.contributor.account.network;
   if (network === "westend" || network === "localwestend" || network === "rococo" || network === "localrococo") {
     const api = client.getTypedApi(getDescriptor(network));
