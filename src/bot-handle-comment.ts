@@ -166,7 +166,7 @@ export const handleTipRequest = async (
       { octokitInstance },
     ))
   ) {
-    let createReferendumLink: string | undefined = undefined;
+    let createReferendumLink: string | undefined;
     // TODO: Broken after PAPI migration. https://github.com/paritytech/substrate-tip-bot/issues/170
     // try {
     //   const tipLink = await tipUserLink(state, tipRequest);
