@@ -7,7 +7,7 @@ import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { updateBalance } from "./balance";
 import { matrixNotifyOnFailure, matrixNotifyOnNewTip } from "./matrix";
 import { recordTip } from "./metrics";
-import { tipUser, tipUserLink } from "./tip";
+import { tipUser } from "./tip";
 import { updatePolkassemblyPost } from "./tip-opengov";
 import { GithubReactionType, State, TipRequest, TipResult } from "./types";
 import { formatTipSize, getTipSize, parseContributorAccount } from "./util";
@@ -166,17 +166,18 @@ export const handleTipRequest = async (
       { octokitInstance },
     ))
   ) {
-    let createReferendumLink: string | undefined = undefined;
-    try {
-      const tipLink = await tipUserLink(state, tipRequest);
-      if (!tipLink.success) {
-        throw new Error(tipLink.errorMessage);
-      }
-      createReferendumLink = tipLink.extrinsicCreationLink;
-    } catch (e) {
-      bot.log.error("Failed to encode and create a link to tip referendum creation.");
-      bot.log.error(e.message);
-    }
+    let createReferendumLink: string | undefined;
+    // TODO: Broken after PAPI migration. https://github.com/paritytech/substrate-tip-bot/issues/170
+    // try {
+    //   const tipLink = await tipUserLink(state, tipRequest);
+    //   if (!tipLink.success) {
+    //     throw new Error(tipLink.errorMessage);
+    //   }
+    //   createReferendumLink = tipLink.extrinsicCreationLink;
+    // } catch (e) {
+    //   bot.log.error("Failed to encode and create a link to tip referendum creation.");
+    //   bot.log.error(e.message);
+    // }
 
     let message =
       `Only members of \`${allowedGitHubOrg}/${allowedGitHubTeam}\` ` +
