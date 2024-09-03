@@ -79,7 +79,7 @@ To run the tests:
 
 Build the application image:
 ```bash
-yarn build":docker
+yarn build:docker
 ```
 
 Then run the tests:
