@@ -63,6 +63,31 @@ describe("tip", () => {
     return data.free;
   };
 
+  const expectTipperMembership = async () => {
+    await gitHub.forGet("/orgs/tip-bot-org/teams/tip-bot-approvers/memberships/tipper").thenReply(
+      200,
+      JSON.stringify(
+        fixtures.github.getOrgMembershipPayload({
+          login: "tipper",
+          org: "tip-bot-approvers",
+        }),
+      ),
+      jsonResponseHeaders,
+    );
+  };
+
+  const expectNoTipperMembership = async () => {
+    await gitHub.forGet("/orgs/tip-bot-org/teams/tip-bot-approvers/memberships/tipper").thenReply(
+      404,
+      JSON.stringify({
+        message: "Not Found",
+        documentation_url: "https://docs.github.com/rest/teams/members#get-team-membership-for-a-user",
+        status: "404",
+      }),
+      jsonResponseHeaders,
+    );
+  };
+
   beforeAll(async () => {
     await fs.mkdir(containterLogsDir, { recursive: true });
 
@@ -81,6 +106,7 @@ describe("tip", () => {
         .withNetwork(containerNetwork)
         .withNetworkAliases("localrococo")
         .withExposedPorts(9945)
+        .withPlatform("linux/amd64")
         .start(),
       new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
         .withWaitStrategy(Wait.forListeningPorts())
@@ -90,6 +116,7 @@ describe("tip", () => {
         .withNetwork(containerNetwork)
         .withNetworkAliases("localwestend")
         .withExposedPorts(9945)
+        .withPlatform("linux/amd64")
         .start(),
       mockServer.startMockServer({ name: "GitHub", port: gitHubPort, testCaCertPath }),
     ]);
@@ -199,17 +226,6 @@ describe("tip", () => {
     await gitHub
       .forPost("/app/installations/155/access_tokens")
       .thenReply(200, JSON.stringify(fixtures.github.getAppInstallationTokenPayload()), jsonResponseHeaders);
-
-    await gitHub.forGet("/orgs/tip-bot-org/teams/tip-bot-approvers/memberships/tipper").thenReply(
-      200,
-      JSON.stringify(
-        fixtures.github.getOrgMembershipPayload({
-          login: "tipper",
-          org: "tip-bot-approvers",
-        }),
-      ),
-      jsonResponseHeaders,
-    );
   });
 
   afterAll(async () => {
@@ -235,6 +251,7 @@ describe("tip", () => {
     });
 
     test.each(tipSizes)("tips a user (%s)", async (tipSize) => {
+      await expectTipperMembership();
       const api = network === "localrococo" ? rococoApi : westendApi;
       const nextFreeReferendumId = await api.query.Referenda.ReferendumCount.getValue();
       await tipUser(appPort, tipSize);
@@ -272,6 +289,7 @@ describe("tip", () => {
     });
 
     test(`huge tip in ${network}`, async () => {
+      await expectTipperMembership();
       const successEndpoint = await gitHub.forPost("/repos/paritytech-stg/testre/issues/4/comments").thenReply(
         200,
         JSON.stringify(
@@ -296,6 +314,40 @@ describe("tip", () => {
       expect(body.body).toContain(
         `The requested tip value of '1000000 ${currency}' exceeds the BigTipper track maximum`,
       );
+    });
+
+    test(`tip link in ${network}`, async () => {
+      await expectNoTipperMembership();
+      const successEndpoint = await gitHub.forPost("/repos/paritytech-stg/testre/issues/4/comments").thenReply(
+        200,
+        JSON.stringify(
+          fixtures.github.getIssueCommentPayload({
+            org: "paritytech-stg",
+            repo: "testre",
+            comment: {
+              author: "substrate-tip-bot",
+              body: "",
+              id: 4,
+            },
+          }),
+        ),
+      );
+
+      await tipUser(appPort, "small");
+
+      await until(async () => !(await successEndpoint.isPending()), 500, 50);
+
+      const [request] = await successEndpoint.getSeenRequests();
+      const body = (await request.body.getJson()) as { body: string };
+      expect(body.body).toContain(
+        "Only members of `tip-bot-org/tip-bot-approvers` have permission to request the creation of the tip referendum from the bot.",
+      );
+      expect(body.body).toContain(`https://polkadot.js.org/apps/?rpc=ws://localrococo:9945#/`);
+
+      const extrinsicHex = body.body.match(/decode\/(\w+)/)?.[1];
+      expect(extrinsicHex).toBeDefined();
+
+      // TODO: validate the contents of the extrinsic, when such functionality will be available in PAPI
     });
   });
 });

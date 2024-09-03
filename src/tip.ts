@@ -61,12 +61,13 @@ export async function tipUserLink(
       return preparedExtrinsic;
     }
 
-    const { botTipAccount } = state;
+    const transactionHex = (await preparedExtrinsic.referendumExtrinsic.getEncodedData()).asHex();
 
-    const { txHash } = await preparedExtrinsic.referendumExtrinsic.signAndSubmit(botTipAccount);
     const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${papiConfig.entries[network].wsUrl}#/`;
-    const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${txHash}`;
+    const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${transactionHex}`;
     return { success: true, extrinsicCreationLink };
+  } catch (e) {
+    return { success: false, errorMessage: e instanceof Error ? e.stack ?? e.message : String(e) };
   } finally {
     client.destroy();
   }
