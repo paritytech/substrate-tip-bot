@@ -1,23 +1,9 @@
-import {
-  kusama,
-  localkusama,
-  localpolkadot,
-  localrococo,
-  localwestend,
-  polkadot,
-  rococo,
-  westend,
-} from "@polkadot-api/descriptors";
+import { kusama, polkadot, rococo, westend } from "@polkadot-api/descriptors";
 import { readFileSync } from "fs";
 
 import { ChainConfig, TipNetwork } from "./types";
 
-export const papiConfig = JSON.parse(
-  readFileSync(
-    process.env.INTEGRATION_TEST ? ".papi/polkadot-api-integration.json" : ".papi/polkadot-api.json",
-    "utf-8",
-  ),
-) as {
+const papiConfig = JSON.parse(readFileSync(".papi/polkadot-api.json", "utf-8")) as {
   entries: {
     [p in TipNetwork]: {
       wsUrl: string;
@@ -27,36 +13,54 @@ export const papiConfig = JSON.parse(
   };
 };
 
+export function getWsUrl(network: TipNetwork): string {
+  const local = Boolean(process.env.LOCAL_NETWORKS);
+
+  switch (network) {
+    case "kusama": {
+      return local ? "ws://127.0.0.1:9901" : papiConfig.entries.kusama.wsUrl;
+    }
+    case "polkadot": {
+      return local ? "ws://127.0.0.1:9900" : papiConfig.entries.polkadot.wsUrl;
+    }
+    case "rococo": {
+      if (process.env.INTEGRATION_TEST) {
+        return "ws://localrococo:9945"; // neighbouring container name
+      }
+      return local ? "ws://127.0.0.1:9902" : papiConfig.entries.rococo.wsUrl;
+    }
+    case "westend": {
+      if (process.env.INTEGRATION_TEST) {
+        return "ws://localwestend:9945"; // neighbouring container name
+      }
+      return local ? "ws://127.0.0.1:9903" : papiConfig.entries.westend.wsUrl;
+    }
+    default: {
+      const exhaustivenessCheck: never = network;
+      throw new Error(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `Network is not handled properly in tipUser: ${exhaustivenessCheck}`,
+      );
+    }
+  }
+}
+
 export type ChainDescriptor<Chain extends TipNetwork> = Chain extends "polkadot"
   ? typeof polkadot
-  : Chain extends "localpolkadot"
-    ? typeof localpolkadot
-    : Chain extends "localpolkadot"
-      ? typeof localpolkadot
-      : Chain extends "kusama"
-        ? typeof kusama
-        : Chain extends "localkusama"
-          ? typeof localkusama
-          : Chain extends "rococo"
-            ? typeof rococo
-            : Chain extends "localrococo"
-              ? typeof localrococo
-              : Chain extends "westend"
-                ? typeof westend
-                : Chain extends "localwestend"
-                  ? typeof localwestend
-                  : never;
+  : Chain extends "kusama"
+    ? typeof kusama
+    : Chain extends "rococo"
+      ? typeof rococo
+      : Chain extends "westend"
+        ? typeof westend
+        : never;
 
 export function getDescriptor<Chain extends TipNetwork>(network: Chain): ChainDescriptor<Chain> {
   const networks: { [Key in TipNetwork]: ChainDescriptor<Key> } = {
     polkadot,
-    localpolkadot,
     kusama,
-    localkusama,
     rococo,
-    localrococo,
     westend,
-    localwestend,
   };
 
   return networks[network] as ChainDescriptor<Chain>;
@@ -161,19 +165,15 @@ export const westendConstants: Constants = {
 
 export function getChainConfig(network: TipNetwork): ChainConfig {
   switch (network) {
-    case "kusama":
-    case "localkusama": {
+    case "kusama": {
       return kusamaConstants;
     }
-    case "localpolkadot":
     case "polkadot": {
       return polkadotConstants;
     }
-    case "localrococo":
     case "rococo": {
       return rococoConstants;
     }
-    case "localwestend":
     case "westend": {
       return westendConstants;
     }

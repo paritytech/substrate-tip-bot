@@ -44,7 +44,7 @@ export async function tipOpenGovReferendumExtrinsic(opts: { client: PolkadotClie
 
   let referendumExtrinsic: Transaction<object, "Referenda", "submit", unknown>;
   const network: TipNetwork = tipRequest.contributor.account.network;
-  if (network === "westend" || network === "localwestend" || network === "rococo" || network === "localrococo") {
+  if (network === "westend" || network === "rococo") {
     const api = client.getTypedApi(getDescriptor(network));
     const proposalOrigin = WestendRuntimeOriginCaller.Origins(
       track.track.trackName as WestendRuntimeGovernanceOriginsPalletCustomOriginsOrigin,

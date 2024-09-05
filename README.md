@@ -16,7 +16,7 @@ Permission to send out tips is limited for a GitHub team, that's configured with
 ### Pull request body
 
 ```sh
-{kusama|polkadot|localtest} address: <SS58 Address>
+{kusama|polkadot|rococo|westend} address: <SS58 Address>
 ```
 
 Followed by a _comment_ on said pull request
@@ -47,7 +47,7 @@ A reference env file is placed at `.env.example` to copy over
 $ cp .env.example .env
 ```
 
-### Run polkadot or substrate `localtest` network locally
+### Run network locally
 
 - Follow readme in https://github.com/paritytech/polkadot#development to run local network. 
   - Among all dependencies, main steps are (from repo): 
@@ -58,6 +58,7 @@ $ cp .env.example .env
   - Save the seeds & passwords somewhere
   - Set `ACCOUNT_SEED` as bot's seed in `.env` file  
 - Create a team in GitHub for the org that you control, and set `APPROVERS_GH_ORG` and `APPROVERS_GH_TEAM` in `.env` to said org and team
+- Set `LOCALNETWORKS=true` in `.env`, to change the endpoints
 - Transfer some meaningful amount from test accounts (like Alice) to a new bot account (from which bot will send tip to the contributor)
 
 ### Create GitHub application for testing
@@ -113,7 +114,7 @@ $ yarn start
 ### Create a PR and test it
 You'll need 2 gh users: contributor and maintainer (since it's not allowed for contributors to send a tip to themselves)
 
-- From contributor GH account: create a PR and add into PR description `localtest address: <contributor polkadot address>`
+- From contributor GH account: create a PR and add into PR description `rococo address: <contributor polkadot address>`
 - From maintainer GH account: write `/tip small` in comments so the bot sends funds to <contributor polkadot address>
 
 ### Docker

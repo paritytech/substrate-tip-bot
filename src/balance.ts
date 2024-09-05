@@ -1,8 +1,8 @@
 import { createClient } from "polkadot-api";
-import { WebSocketProvider } from "polkadot-api/ws-provider/node";
+import { getWsProvider } from "polkadot-api/ws-provider/node";
 import type { Probot } from "probot";
 
-import { getChainConfig, getDescriptor, papiConfig } from "./chain-config";
+import { getChainConfig, getDescriptor, getWsUrl } from "./chain-config";
 import { balanceGauge } from "./metrics";
 import { TipNetwork } from "./types";
 
@@ -28,7 +28,7 @@ export const updateBalance = async (opts: { network: TipNetwork; tipBotAddress: 
   const { network, tipBotAddress } = opts;
   const config = getChainConfig(network);
 
-  const jsonRpcProvider = WebSocketProvider(papiConfig.entries[network].wsUrl);
+  const jsonRpcProvider = getWsProvider(getWsUrl(network));
   const client = createClient(jsonRpcProvider);
   const api = client.getTypedApi(getDescriptor(network));
 

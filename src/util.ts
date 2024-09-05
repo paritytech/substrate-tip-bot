@@ -20,14 +20,6 @@ const validNetworks: { [key: string]: TipNetwork } = {
   kusama: "kusama",
   rococo: "rococo",
   westend: "westend",
-  ...(process.env.NODE_ENV === "development" || process.env.INTEGRATION_TEST
-    ? {
-        localpolkadot: "localpolkadot",
-        localkusama: "localkusama",
-        localrococo: "localrococo",
-        localwestend: "localwestend",
-      }
-    : {}),
 } as const;
 
 export function getTipSize(tipSizeInput: string | undefined): TipSize | bigint | { error: string } {
