@@ -14,7 +14,7 @@ jobs:
         id: read-tag
         run: |
           # Fetch all Polkadot release tags, get the last (newest) one, and parse its name from the output.
-          TAG=$(git ls-remote --refs --tags https://github.com/paritytech/polkadot-sdk.git 'polkadot-v*' \
+          TAG=$(git ls-remote --refs --tags https://github.com/paritytech/polkadot-sdk.git 'polkadot-stable*' \
             | sed 's,[^r]*refs/tags/,,' \
             | sort --version-sort \
             | tail -1)
