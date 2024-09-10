@@ -4,15 +4,15 @@ from the point of creating a tip,
 all the way to completing the referendum.
  */
 
-import { ConvictionVotingVoteAccountVote, localrococo, MultiAddress } from "@polkadot-api/descriptors";
+import { ConvictionVotingVoteAccountVote, MultiAddress, rococo } from "@polkadot-api/descriptors";
 import { DEV_PHRASE } from "@polkadot-labs/hdkd-helpers";
 import assert from "assert";
 import { createClient, PolkadotClient, PolkadotSigner, TypedApi } from "polkadot-api";
-import { WebSocketProvider } from "polkadot-api/ws-provider/node";
+import { getWsProvider } from "polkadot-api/ws-provider/node";
 import { filter, firstValueFrom, mergeMap, pairwise, race, skip, throwError } from "rxjs";
 
 import { generateSigner } from "./bot-initialize";
-import { papiConfig, rococoConstants } from "./chain-config";
+import { getWsUrl, rococoConstants } from "./chain-config";
 import { randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
@@ -23,9 +23,10 @@ logMock.error = console.error.bind(console);
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 const treasuryAccount = "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB"; // https://wiki.polkadot.network/docs/learn-account-advanced#system-accounts
 
-const network = "localrococo";
+const network = "rococo";
+const wsUrl = getWsUrl(network);
 
-const expectBalanceIncrease = async (useraddress: string, api: TypedApi<typeof localrococo>, blocksNum: number) =>
+const expectBalanceIncrease = async (useraddress: string, api: TypedApi<typeof rococo>, blocksNum: number) =>
   await firstValueFrom(
     race([
       api.query.System.Account.watchValue(useraddress, "best")
@@ -42,14 +43,14 @@ const expectBalanceIncrease = async (useraddress: string, api: TypedApi<typeof l
 
 describe("E2E opengov tip", () => {
   let state: State;
-  let api: TypedApi<typeof localrococo>;
+  let api: TypedApi<typeof rococo>;
   let alice: PolkadotSigner;
   let client: PolkadotClient;
 
   beforeAll(() => {
-    const jsonRpcProvider = WebSocketProvider(papiConfig.entries[network].wsUrl);
+    const jsonRpcProvider = getWsProvider(wsUrl);
     client = createClient(jsonRpcProvider);
-    api = client.getTypedApi(localrococo);
+    api = client.getTypedApi(rococo);
   });
 
   afterAll(() => {
@@ -66,9 +67,7 @@ describe("E2E opengov tip", () => {
       await client.getFinalizedBlock();
     } catch (e) {
       console.log(
-        `For these integrations tests, we're expecting local Rococo on ${
-          papiConfig.entries[network].wsUrl
-        }. Please refer to the Readme.`,
+        `For these integrations tests, we're expecting local Rococo on ${wsUrl}. Please refer to the Readme.`,
       );
     }
 

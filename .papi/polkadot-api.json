@@ -2,24 +2,6 @@
   "version": 0,
   "descriptorPath": ".papi/descriptors",
   "entries": {
-    "localpolkadot": {
-      "wsUrl": "ws://127.0.0.1:9900",
-      "chain": "polkadot",
-      "metadata": ".papi/metadata/polkadot.scale"
-    },
-    "localkusama": {
-      "wsUrl": "ws://127.0.0.1:9901",
-      "chain": "ksmcc3",
-      "metadata": ".papi/metadata/kusama.scale"
-    },
-    "localwestend": {
-      "wsUrl": "ws://127.0.0.1:9903",
-      "metadata": ".papi/metadata/localwestend.scale"
-    },
-    "localrococo": {
-      "wsUrl": "ws://127.0.0.1:9902",
-      "metadata": ".papi/metadata/localrococo.scale"
-    },
     "polkadot": {
       "wsUrl": "wss://rpc.polkadot.io",
       "chain": "polkadot",

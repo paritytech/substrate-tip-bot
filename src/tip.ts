@@ -1,7 +1,7 @@
 import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
-import { WebSocketProvider } from "polkadot-api/ws-provider/node";
+import { getWsProvider } from "polkadot-api/ws-provider/node";
 
-import { ChainDescriptor, getDescriptor, papiConfig } from "./chain-config";
+import { ChainDescriptor, getDescriptor, getWsUrl } from "./chain-config";
 import { tipOpenGov, tipOpenGovReferendumExtrinsic } from "./tip-opengov";
 import { State, TipNetwork, TipRequest, TipResult } from "./types";
 
@@ -15,7 +15,7 @@ async function createApi(
 }> {
   const { bot } = state;
 
-  const provider = WebSocketProvider(papiConfig.entries[network].wsUrl);
+  const provider = getWsProvider(getWsUrl(network));
   const client = createClient(provider);
 
   // Check that it works
@@ -63,7 +63,7 @@ export async function tipUserLink(
 
     const transactionHex = (await preparedExtrinsic.referendumExtrinsic.getEncodedData()).asHex();
 
-    const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${papiConfig.entries[network].wsUrl}#/`;
+    const polkadotAppsUrl = `https://polkadot.js.org/apps/?rpc=${getWsUrl(network)}#/`;
     const extrinsicCreationLink = `${polkadotAppsUrl}extrinsics/decode/${transactionHex}`;
     return { success: true, extrinsicCreationLink };
   } catch (e) {

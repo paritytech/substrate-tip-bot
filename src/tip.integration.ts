@@ -5,13 +5,13 @@ different sizes of opengov tips.
 
 import { findFreePorts, until } from "@eng-automation/js";
 import { fixtures, githubWebhooks, mockServer } from "@eng-automation/testing";
-import { localrococo, localwestend } from "@polkadot-api/descriptors";
+import { rococo, westend } from "@polkadot-api/descriptors";
 import { DEV_PHRASE } from "@polkadot-labs/hdkd-helpers";
 import assert from "assert";
 import fs from "fs/promises";
 import path from "path";
-import { createClient, PolkadotClient, TypedApi } from "polkadot-api";
-import { WebSocketProvider } from "polkadot-api/ws-provider/node";
+import { Binary, createClient, PolkadotClient, TypedApi } from "polkadot-api";
+import { getWsProvider } from "polkadot-api/ws-provider/node";
 import { filter, firstValueFrom } from "rxjs";
 import { Readable } from "stream";
 import { GenericContainer, Network, StartedTestContainer, TestContainers, Wait } from "testcontainers";
@@ -39,7 +39,7 @@ function logConsumer(name: string, addTs: boolean = true): (stream: Readable) =>
 }
 
 const POLKADOT_VERSION = "v1.15.0";
-const networks = ["localrococo", "localwestend"] as const;
+const networks = ["rococo", "westend"] as const;
 const tipSizes = ["small", "medium", "large", "1", "3"];
 const commonDockerArgs =
   "--tmp --alice --execution Native --rpc-port 9945 --rpc-external --no-prometheus --no-telemetry --rpc-cors all --unsafe-force-node-key-generation";
@@ -51,14 +51,14 @@ describe("tip", () => {
   let appContainer: StartedTestContainer;
   let rococoContainer: StartedTestContainer;
   let rococoClient: PolkadotClient;
-  let rococoApi: TypedApi<typeof localrococo>;
+  let rococoApi: TypedApi<typeof rococo>;
   let westendContainer: StartedTestContainer;
   let westendClient: PolkadotClient;
-  let westendApi: TypedApi<typeof localwestend>;
+  let westendApi: TypedApi<typeof westend>;
   let gitHub: mockServer.MockServer;
   let appPort: number;
 
-  const getUserBalance = async (api: TypedApi<typeof localrococo | typeof localwestend>, userAddress: string) => {
+  const getUserBalance = async (api: TypedApi<typeof rococo | typeof westend>, userAddress: string) => {
     const { data } = await api.query.System.Account.getValue(userAddress, { at: "best" });
     return data.free;
   };
@@ -187,11 +187,11 @@ describe("tip", () => {
 
     appPort = appContainer.getMappedPort(probotPort);
 
-    rococoClient = createClient(WebSocketProvider(`ws://localhost:${rococoContainer.getMappedPort(9945)}`));
-    rococoApi = rococoClient.getTypedApi(localrococo);
+    rococoClient = createClient(getWsProvider(`ws://localhost:${rococoContainer.getMappedPort(9945)}`));
+    rococoApi = rococoClient.getTypedApi(rococo);
 
-    westendClient = createClient(WebSocketProvider(`ws://localhost:${westendContainer.getMappedPort(9945)}`));
-    westendApi = westendClient.getTypedApi(localwestend);
+    westendClient = createClient(getWsProvider(`ws://localhost:${westendContainer.getMappedPort(9945)}`));
+    westendApi = westendClient.getTypedApi(westend);
 
     // ensure that the connection works
     await Promise.all([rococoApi.query.System.Number.getValue(), westendApi.query.System.Number.getValue()]);
@@ -234,7 +234,7 @@ describe("tip", () => {
     await Promise.all([rococoContainer?.stop(), westendContainer?.stop(), gitHub?.stop(), appContainer?.stop()]);
   });
 
-  describe.each([networks])("%s", (network: "localrococo" | "localwestend") => {
+  describe.each([networks])("%s", (network: "rococo" | "westend") => {
     let contributorAddress: string;
     beforeEach(async () => {
       contributorAddress = randomAddress();
@@ -252,7 +252,7 @@ describe("tip", () => {
 
     test.each(tipSizes)("tips a user (%s)", async (tipSize) => {
       await expectTipperMembership();
-      const api = network === "localrococo" ? rococoApi : westendApi;
+      const api = network === "rococo" ? rococoApi : westendApi;
       const nextFreeReferendumId = await api.query.Referenda.ReferendumCount.getValue();
       await tipUser(appPort, tipSize);
 
@@ -310,7 +310,7 @@ describe("tip", () => {
       await until(async () => !(await successEndpoint.isPending()), 500, 50);
       const [request] = await successEndpoint.getSeenRequests();
       const body = (await request.body.getJson()) as { body: string };
-      const currency = network === "localrococo" ? "ROC" : "WND";
+      const currency = network === "rococo" ? "ROC" : "WND";
       expect(body.body).toContain(
         `The requested tip value of '1000000 ${currency}' exceeds the BigTipper track maximum`,
       );
@@ -347,7 +347,10 @@ describe("tip", () => {
       const extrinsicHex = body.body.match(/decode\/(\w+)/)?.[1];
       expect(extrinsicHex).toBeDefined();
 
-      // TODO: validate the contents of the extrinsic, when such functionality will be available in PAPI
+      const api = network === "rococo" ? rococoApi : westendApi;
+      const tx = await api.txFromCallData(Binary.fromHex(extrinsicHex!));
+      expect(tx.decodedCall.type).toEqual("Referenda");
+      expect(tx.decodedCall.value.type).toEqual("submit");
     });
   });
 });
