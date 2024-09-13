@@ -73,7 +73,11 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
   await matrixNotifyOnNewTip(state.matrix, event);
   let result: OnIssueCommentResult;
   try {
-    result = await handleTipRequest(state, event, tipRequester, octokitInstance);
+    // important: using appOctokitInstance to handleTipRequest, as we'll be querying our org
+    // team members with that, and installation permissions may not work
+    // we have to, however, respond in comments with an installation instance, as our org
+    // instance may not have permissions for that
+    result = await handleTipRequest(state, event, tipRequester, appOctokitInstance);
     if (result.success) {
       await githubComment(result.message);
       await githubEmojiReaction("rocket");
