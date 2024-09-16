@@ -3,7 +3,6 @@ on:
   schedule:
     - cron: 0 3 * * SUN # Once a week on Sunday.
   workflow_dispatch:
-  push:
 
 jobs:
   test-e2e-cron:
