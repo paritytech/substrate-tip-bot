@@ -47,7 +47,7 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
   ).id;
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const octokitInstance: GitHubInstance = await github.getInstance({
+  const repositoryOctokitInstance: GitHubInstance = await github.getInstance({
     authType: "installation",
     appId: envVar("GITHUB_APP_ID"),
     installationId: String(installationId),
@@ -62,18 +62,20 @@ export const handleIssueCommentCreated = async (state: State, event: IssueCommen
   };
 
   const githubComment = async (body: string) =>
-    await github.createComment({ ...respondParams, body }, { octokitInstance });
+    await github.createComment({ ...respondParams, body }, { octokitInstance: repositoryOctokitInstance });
   const githubEmojiReaction = async (reaction: GithubReactionType) =>
     await github.createReactionForIssueComment(
       { ...respondParams, comment_id: event.comment.id, content: reaction },
-      { octokitInstance },
+      { octokitInstance: repositoryOctokitInstance },
     );
 
   await githubEmojiReaction("eyes");
   await matrixNotifyOnNewTip(state.matrix, event);
   let result: OnIssueCommentResult;
   try {
-    result = await handleTipRequest(state, event, tipRequester, octokitInstance);
+    // important: using appOctokitInstance to handleTipRequest, and getting right installation there,
+    // as we'll be querying our org team members with that, and repo installation permissions may not work.
+    result = await handleTipRequest(state, event, tipRequester, appOctokitInstance);
     if (result.success) {
       await githubComment(result.message);
       await githubEmojiReaction("rocket");
@@ -120,7 +122,7 @@ export const handleTipRequest = async (
   state: State,
   event: IssueCommentCreatedEvent,
   tipRequester: string,
-  octokitInstance: github.GitHubInstance,
+  appOctokitInstance: github.GitHubInstance,
 ): Promise<OnIssueCommentResult> => {
   const { allowedGitHubOrg, allowedGitHubTeam, bot } = state;
 
@@ -134,6 +136,26 @@ export const handleTipRequest = async (
   if (tipRequester === contributorLogin) {
     return { success: false, errorMessage: `@${tipRequester} Contributor and tipper cannot be the same person!` };
   }
+
+  const appInstallations = await github.getAppInstallations({}, { octokitInstance: appOctokitInstance });
+  const approversOrgInstallation = appInstallations.find(
+    (installation) => installation.account?.login === allowedGitHubOrg,
+  );
+
+  if (approversOrgInstallation === undefined) {
+    return { success: false, errorMessage: `GitHub application is not installed to ${allowedGitHubOrg} org` };
+  }
+
+  // The "Unsafe assignment of an error typed value" error here goes deep into octokit types, that are full of `any`s
+  // I wasn't able to get around it
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const octokitInstance: GitHubInstance = await github.getInstance({
+    authType: "installation",
+    appId: envVar("GITHUB_APP_ID"),
+    installationId: String(approversOrgInstallation.id),
+    privateKey: envVar("GITHUB_PRIVATE_KEY"),
+    ...(process.env.GITHUB_BASE_URL && { apiEndpoint: envVar("GITHUB_BASE_URL") }),
+  });
 
   const userBio = (await octokitInstance.rest.users.getByUsername({ username: contributorLogin })).data.bio;
   const contributorAccount = parseContributorAccount([pullRequestBody, userBio]);

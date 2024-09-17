@@ -38,7 +38,7 @@ function logConsumer(name: string, addTs: boolean = true): (stream: Readable) =>
   };
 }
 
-const POLKADOT_VERSION = "v1.15.0";
+const POLKADOT_VERSION = "v1.15.2";
 const networks = ["rococo", "westend"] as const;
 const tipSizes = ["small", "medium", "large", "1", "3"];
 const commonDockerArgs =
@@ -46,6 +46,9 @@ const commonDockerArgs =
 const probotPort = 3000; // default value; not configured in the app
 
 export const jsonResponseHeaders = { "content-type": "application/json" };
+
+const tipBotOrgToken = "ghs_989898989898989898989898989898dfdfdfd";
+const paritytechStgOrgToken = "ghs_12345678912345678123456723456abababa";
 
 describe("tip", () => {
   let appContainer: StartedTestContainer;
@@ -64,28 +67,34 @@ describe("tip", () => {
   };
 
   const expectTipperMembership = async () => {
-    await gitHub.forGet("/orgs/tip-bot-org/teams/tip-bot-approvers/memberships/tipper").thenReply(
-      200,
-      JSON.stringify(
-        fixtures.github.getOrgMembershipPayload({
-          login: "tipper",
-          org: "tip-bot-approvers",
-        }),
-      ),
-      jsonResponseHeaders,
-    );
+    await gitHub
+      .forGet("/orgs/tip-bot-org/teams/tip-bot-approvers/memberships/tipper")
+      .withHeaders({ Authorization: `token ${tipBotOrgToken}` })
+      .thenReply(
+        200,
+        JSON.stringify(
+          fixtures.github.getOrgMembershipPayload({
+            login: "tipper",
+            org: "tip-bot-approvers",
+          }),
+        ),
+        jsonResponseHeaders,
+      );
   };
 
   const expectNoTipperMembership = async () => {
-    await gitHub.forGet("/orgs/tip-bot-org/teams/tip-bot-approvers/memberships/tipper").thenReply(
-      404,
-      JSON.stringify({
-        message: "Not Found",
-        documentation_url: "https://docs.github.com/rest/teams/members#get-team-membership-for-a-user",
-        status: "404",
-      }),
-      jsonResponseHeaders,
-    );
+    await gitHub
+      .forGet("/orgs/tip-bot-org/teams/tip-bot-approvers/memberships/tipper")
+      .withHeaders({ Authorization: `token ${tipBotOrgToken}` })
+      .thenReply(
+        404,
+        JSON.stringify({
+          message: "Not Found",
+          documentation_url: "https://docs.github.com/rest/teams/members#get-team-membership-for-a-user",
+          status: "404",
+        }),
+        jsonResponseHeaders,
+      );
   };
 
   beforeAll(async () => {
@@ -199,33 +208,56 @@ describe("tip", () => {
     assert(Number(await getUserBalance(rococoApi, tipperAccount)) > 0);
     assert(Number(await getUserBalance(westendApi, tipperAccount)) > 0);
 
-    await gitHub.forGet("/repos/paritytech-stg/testre/installation").thenReply(
-      200,
-      JSON.stringify(
-        fixtures.github.getAppInstallationsPayload([
-          {
-            accountLogin: "paritytech-stg",
-            accountId: 74720417,
-            id: 155,
-          },
-        ])[0],
-      ),
-      jsonResponseHeaders,
-    );
+    const appInstallations = fixtures.github.getAppInstallationsPayload([
+      {
+        accountLogin: "paritytech-stg",
+        accountId: 74720417,
+        id: 155,
+      },
+      {
+        accountLogin: "tip-bot-org",
+        accountId: 87878787,
+        id: 199,
+      },
+    ]);
 
-    await gitHub.forPost("/repos/paritytech-stg/testre/issues/comments/1234532076/reactions").thenReply(
-      200,
-      JSON.stringify(
-        fixtures.github.getIssueCommentReactionPayload({
-          content: "eyes",
-        }),
-      ),
-      jsonResponseHeaders,
-    );
+    await gitHub
+      .forGet("/repos/paritytech-stg/testre/installation")
+      .thenReply(200, JSON.stringify(appInstallations[0]), jsonResponseHeaders);
+
+    await gitHub
+      .forPost("/repos/paritytech-stg/testre/issues/comments/1234532076/reactions")
+      .withHeaders({ Authorization: `token ${paritytechStgOrgToken}` })
+      .thenReply(
+        200,
+        JSON.stringify(
+          fixtures.github.getIssueCommentReactionPayload({
+            content: "eyes",
+          }),
+        ),
+        jsonResponseHeaders,
+      );
 
     await gitHub
       .forPost("/app/installations/155/access_tokens")
-      .thenReply(200, JSON.stringify(fixtures.github.getAppInstallationTokenPayload()), jsonResponseHeaders);
+      .thenReply(
+        200,
+        JSON.stringify(fixtures.github.getAppInstallationTokenPayload(paritytechStgOrgToken)),
+        jsonResponseHeaders,
+      );
+
+    await gitHub
+      .forPost("/app/installations/199/access_tokens")
+      .thenReply(
+        200,
+        JSON.stringify(fixtures.github.getAppInstallationTokenPayload(tipBotOrgToken)),
+        jsonResponseHeaders,
+      );
+
+    await gitHub
+      .forGet("/app/installations")
+      .withQuery({ per_page: "100" })
+      .thenReply(200, JSON.stringify(appInstallations), jsonResponseHeaders);
   });
 
   afterAll(async () => {
@@ -252,24 +284,29 @@ describe("tip", () => {
 
     test.each(tipSizes)("tips a user (%s)", async (tipSize) => {
       await expectTipperMembership();
+
       const api = network === "rococo" ? rococoApi : westendApi;
       const nextFreeReferendumId = await api.query.Referenda.ReferendumCount.getValue();
-      await tipUser(appPort, tipSize);
 
-      const successEndpoint = await gitHub.forPost("/repos/paritytech-stg/testre/issues/4/comments").thenReply(
-        200,
-        JSON.stringify(
-          fixtures.github.getIssueCommentPayload({
-            org: "paritytech-stg",
-            repo: "testre",
-            comment: {
-              author: "substrate-tip-bot",
-              body: "",
-              id: 4,
-            },
-          }),
-        ),
-      );
+      const successEndpoint = await gitHub
+        .forPost("/repos/paritytech-stg/testre/issues/4/comments")
+        .withHeaders({ Authorization: `token ${paritytechStgOrgToken}` })
+        .thenReply(
+          200,
+          JSON.stringify(
+            fixtures.github.getIssueCommentPayload({
+              org: "paritytech-stg",
+              repo: "testre",
+              comment: {
+                author: "substrate-tip-bot",
+                body: "",
+                id: 4,
+              },
+            }),
+          ),
+        );
+
+      await tipUser(appPort, tipSize);
 
       await until(async () => !(await successEndpoint.isPending()), 500, 100);
 
@@ -290,20 +327,23 @@ describe("tip", () => {
 
     test(`huge tip in ${network}`, async () => {
       await expectTipperMembership();
-      const successEndpoint = await gitHub.forPost("/repos/paritytech-stg/testre/issues/4/comments").thenReply(
-        200,
-        JSON.stringify(
-          fixtures.github.getIssueCommentPayload({
-            org: "paritytech-stg",
-            repo: "testre",
-            comment: {
-              author: "substrate-tip-bot",
-              body: "",
-              id: 4,
-            },
-          }),
-        ),
-      );
+      const successEndpoint = await gitHub
+        .forPost("/repos/paritytech-stg/testre/issues/4/comments")
+        .withHeaders({ Authorization: `token ${paritytechStgOrgToken}` })
+        .thenReply(
+          200,
+          JSON.stringify(
+            fixtures.github.getIssueCommentPayload({
+              org: "paritytech-stg",
+              repo: "testre",
+              comment: {
+                author: "substrate-tip-bot",
+                body: "",
+                id: 4,
+              },
+            }),
+          ),
+        );
 
       await tipUser(appPort, "1000000");
 
@@ -318,20 +358,23 @@ describe("tip", () => {
 
     test(`tip link in ${network}`, async () => {
       await expectNoTipperMembership();
-      const successEndpoint = await gitHub.forPost("/repos/paritytech-stg/testre/issues/4/comments").thenReply(
-        200,
-        JSON.stringify(
-          fixtures.github.getIssueCommentPayload({
-            org: "paritytech-stg",
-            repo: "testre",
-            comment: {
-              author: "substrate-tip-bot",
-              body: "",
-              id: 4,
-            },
-          }),
-        ),
-      );
+      const successEndpoint = await gitHub
+        .forPost("/repos/paritytech-stg/testre/issues/4/comments")
+        .withHeaders({ Authorization: `token ${paritytechStgOrgToken}` })
+        .thenReply(
+          200,
+          JSON.stringify(
+            fixtures.github.getIssueCommentPayload({
+              org: "paritytech-stg",
+              repo: "testre",
+              comment: {
+                author: "substrate-tip-bot",
+                body: "",
+                id: 4,
+              },
+            }),
+          ),
+        );
 
       await tipUser(appPort, "small");
 
@@ -342,7 +385,7 @@ describe("tip", () => {
       expect(body.body).toContain(
         "Only members of `tip-bot-org/tip-bot-approvers` have permission to request the creation of the tip referendum from the bot.",
       );
-      expect(body.body).toContain(`https://polkadot.js.org/apps/?rpc=ws://localrococo:9945#/`);
+      expect(body.body).toContain(`https://polkadot.js.org/apps/?rpc=ws://local${network}:9945#/`);
 
       const extrinsicHex = body.body.match(/decode\/(\w+)/)?.[1];
       expect(extrinsicHex).toBeDefined();

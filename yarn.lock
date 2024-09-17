@@ -793,15 +793,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eng-automation/testing@npm:^1.5.0":
-  version: 1.5.0
-  resolution: "@eng-automation/testing@npm:1.5.0"
+"@eng-automation/testing@npm:^1.5.2":
+  version: 1.5.2
+  resolution: "@eng-automation/testing@npm:1.5.2"
   dependencies:
     "@eng-automation/js": "npm:^2.1.0"
     "@octokit/rest": "npm:^19.0.7"
     mockttp: "npm:^3.9.4"
     selfsigned: "npm:^2.1.0"
-  checksum: 10c0/bab1ac26228d51b8c8450ce1df8a1a2781044057faf95ce81c0edbdba640ee2200a1e2c58ce0b87efb6ed97fde702d2c5e764acf41bda62c72cf4c552ec04248
+  checksum: 10c0/451c699d60b842cab5d797ec95ce186e62cf76cc369f866b04e12591809f0ab00b75b0d51dbc959bc780673c10d40eda094cc75743d3f8161843266af0cfc215
   languageName: node
   linkType: hard
 
@@ -3192,7 +3192,7 @@ __metadata:
     "@eng-automation/integrations": "npm:^4.4.0"
     "@eng-automation/js": "npm:^2.2.0"
     "@eng-automation/js-style": "npm:^3.1.0"
-    "@eng-automation/testing": "npm:^1.5.0"
+    "@eng-automation/testing": "npm:^1.5.2"
     "@polkadot-api/descriptors": "portal:.papi/descriptors"
     "@polkadot-labs/hdkd": "npm:^0.0.6"
     "@polkadot-labs/hdkd-helpers": "npm:^0.0.6"
