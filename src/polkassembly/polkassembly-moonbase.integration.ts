@@ -42,6 +42,7 @@ describe("Polkassembly with production API and Moonbase Alpha testnet", () => {
 
     const content = formatReason(
       {
+        pullRequestOwner: "exampleorg",
         pullRequestRepo: "examplerepo",
         pullRequestNumber: 1,
         contributor: { githubUsername: "exampleuser", account: { address: "xyz", network: "kusama" } },

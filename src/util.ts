@@ -104,7 +104,7 @@ export function parseContributorAccount(bodys: (string | null)[]): ContributorAc
  * With markdown option enabled, it will produce a multi-line markdown text.
  */
 export const formatReason = (tipRequest: TipRequest, opts: { markdown: boolean } = { markdown: false }): string => {
-  const { contributor, pullRequestNumber, pullRequestRepo } = tipRequest;
+  const { contributor, pullRequestNumber, pullRequestOwner, pullRequestRepo } = tipRequest;
   if (!opts.markdown) {
     return `TO: ${contributor.githubUsername} FOR: ${pullRequestRepo}#${pullRequestNumber} (${formatTipSize(
       tipRequest,
@@ -115,8 +115,8 @@ export const formatReason = (tipRequest: TipRequest, opts: { markdown: boolean }
 
 ### Details
 
-- **Repository:** [${pullRequestRepo}](https://github.com/paritytech/${pullRequestRepo})
-- **PR:** [#${pullRequestNumber}](https://github.com/paritytech/${pullRequestRepo}/pull/${pullRequestNumber})
+- **Repository:** [${pullRequestRepo}](https://github.com/${pullRequestOwner}/${pullRequestRepo})
+- **PR:** [#${pullRequestNumber}](https://github.com/${pullRequestOwner}/${pullRequestRepo}/pull/${pullRequestNumber})
 - **Contributor:** [${contributor.githubUsername}](https://github.com/${contributor.githubUsername})
 - **Tip Size:** ${formatTipSize(tipRequest)}
 `;
