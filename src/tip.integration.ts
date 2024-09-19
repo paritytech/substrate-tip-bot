@@ -383,7 +383,7 @@ describe("tip", () => {
       const [request] = await successEndpoint.getSeenRequests();
       const body = (await request.body.getJson()) as { body: string };
       expect(body.body).toContain(
-        "Only members of `tip-bot-org/tip-bot-approvers` have permission to request the creation of the tip referendum from the bot.",
+        "Only members of [tip-bot-org/tip-bot-approvers](https://github.com/orgs/tip-bot-org/teams/tip-bot-approvers) have permission to request the creation of the tip referendum from the bot.",
       );
       expect(body.body).toContain(`https://polkadot.js.org/apps/?rpc=ws://local${network}:9945#/`);
 

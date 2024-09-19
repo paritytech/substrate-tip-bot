@@ -203,7 +203,7 @@ export const handleTipRequest = async (
     }
 
     let message =
-      `Only members of \`${allowedGitHubOrg}/${allowedGitHubTeam}\` ` +
+      `Only members of [${allowedGitHubOrg}/${allowedGitHubTeam}](https://github.com/orgs/${allowedGitHubOrg}/teams/${allowedGitHubTeam}) ` +
       `have permission to request the creation of the tip referendum from the bot.\n\n`;
     message += `However, you can create the tip referendum yourself using [Polkassembly](https://wiki.polkadot.network/docs/learn-polkadot-opengov-treasury#submit-treasury-proposal-via-polkassembly)`;
     return {
