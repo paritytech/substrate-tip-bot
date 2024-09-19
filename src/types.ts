@@ -50,6 +50,7 @@ export type TipRequest = {
   contributor: Contributor;
   pullRequestNumber: number;
   pullRequestRepo: string;
+  pullRequestOwner: string;
   tip: {
     size: TipSize | bigint;
   };

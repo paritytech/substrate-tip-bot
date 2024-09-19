@@ -92,6 +92,7 @@ describe("E2E opengov tip", () => {
     const tipRequest: TipRequest = {
       tip: { size: "small" },
       contributor: { githubUsername: "test", account: { address: randomAddress(), network } },
+      pullRequestOwner: "test-org",
       pullRequestRepo: "test",
       pullRequestNumber: 1,
     };

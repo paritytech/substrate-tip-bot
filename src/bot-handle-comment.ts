@@ -132,6 +132,7 @@ export const handleTipRequest = async (
   const contributorLogin = event.issue.user.login;
   const pullRequestNumber = event.issue.number;
   const pullRequestRepo = event.repository.name;
+  const pullRequestOwner = event.repository.owner.login;
 
   if (tipRequester === contributorLogin) {
     return { success: false, errorMessage: `@${tipRequester} Contributor and tipper cannot be the same person!` };
@@ -173,6 +174,7 @@ export const handleTipRequest = async (
     contributor: { githubUsername: contributorLogin, account: contributorAccount },
     pullRequestNumber,
     pullRequestRepo,
+    pullRequestOwner,
     tip: { size: tipSize },
   };
 
