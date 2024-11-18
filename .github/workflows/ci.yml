@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  set-variables:
+    name: Set variables
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      VERSION: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - name: Define version
+        id: version
+        run: |
+          export COMMIT_SHA=${{ github.sha }}
+          export COMMIT_SHA_SHORT=${COMMIT_SHA:0:8}
+          export REF_NAME=${{ github.ref_name }}
+          export REF_SLUG=${REF_NAME//\//_}
+          echo "short sha: ${COMMIT_SHA_SHORT}  slug: ${REF_SLUG}"
+          if [[ ${REF_SLUG} == "master" ]]
+          then
+            export VERSION=${REF_SLUG}-${COMMIT_SHA_SHORT}
+            echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          else
+            export VERSION=${REF_SLUG}
+            echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          fi
+          echo "set COMMIT_SHA_SHORT=${COMMIT_SHA_SHORT}"
+          echo "set VERSION=${VERSION}"
+  ci:
+    name: Run lint, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Tests
+        run: |
+          yarn --immutable
+          yarn lint
+          yarn test
+
+  build_image:
+    name: Build docker image
+    runs-on: ubuntu-latest
+    needs: [set-variables]
+    timeout-minutes: 10
+    env:
+      VERSION: ${{ needs.set-variables.outputs.VERSION }}
+      IMAGE_NAME: "docker.io/paritytech/substrate-tip-bot"
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
