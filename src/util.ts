@@ -93,7 +93,12 @@ export function parseContributorAccount(bodys: (string | null)[]): ContributorAc
   }
 
   return {
-    error: `Contributor did not properly post their account address.\n\nMake sure the pull request description (or user bio) has: "{network} address: {address}".`,
+    error: `hey 👋, you were nominated to receive a tip for your contribution 🤩
+    
+    You can pick between DOT or KSM. Please put either your Polkadot or Kusama address into the Pull Request description or your GitHub bio.
+    The format should be like this: \`{network} address: {address}\`  
+    Just replace \`{network}\` with \`polkadot\` or \`kusama\` and \`{address}\` with your actual address.
+    `
   };
 }
 
