@@ -97,8 +97,7 @@ export function parseContributorAccount(bodys: (string | null)[]): ContributorAc
     
     You can pick between DOT or KSM. Please put either your Polkadot or Kusama address into the Pull Request description or your GitHub bio.
     The format should be like this: \`{network} address: {address}\`  
-    Just replace \`{network}\` with \`polkadot\` or \`kusama\` and \`{address}\` with your actual address.
-    `
+    Just replace \`{network}\` with either ${Object.keys(validNetworks).join(", ")} and \`{address}\` with your actual address.`,
   };
 }
 
