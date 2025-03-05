@@ -93,11 +93,14 @@ export function parseContributorAccount(bodys: (string | null)[]): ContributorAc
   }
 
   return {
-    error: `hey 👋, you were nominated to receive a tip for your contribution 🤩
+    error: `Hey 👋, thanks for your contribution. We offer to propose a tip for you to OpenGov 🤩
     
     You can pick between DOT or KSM. Please put either your Polkadot or Kusama address into the Pull Request description or your GitHub bio.
     The format should be like this: \`{network} address: {address}\`  
-    Just replace \`{network}\` with either ${Object.keys(validNetworks).join(", ")} and \`{address}\` with your actual address.`,
+    Just replace \`{network}\` with either ${Object.keys(validNetworks).join(", ")} and \`{address}\` with your actual address.
+    
+    You still need to claim the tip after it was approved by OpenGov;
+    please check the [Contributing docs](https://github.com/paritytech/polkadot-sdk/blob/master/docs/contributor/CONTRIBUTING.md#Tip) for help.`,
   };
 }
 
