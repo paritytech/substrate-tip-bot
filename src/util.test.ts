@@ -50,7 +50,9 @@ describe("Utility functions", () => {
       if (!("error" in result)) {
         throw new Error("Expected error message not found.");
       }
-      expect(result.error).toMatch("Contributor did not properly post their account address");
+      expect(result.error).toMatch(
+        "Hey 👋, thanks for your contribution. We offer to propose a tip for you to OpenGov",
+      );
     });
 
     test("Throws on invalid network", () => {
