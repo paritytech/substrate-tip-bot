@@ -150,7 +150,7 @@ export const formatTipSize = (tipRequest: TipRequest): string => {
  * It is used to tag these usernames when there is a failure.
  */
 export const teamMatrixHandles =
-  process.env.NODE_ENV === "development" ? [] : ["@przemek", "@mak", "@yuri", "@bullrich"]; // Don't interrupt other people when testing.
+  process.env.NODE_ENV === "development" ? [] : ["@mak", "@yuri"]; // Don't interrupt other people when testing.
 
 export const byteSize = (extrinsic: Uint8Array): number => extrinsic.length * Uint8Array.BYTES_PER_ELEMENT;
 
