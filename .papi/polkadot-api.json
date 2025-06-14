@@ -5,22 +5,30 @@
     "polkadot": {
       "wsUrl": "wss://rpc.polkadot.io",
       "chain": "polkadot",
-      "metadata": ".papi/metadata/polkadot.scale"
+      "metadata": ".papi/metadata/polkadot.scale",
+      "genesis": "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+      "codeHash": "0x716bb701ec19452fa522cdaa83ef101d368ba2bcfd89fde9acb6f793a420a616"
     },
     "kusama": {
       "wsUrl": "wss://kusama-rpc.polkadot.io",
       "chain": "ksmcc3",
-      "metadata": ".papi/metadata/kusama.scale"
+      "metadata": ".papi/metadata/kusama.scale",
+      "genesis": "0xb0a8d493285c2df73290dfb7e61f870f17b41801197a149ca93654499ea3dafe",
+      "codeHash": "0xf45689276dfdcf05b6defd26da68e3283a96190d789f7a311ff31f64b455b421"
     },
     "westend": {
       "wsUrl": "wss://westend-rpc.polkadot.io",
       "chain": "westend2",
-      "metadata": ".papi/metadata/westend.scale"
+      "metadata": ".papi/metadata/westend.scale",
+      "genesis": "0xe143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e",
+      "codeHash": "0xe042061a17fc950bbee15fdc7997fb04fd1a8e7b3af8c59655f19eaaa23cce28"
     },
     "rococo": {
       "wsUrl": "wss://rococo-rpc.polkadot.io",
       "chain": "rococo_v2_2",
-      "metadata": ".papi/metadata/rococo.scale"
+      "metadata": ".papi/metadata/rococo.scale",
+      "genesis": "0x6408de7737c59c238890533af25896a2c20608d8b380bb01029acb392781063e",
+      "codeHash": "0xf645d939be087a8a76ade94d3e28f51f0c4b70abfc0db8b302e2372590b9e31a"
     }
   }
 }
