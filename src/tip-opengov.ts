@@ -1,8 +1,5 @@
 import { until } from "@eng-automation/js";
-import {
-  PreimagesBounded,
-  TraitsScheduleDispatchTime,
-} from "@polkadot-api/descriptors";
+import { PreimagesBounded, TraitsScheduleDispatchTime } from "@polkadot-api/descriptors";
 import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { getDescriptor } from "#src/chain-config";
 import { Binary, Enum, PolkadotClient, Transaction } from "polkadot-api";
@@ -38,15 +35,14 @@ export async function tipOpenGovReferendumExtrinsic(opts: { client: PolkadotClie
 
   const enactMoment = TraitsScheduleDispatchTime.After(10);
 
-  let referendumExtrinsic: Transaction<object, "Referenda", "submit", unknown>;
   const network: TipNetwork = tipRequest.contributor.account.network;
 
   const api = client.getTypedApi(getDescriptor(network));
-    referendumExtrinsic = api.tx.Referenda.submit({
-      proposal,
-      proposal_origin: Enum("Origins", Enum(track.track.trackName.type)),
-      enactment_moment: enactMoment,
-    });
+  const referendumExtrinsic = api.tx.Referenda.submit({
+    proposal,
+    proposal_origin: Enum("Origins", Enum(track.track.trackName.type)),
+    enactment_moment: enactMoment,
+  });
 
   return {
     success: true,

@@ -149,8 +149,7 @@ export const formatTipSize = (tipRequest: TipRequest): string => {
  * Currently - Engineering Automation / Opstooling.
  * It is used to tag these usernames when there is a failure.
  */
-export const teamMatrixHandles =
-  process.env.NODE_ENV === "development" ? [] : ["@mak", "@yuri"]; // Don't interrupt other people when testing.
+export const teamMatrixHandles = process.env.NODE_ENV === "development" ? [] : ["@mak", "@yuri"]; // Don't interrupt other people when testing.
 
 export const byteSize = (extrinsic: Uint8Array): number => extrinsic.length * Uint8Array.BYTES_PER_ELEMENT;
 
@@ -170,7 +169,7 @@ export const encodeProposal = async (
   const proposalTx = api.tx.Treasury.spend_local({ amount: track.value, beneficiary });
 
   const encodedProposal = await proposalTx.getEncodedData();
-  const proposalByteSize = byteSize(encodedProposal.asBytes());
+  const proposalByteSize = byteSize(encodedProposal.asBytes() as Uint8Array);
   if (proposalByteSize >= 128) {
     return {
       success: false,

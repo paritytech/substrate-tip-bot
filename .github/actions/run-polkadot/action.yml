@@ -17,7 +17,7 @@ runs:
         ref: ${{ inputs.polkadot-version }}
         path: polkadot-sdk
     - name: Apply Polkadot patches
-      run: git apply ../substrate-tip-bot/polkadot.e2e.patch
+      run: git apply ../substrate-tip-bot/polkadot.e2e.patch --unidiff-zero 
       shell: bash
       working-directory: polkadot-sdk
     - name: Restore cached Polkadot build

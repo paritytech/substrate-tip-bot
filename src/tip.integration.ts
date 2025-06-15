@@ -316,11 +316,13 @@ describe("tip", () => {
       expect(body.body).toContain("was successfully submitted for @contributor");
       expect(body.body).toContain(`Referendum number: **${nextFreeReferendumId}**`);
 
-      const referendum = await firstValueFrom(
-        (api.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId) as any).pipe(
-          filter((v: any) => v !== undefined),
-        ),
-      ) as any;
+      const referendum = (await firstValueFrom(
+        (
+          api.query.Referenda.ReferendumInfoFor.watchValue(
+            nextFreeReferendumId,
+          ) as unknown as import("rxjs").Observable<{ type: string }>
+        ).pipe(filter((v: unknown) => v !== undefined)),
+      )) as { type: string };
 
       expect(referendum.type).toEqual("Ongoing");
     });
