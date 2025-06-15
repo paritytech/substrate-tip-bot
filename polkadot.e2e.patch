@@ -1,5 +1,5 @@
 diff --git a/polkadot/runtime/rococo/src/governance/mod.rs b/polkadot/runtime/rococo/src/governance/mod.rs
-index ef2adf60753..218c0a3c837 100644
+index 4cd7739..08a43de 100644
 --- a/polkadot/runtime/rococo/src/governance/mod.rs
 +++ b/polkadot/runtime/rococo/src/governance/mod.rs
 @@ -35,7 +35,7 @@ mod fellowship;
@@ -12,11 +12,11 @@ index ef2adf60753..218c0a3c837 100644
  
  impl pallet_conviction_voting::Config for Runtime {
 diff --git a/polkadot/runtime/rococo/src/governance/tracks.rs b/polkadot/runtime/rococo/src/governance/tracks.rs
-index 3765569f183..ed226f4ef65 100644
+index 62229ff..70601da 100644
 --- a/polkadot/runtime/rococo/src/governance/tracks.rs
 +++ b/polkadot/runtime/rococo/src/governance/tracks.rs
-@@ -212,10 +212,10 @@ const TRACKS_DATA: [(u16, pallet_referenda::TrackInfo<Balance, BlockNumber>); 15
- 			name: "small_tipper",
+@@ -215,10 +215,10 @@ const TRACKS_DATA: [pallet_referenda::Track<u16, Balance, BlockNumber>; 15] = [
+ 			name: s("small_tipper"),
  			max_deciding: 200,
  			decision_deposit: 1 * 3 * CENTS,
 -			prepare_period: 1 * MINUTES,
@@ -30,8 +30,8 @@ index 3765569f183..ed226f4ef65 100644
  			min_approval: APP_SMALL_TIPPER,
  			min_support: SUP_SMALL_TIPPER,
  		},
-@@ -226,10 +226,10 @@ const TRACKS_DATA: [(u16, pallet_referenda::TrackInfo<Balance, BlockNumber>); 15
- 			name: "big_tipper",
+@@ -229,10 +229,10 @@ const TRACKS_DATA: [pallet_referenda::Track<u16, Balance, BlockNumber>; 15] = [
+ 			name: s("big_tipper"),
  			max_deciding: 100,
  			decision_deposit: 10 * 3 * CENTS,
 -			prepare_period: 4 * MINUTES,
@@ -46,10 +46,10 @@ index 3765569f183..ed226f4ef65 100644
  			min_support: SUP_BIG_TIPPER,
  		},
 diff --git a/polkadot/runtime/rococo/src/lib.rs b/polkadot/runtime/rococo/src/lib.rs
-index 7309eeead31..35d75fc49cd 100644
+index 58593ff..1705eab 100644
 --- a/polkadot/runtime/rococo/src/lib.rs
 +++ b/polkadot/runtime/rococo/src/lib.rs
-@@ -477,7 +477,7 @@ parameter_types! {
+@@ -507,7 +507,7 @@ parameter_types! {
  }
  
  parameter_types! {
@@ -59,7 +59,7 @@ index 7309eeead31..35d75fc49cd 100644
  	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
  	pub const PayoutSpendPeriod: BlockNumber = 30 * DAYS;
 diff --git a/polkadot/runtime/westend/src/governance/mod.rs b/polkadot/runtime/westend/src/governance/mod.rs
-index d027f788d71..de6f36ecfce 100644
+index 50d29bc..1e86f84 100644
 --- a/polkadot/runtime/westend/src/governance/mod.rs
 +++ b/polkadot/runtime/westend/src/governance/mod.rs
 @@ -32,7 +32,7 @@ mod tracks;
@@ -72,11 +72,11 @@ index d027f788d71..de6f36ecfce 100644
  
  impl pallet_conviction_voting::Config for Runtime {
 diff --git a/polkadot/runtime/westend/src/governance/tracks.rs b/polkadot/runtime/westend/src/governance/tracks.rs
-index 3765569f183..ed226f4ef65 100644
+index 62229ff..70601da 100644
 --- a/polkadot/runtime/westend/src/governance/tracks.rs
 +++ b/polkadot/runtime/westend/src/governance/tracks.rs
-@@ -212,10 +212,10 @@ const TRACKS_DATA: [(u16, pallet_referenda::TrackInfo<Balance, BlockNumber>); 15
- 			name: "small_tipper",
+@@ -215,10 +215,10 @@ const TRACKS_DATA: [pallet_referenda::Track<u16, Balance, BlockNumber>; 15] = [
+ 			name: s("small_tipper"),
  			max_deciding: 200,
  			decision_deposit: 1 * 3 * CENTS,
 -			prepare_period: 1 * MINUTES,
@@ -90,8 +90,8 @@ index 3765569f183..ed226f4ef65 100644
  			min_approval: APP_SMALL_TIPPER,
  			min_support: SUP_SMALL_TIPPER,
  		},
-@@ -226,10 +226,10 @@ const TRACKS_DATA: [(u16, pallet_referenda::TrackInfo<Balance, BlockNumber>); 15
- 			name: "big_tipper",
+@@ -229,10 +229,10 @@ const TRACKS_DATA: [pallet_referenda::Track<u16, Balance, BlockNumber>; 15] = [
+ 			name: s("big_tipper"),
  			max_deciding: 100,
  			decision_deposit: 10 * 3 * CENTS,
 -			prepare_period: 4 * MINUTES,
@@ -106,10 +106,10 @@ index 3765569f183..ed226f4ef65 100644
  			min_support: SUP_BIG_TIPPER,
  		},
 diff --git a/polkadot/runtime/westend/src/lib.rs b/polkadot/runtime/westend/src/lib.rs
-index 369fd308272..733ec32f581 100644
+index 9c0db32..8b06e0b 100644
 --- a/polkadot/runtime/westend/src/lib.rs
 +++ b/polkadot/runtime/westend/src/lib.rs
-@@ -666,7 +666,7 @@ impl pallet_fast_unstake::Config for Runtime {
+@@ -898,7 +898,7 @@ impl pallet_fast_unstake::Config for Runtime {
  }
  
  parameter_types! {

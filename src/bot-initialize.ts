@@ -22,7 +22,7 @@ export const generateSigner = (accountSeed: string): PolkadotSigner => {
   const suri = parseSuri(accountSeed);
 
   assert(suri.phrase, "Invalid account seed");
-  assert(Array.isArray(suri.paths), "Invalid account seed");
+  assert(typeof suri.paths === "string", "Invalid account seed - paths should be a string");
 
   const entropy = mnemonicToEntropy(suri.phrase);
   const miniSecret = entropyToMiniSecret(entropy);
