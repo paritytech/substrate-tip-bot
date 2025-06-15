@@ -73,15 +73,15 @@ export const kusamaConstants: Constants = {
 
   /**
    * Source of the calculation:
-   * https://github.com/paritytech/polkadot/blob/e164da65873f11bf8c583e81f6d82c21b005cfe4/runtime/kusama/src/governance/origins.rs#L172
-   * https://github.com/paritytech/polkadot/blob/e164da65873f11bf8c583e81f6d82c21b005cfe4/runtime/kusama/constants/src/lib.rs#L29
+   * https://github.com/polkadot-fellows/runtimes/blob/30804db6b266ea79ad496a58208106038562e8fe/relay/kusama/src/governance/origins.rs#L185
+   * https://github.com/polkadot-fellows/runtimes/blob/30804db6b266ea79ad496a58208106038562e8fe/relay/kusama/constants/src/lib.rs#L31
    */
   smallTipperMaximum: 8.33,
 
   /**
    * Source of the calculation:
-   * https://github.com/paritytech/polkadot/blob/e164da65873f11bf8c583e81f6d82c21b005cfe4/runtime/kusama/src/governance/origins.rs#L173
-   * https://github.com/paritytech/polkadot/blob/e164da65873f11bf8c583e81f6d82c21b005cfe4/runtime/kusama/constants/src/lib.rs#L31
+   * https://github.com/polkadot-fellows/runtimes/blob/30804db6b266ea79ad496a58208106038562e8fe/relay/kusama/src/governance/origins.rs#L186
+   * https://github.com/polkadot-fellows/runtimes/blob/30804db6b266ea79ad496a58208106038562e8fe/relay/kusama/constants/src/lib.rs#L33
    */
   bigTipperMaximum: 33.33,
 
@@ -97,15 +97,15 @@ export const polkadotConstants: Constants = {
 
   /**
    * Source of the calculation:
-   * https://github.com/paritytech/polkadot/blob/e164da65873f11bf8c583e81f6d82c21b005cfe4/runtime/polkadot/src/governance/origins.rs#L143
-   * https://github.com/paritytech/polkadot/blob/e164da65873f11bf8c583e81f6d82c21b005cfe4/runtime/polkadot/constants/src/lib.rs#L31
+   * https://github.com/polkadot-fellows/runtimes/blob/30804db6b266ea79ad496a58208106038562e8fe/relay/polkadot/src/governance/origins.rs#L156
+   * https://github.com/polkadot-fellows/runtimes/blob/30804db6b266ea79ad496a58208106038562e8fe/relay/polkadot/constants/src/lib.rs#L33
    */
   smallTipperMaximum: 250,
 
   /**
    * Source of the calculation:
-   * https://github.com/paritytech/polkadot/blob/e164da65873f11bf8c583e81f6d82c21b005cfe4/runtime/polkadot/src/governance/origins.rs#L144
-   * https://github.com/paritytech/polkadot/blob/e164da65873f11bf8c583e81f6d82c21b005cfe4/runtime/polkadot/constants/src/lib.rs#L32
+   * https://github.com/polkadot-fellows/runtimes/blob/30804db6b266ea79ad496a58208106038562e8fe/relay/polkadot/src/governance/origins.rs#L157
+   * https://github.com/polkadot-fellows/runtimes/blob/30804db6b266ea79ad496a58208106038562e8fe/relay/polkadot/constants/src/lib.rs#L34
    */
   bigTipperMaximum: 1000,
 

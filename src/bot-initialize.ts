@@ -12,6 +12,7 @@ import { handleIssueCommentCreated } from "./bot-handle-comment";
 import { addMetricsRoute } from "./metrics";
 import { Polkassembly } from "./polkassembly/polkassembly";
 import { State } from "./types";
+import assert from "node:assert";
 
 type AsyncApplicationFunction = (
   ...params: Parameters<ApplicationFunction>
@@ -19,6 +20,9 @@ type AsyncApplicationFunction = (
 
 export const generateSigner = (accountSeed: string): PolkadotSigner => {
   const suri = parseSuri(accountSeed);
+
+  assert(suri.phrase, "Invalid account seed");
+  assert(suri.paths, "Invalid account seed");
 
   const entropy = mnemonicToEntropy(suri.phrase);
   const miniSecret = entropyToMiniSecret(entropy);

@@ -316,13 +316,13 @@ describe("tip", () => {
       expect(body.body).toContain("was successfully submitted for @contributor");
       expect(body.body).toContain(`Referendum number: **${nextFreeReferendumId}**`);
 
-      // This returns undefined for a bit, so using subscription to wait for the data
       const referendum = await firstValueFrom(
-        api.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId).pipe(
-          filter((value) => value !== undefined),
+        (api.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId) as any).pipe(
+          filter((v: any) => v !== undefined),
         ),
-      );
-      expect(referendum?.type).toEqual("Ongoing");
+      ) as any;
+
+      expect(referendum.type).toEqual("Ongoing");
     });
 
     test(`huge tip in ${network}`, async () => {
