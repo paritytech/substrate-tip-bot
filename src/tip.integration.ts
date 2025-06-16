@@ -12,7 +12,7 @@ import fs from "fs/promises";
 import path from "path";
 import { Binary, createClient, PolkadotClient, TypedApi } from "polkadot-api";
 import { getWsProvider } from "polkadot-api/ws-provider/node";
-import { filter, firstValueFrom } from "rxjs";
+import { filter, firstValueFrom, Observable } from "rxjs";
 import { Readable } from "stream";
 import { GenericContainer, Network, StartedTestContainer, TestContainers, Wait } from "testcontainers";
 
@@ -317,11 +317,9 @@ describe("tip", () => {
       expect(body.body).toContain(`Referendum number: **${nextFreeReferendumId}**`);
 
       const referendum = (await firstValueFrom(
-        (
-          api.query.Referenda.ReferendumInfoFor.watchValue(
-            nextFreeReferendumId,
-          ) as unknown as import("rxjs").Observable<{ type: string }>
-        ).pipe(filter((v: unknown) => v !== undefined)),
+        (api.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId) as Observable<{ type: string }>).pipe(
+          filter((v: unknown) => v !== undefined),
+        ),
       )) as { type: string };
 
       expect(referendum.type).toEqual("Ongoing");
