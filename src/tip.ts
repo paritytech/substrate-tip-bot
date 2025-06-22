@@ -28,7 +28,7 @@ async function createApi(
     const version = await api.apis.Core.version();
     bot.log(`You are connected to chain ${version.spec_name}#${version.spec_version}`);
   } catch (e) {
-    console.error("wtf", e);
+    console.error("Error getting core version", e);
   }
 
   return { client };
