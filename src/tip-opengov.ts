@@ -1,15 +1,8 @@
 import { until } from "@eng-automation/js";
-import {
-  GovernanceOrigin,
-  PolkadotRuntimeOriginCaller,
-  PreimagesBounded,
-  TraitsScheduleDispatchTime,
-  WestendRuntimeGovernanceOriginsPalletCustomOriginsOrigin,
-  WestendRuntimeOriginCaller,
-} from "@polkadot-api/descriptors";
+import { PreimagesBounded, TraitsScheduleDispatchTime } from "@polkadot-api/descriptors";
 import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { getDescriptor } from "#src/chain-config";
-import { Binary, PolkadotClient, Transaction } from "polkadot-api";
+import { Binary, Enum, PolkadotClient, Transaction } from "polkadot-api";
 import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
@@ -42,27 +35,14 @@ export async function tipOpenGovReferendumExtrinsic(opts: { client: PolkadotClie
 
   const enactMoment = TraitsScheduleDispatchTime.After(10);
 
-  let referendumExtrinsic: Transaction<object, "Referenda", "submit", unknown>;
   const network: TipNetwork = tipRequest.contributor.account.network;
-  if (network === "westend" || network === "rococo") {
-    const api = client.getTypedApi(getDescriptor(network));
-    const proposalOrigin = WestendRuntimeOriginCaller.Origins(
-      track.track.trackName as WestendRuntimeGovernanceOriginsPalletCustomOriginsOrigin,
-    );
-    referendumExtrinsic = api.tx.Referenda.submit({
-      proposal,
-      proposal_origin: proposalOrigin,
-      enactment_moment: enactMoment,
-    });
-  } else {
-    const api = client.getTypedApi(getDescriptor(network));
-    const proposalOrigin = PolkadotRuntimeOriginCaller.Origins(track.track.trackName as GovernanceOrigin);
-    referendumExtrinsic = api.tx.Referenda.submit({
-      proposal,
-      proposal_origin: proposalOrigin,
-      enactment_moment: enactMoment,
-    });
-  }
+
+  const api = client.getTypedApi(getDescriptor(network));
+  const referendumExtrinsic = api.tx.Referenda.submit({
+    proposal,
+    proposal_origin: Enum("Origins", Enum(track.track.trackName.type)),
+    enactment_moment: enactMoment,
+  });
 
   return {
     success: true,

@@ -12,7 +12,7 @@ import fs from "fs/promises";
 import path from "path";
 import { Binary, createClient, PolkadotClient, TypedApi } from "polkadot-api";
 import { getWsProvider } from "polkadot-api/ws-provider/node";
-import { filter, firstValueFrom } from "rxjs";
+import { filter, firstValueFrom, Observable } from "rxjs";
 import { Readable } from "stream";
 import { GenericContainer, Network, StartedTestContainer, TestContainers, Wait } from "testcontainers";
 
@@ -316,13 +316,13 @@ describe("tip", () => {
       expect(body.body).toContain("was successfully submitted for @contributor");
       expect(body.body).toContain(`Referendum number: **${nextFreeReferendumId}**`);
 
-      // This returns undefined for a bit, so using subscription to wait for the data
-      const referendum = await firstValueFrom(
-        api.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId).pipe(
-          filter((value) => value !== undefined),
+      const referendum = (await firstValueFrom(
+        (api.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId) as Observable<{ type: string }>).pipe(
+          filter((v: unknown) => v !== undefined),
         ),
-      );
-      expect(referendum?.type).toEqual("Ongoing");
+      )) as { type: string };
+
+      expect(referendum.type).toEqual("Ongoing");
     });
 
     test(`huge tip in ${network}`, async () => {

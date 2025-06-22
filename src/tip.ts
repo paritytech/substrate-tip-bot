@@ -24,10 +24,14 @@ async function createApi(
   // Set up the types
   const api = client.getTypedApi(getDescriptor(network));
 
-  const version = await api.apis.Core.version();
-  bot.log(`You are connected to chain ${version.spec_name}#${version.spec_version}`);
+  try {
+    const version = await api.apis.Core.version();
+    bot.log(`You are connected to chain ${version.spec_name}#${version.spec_version}`);
+  } catch (e) {
+    console.error("Error getting core version", e);
+  }
 
-  return { client: client };
+  return { client };
 }
 
 /**

@@ -2,6 +2,7 @@ import { envVar } from "@eng-automation/js";
 import { sr25519CreateDerive } from "@polkadot-labs/hdkd";
 import { entropyToMiniSecret, mnemonicToEntropy, parseSuri, ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { createClient } from "matrix-js-sdk";
+import assert from "node:assert";
 import * as process from "node:process";
 import { PolkadotSigner } from "polkadot-api";
 import { getPolkadotSigner } from "polkadot-api/signer";
@@ -19,6 +20,9 @@ type AsyncApplicationFunction = (
 
 export const generateSigner = (accountSeed: string): PolkadotSigner => {
   const suri = parseSuri(accountSeed);
+
+  assert(suri.phrase, "Invalid account seed");
+  assert(typeof suri.paths === "string", "Invalid account seed - paths should be a string");
 
   const entropy = mnemonicToEntropy(suri.phrase);
   const miniSecret = entropyToMiniSecret(entropy);
