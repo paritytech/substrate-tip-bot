@@ -104,6 +104,7 @@ export async function tipOpenGov(opts: {
     };
   } catch (e) {
     const msg = `Tip for ${contributor.account.address} referendum status is 👎: ${e}`;
+    bot.log.error(e, msg);
     return { success: false, errorMessage: msg };
   }
 }
