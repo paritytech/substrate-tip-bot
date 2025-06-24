@@ -20,6 +20,7 @@ export type ChainConfig = {
   smallTipperMaximum: number;
   bigTipperMaximum: number;
   namedTips: Record<TipSize, bigint>;
+  networkPrefix: number;
 };
 
 export type ContributorAccount = {

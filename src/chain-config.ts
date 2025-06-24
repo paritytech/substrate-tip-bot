@@ -89,6 +89,8 @@ export const kusamaConstants: Constants = {
    * These are arbitrary values, can be changed at any time.
    */
   namedTips: { small: 4n, medium: 16n, large: 30n },
+
+  networkPrefix: 2,
 };
 
 export const polkadotConstants: Constants = {
@@ -113,6 +115,8 @@ export const polkadotConstants: Constants = {
    * These are arbitrary values, can be changed at any time.
    */
   namedTips: { small: 20n, medium: 80n, large: 150n },
+
+  networkPrefix: 0,
 };
 
 export const rococoConstants: Constants = {
@@ -137,6 +141,8 @@ export const rococoConstants: Constants = {
    * These are arbitrary values, can be changed at any time.
    */
   namedTips: { small: 1n, medium: 2n, large: 3n },
+
+  networkPrefix: 42,
 };
 
 export const westendConstants: Constants = {
@@ -161,6 +167,8 @@ export const westendConstants: Constants = {
    * These are arbitrary values, can be changed at any time.
    */
   namedTips: { small: 1n, medium: 2n, large: 3n },
+
+  networkPrefix: 42,
 };
 
 export function getChainConfig(network: TipNetwork): ChainConfig {
