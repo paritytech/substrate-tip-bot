@@ -15,7 +15,7 @@ import { TipNetwork } from "./types";
 export const updateAllBalances = async (tipBotAddress: string, log: Probot["log"]): Promise<void> => {
   const networks: TipNetwork[] = ["kusama", "polkadot", "rococo", "westend"];
   for (const network of networks) {
-    log.info(`Checking tip bot balance for ${tipBotAddress} on ${network}`);
+    log.info(`Checking tip bot balance for on ${network}`);
     try {
       await updateBalance({ network, tipBotAddress });
     } catch (e) {
