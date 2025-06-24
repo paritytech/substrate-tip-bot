@@ -1,6 +1,6 @@
 import { envVar } from "@eng-automation/js";
 import { sr25519CreateDerive } from "@polkadot-labs/hdkd";
-import { entropyToMiniSecret, mnemonicToEntropy, parseSuri, ss58Address } from "@polkadot-labs/hdkd-helpers";
+import { entropyToMiniSecret, mnemonicToEntropy, parseSuri } from "@polkadot-labs/hdkd-helpers";
 import { createClient } from "matrix-js-sdk";
 import assert from "node:assert";
 import * as process from "node:process";
@@ -83,8 +83,7 @@ export const botInitialize: AsyncApplicationFunction = async (bot: Probot, { get
 
   try {
     bot.log.info("Loading bot balances across all networks...");
-    const address = ss58Address(botTipAccount.publicKey);
-    await updateAllBalances(address, bot.log);
+    await updateAllBalances(botTipAccount.publicKey, bot.log);
     bot.log.info("Updated bot balances across all networks!");
   } catch (e) {
     bot.log.error(e.message);

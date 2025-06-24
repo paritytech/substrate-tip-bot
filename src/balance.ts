@@ -1,3 +1,4 @@
+import { ss58Address } from "@polkadot-labs/hdkd-helpers";
 import { createClient } from "polkadot-api";
 import { getWsProvider } from "polkadot-api/ws-provider/node";
 import type { Probot } from "probot";
@@ -12,19 +13,24 @@ import { TipNetwork } from "./types";
  * This is intended to be executed upon startup of the bot.
  * After that, the balances (including local ones) will be updated after a tip is executed.
  */
-export const updateAllBalances = async (tipBotAddress: string, log: Probot["log"]): Promise<void> => {
+export const updateAllBalances = async (publicKey: Uint8Array, log: Probot["log"]): Promise<void> => {
   const networks: TipNetwork[] = ["kusama", "polkadot", "rococo", "westend"];
   for (const network of networks) {
     log.info(`Checking tip bot balance on ${network}`);
     try {
-      await updateBalance({ network, tipBotAddress });
+      const tipBotAddress = ss58Address(publicKey, getChainConfig(network).networkPrefix);
+      await updateBalance({ network, tipBotAddress, log });
     } catch (e) {
       log.info(`Failed to check balance on ${network}`, e.message);
     }
   }
 };
 
-export const updateBalance = async (opts: { network: TipNetwork; tipBotAddress: string }): Promise<void> => {
+export const updateBalance = async (opts: {
+  network: TipNetwork;
+  tipBotAddress: string;
+  log: Probot["log"];
+}): Promise<void> => {
   const { network, tipBotAddress } = opts;
   const config = getChainConfig(network);
 
@@ -36,6 +42,7 @@ export const updateBalance = async (opts: { network: TipNetwork; tipBotAddress: 
     const { data: balances } = await api.query.System.Account.getValue(tipBotAddress);
     const balance = Number(balances.free / 10n ** BigInt(config.decimals));
     balanceGauge.set({ network }, balance);
+    opts.log.info(`Balance on network ${network} address ${tipBotAddress} update: ${balance} ${config.currencySymbol}`);
   } finally {
     client.destroy();
   }
