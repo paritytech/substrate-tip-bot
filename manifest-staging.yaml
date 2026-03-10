@@ -1,0 +1,15 @@
+images:
+  substrate-tip-bot:
+    env:
+      APP_HOST: "https://substrate-tip-bot.parity-stg.parity.io"
+      APPROVERS_GH_ORG: "paritytech-stg"
+      APPROVERS_GH_TEAM: "tip-bot-approvers"
+      POLKASSEMBLY_ENDPOINT: "https://test.polkassembly.io/api/v1/"
+      MATRIX_SERVER_URL: "https://m.parity.io"
+      MATRIX_ROOM_ID: "!KiTmXyGkdiLNzrzMgj:parity.io" # ENG: Engineering Automation -> Bot Test Farm
+      # WEBHOOK_SECRET is used internally by probot: https://probot.github.io/docs/configuration/
+      WEBHOOK_SECRET: ref+vault://kv/argo-cd/substrate-tip-bot/opstooling-parity-stg#WEBHOOK_SECRET
+      PRIVATE_KEY: ref+vault://kv/argo-cd/substrate-tip-bot/opstooling-parity-stg#PRIVATE_KEY
+      ACCOUNT_SEED: ref+vault://kv/argo-cd/substrate-tip-bot/opstooling-parity-stg#ACCOUNT_SEED
+      APP_ID: ref+vault://kv/argo-cd/substrate-tip-bot/opstooling-parity-stg#APP_ID
+      MATRIX_ACCESS_TOKEN: ref+vault://kv/argo-cd/substrate-tip-bot/opstooling-parity-stg#MATRIX_ACCESS_TOKEN

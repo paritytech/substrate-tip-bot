@@ -1,0 +1,7 @@
+images:
+  substrate-tip-bot:
+    dockerfile: ./Dockerfile
+    context: .
+    port: 3000
+    http:
+      path: /
