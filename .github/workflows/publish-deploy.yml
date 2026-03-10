@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       VERSION: ${{ steps.version.outputs.VERSION }}
+      DATE_TAG: ${{ steps.version.outputs.DATE_TAG }}
     steps:
       - name: Define version
         id: version
@@ -33,6 +34,7 @@ jobs:
           export COMMIT_SHA=${{ github.sha }}
           export COMMIT_SHA_SHORT=${COMMIT_SHA:0:8}
           export REF_NAME=${{ github.ref_name }}
+          echo "DATE_TAG=$(date -u +'%Y%m%d-%H%M%S')-${COMMIT_SHA_SHORT}" >> ${GITHUB_OUTPUT}
           export REF_SLUG=${REF_NAME//\//_}
           echo "short sha: ${COMMIT_SHA_SHORT}  slug: ${REF_SLUG}"
           if [[ ${REF_SLUG} == "master" ]]
@@ -51,6 +53,8 @@ jobs:
     needs: [set-variables]
     env:
       VERSION: ${{ needs.set-variables.outputs.VERSION }}
+      DATE_TAG: ${{ needs.set-variables.outputs.DATE_TAG }}
+      IMAGE_NAME: "docker.io/paritytech/substrate-tip-bot"
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -67,48 +71,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            docker.io/paritytech/substrate-tip-bot:${{ env.VERSION }}
-
-  deploy-stg:
-    name: Deploy Staging
-    runs-on: ubuntu-latest
-    needs: [set-variables, build_push_docker]
-    environment: parity-stg
-    env:
-      VERSION: ${{ needs.set-variables.outputs.VERSION }}
-      ARGOCD_SERVER: "argocd-stg.teleport.parity.io"
-    steps:
-      - name: Deploy to ArgoCD
-        uses: paritytech/argocd-deployment-action@main
-        with:
-          environment: "parity-stg"
-          tag: "${{ env.VERSION }}"
-          app_name: "${{ env.APP }}"
-          app_packages: "common"
-          argocd_server: ${{ env.ARGOCD_SERVER }}
-          teleport_token: "substrate-tip"
-          teleport_app_name: "argocd-stg"
-          argocd_auth_token: ${{ secrets.ARGOCD_AUTH_TOKEN }}
-
-  deploy-prod:
-    name: Deploy Production
-    runs-on: ubuntu-latest
-    needs: [set-variables, deploy-stg]
-    # deploy only on tags
-    if: startsWith(github.ref, 'refs/tags/v')
-    environment: parity-prod
-    env:
-      VERSION: ${{ needs.set-variables.outputs.VERSION }}
-      ARGOCD_SERVER: "argocd-prod.teleport.parity.io"
-    steps:
-      - name: Deploy to ArgoCD
-        uses: paritytech/argocd-deployment-action@main
-        with:
-          environment: "parity-prod"
-          tag: "${{ env.VERSION }}"
-          app_name: "${{ env.APP }}"
-          app_packages: "common"
-          argocd_server: ${{ env.ARGOCD_SERVER }}
-          teleport_token: "substrate-tip"
-          teleport_app_name: "argocd-prod"
-          argocd_auth_token: ${{ secrets.ARGOCD_AUTH_TOKEN }}
+            ${{ env.IMAGE_NAME }}:${{ env.VERSION }}
+            ${{ env.IMAGE_NAME }}:${{ env.DATE_TAG }}
