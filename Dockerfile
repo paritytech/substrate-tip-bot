@@ -1,4 +1,4 @@
-FROM node:22.5.1-alpine AS builder
+FROM node:22.22-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -10,7 +10,7 @@ COPY src/ ./src
 
 RUN yarn build
 
-FROM node:22.5.1-slim
+FROM node:22.22-slim
 
 # metadata
 ARG VCS_REF=master
