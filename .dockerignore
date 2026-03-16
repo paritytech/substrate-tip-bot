@@ -7,7 +7,7 @@
 **/coverage
 **/.env
 **/.editorconfig
-**/dist
+/dist
 **/*.pem
 Dockerfile
 **/*.e2e.ts
