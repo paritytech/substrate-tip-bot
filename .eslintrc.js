@@ -4,5 +4,6 @@ const conf = getConfiguration({ typescript: { rootDir: __dirname } });
 
 conf.overrides[0].rules["@typescript-eslint/no-misused-promises"] = "off";
 conf.overrides[0].rules["no-async-promise-executor"] = "off";
+conf.overrides[0].rules["spaced-comment"] = ["error", "always", { markers: ["/"] }];
 
 module.exports = conf;

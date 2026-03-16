@@ -22,9 +22,9 @@
     "strict": true,
     "target": "ES2022",
     "typeRoots": ["./node_modules/@types", "./src"],
-    "types": ["node", "jest"],
+    "types": ["node"],
     "useUnknownInCatchVariables": false
   },
-  "include": ["src/**/*", "package.json"],
+  "include": ["src/**/*", "package.json", "vitest.config.ts", "vitest.e2e.config.ts", "vitest.integration.config.ts"],
   "exclude": ["node_modules/**/*"]
 }

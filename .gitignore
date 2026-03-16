@@ -14,3 +14,4 @@ npm-debug.log
 .eslintcache
 yarn-error.log
 .yarn/install-state.gz
+.claude/settings.local.json
