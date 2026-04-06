@@ -298,9 +298,11 @@ describe("tip", () => {
       expect(body.body).toContain(`Referendum number: **${nextFreeReferendumId}**`);
 
       const referendum = (await firstValueFrom(
-        (westendApi.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId) as Observable<{ type: string }>).pipe(
-          filter((v: unknown) => v !== undefined),
-        ),
+        (
+          westendApi.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId) as Observable<{
+            type: string;
+          }>
+        ).pipe(filter((v: unknown) => v !== undefined)),
       )) as { type: string };
 
       expect(referendum.type).toEqual("Ongoing");
@@ -331,9 +333,7 @@ describe("tip", () => {
       await until(async () => !(await successEndpoint.isPending()), 500, 50);
       const [request] = await successEndpoint.getSeenRequests();
       const body = (await request.body.getJson()) as { body: string };
-      expect(body.body).toContain(
-        `The requested tip value of '1000000 WND' exceeds the BigTipper track maximum`,
-      );
+      expect(body.body).toContain(`The requested tip value of '1000000 WND' exceeds the BigTipper track maximum`);
     });
 
     test(`tip link in ${network}`, async () => {
