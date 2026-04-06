@@ -57,6 +57,9 @@
     "vite": "^6",
     "vitest": "^3"
   },
+  "resolutions": {
+    "vite": "^6"
+  },
   "engines": {
     "node": "^22 && !22.5.0"
   },
