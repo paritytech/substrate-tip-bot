@@ -54,6 +54,7 @@
     "smee-client": "^1.2.2",
     "testcontainers": "^10.13.0",
     "typescript": "^5.4.5",
+    "vite": "^6",
     "vitest": "^3"
   },
   "engines": {
