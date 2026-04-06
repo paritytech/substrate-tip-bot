@@ -20,7 +20,7 @@ jobs:
           node-version: 22.5.1
       - run: yarn --immutable
       - run: yarn build:docker
-      - run: yarn test:integration --verbose
+      - run: yarn test:integration --reporter=verbose
       - name: Debug application container logs
         if: failure()
         run: cat integration_tests/containter_logs/application.log
