@@ -5,7 +5,7 @@ different sizes of opengov tips.
 
 import { findFreePorts, until } from "@eng-automation/js";
 import { fixtures, githubWebhooks, mockServer } from "@eng-automation/testing";
-import { rococo, westend } from "@polkadot-api/descriptors";
+import { westend } from "@polkadot-api/descriptors";
 import { DEV_PHRASE } from "@polkadot-labs/hdkd-helpers";
 import assert from "assert";
 import fs from "fs/promises";
@@ -39,7 +39,7 @@ function logConsumer(name: string, addTs: boolean = true): (stream: Readable) =>
 }
 
 const POLKADOT_VERSION = "v1.15.2";
-const networks = ["rococo", "westend"] as const;
+const networks = ["westend"] as const;
 const tipSizes = ["small", "medium", "large", "1", "3"];
 const commonDockerArgs =
   "--tmp --alice --execution Native --rpc-port 9945 --rpc-external --no-prometheus --no-telemetry --rpc-cors all --unsafe-force-node-key-generation";
@@ -52,16 +52,13 @@ const paritytechStgOrgToken = "ghs_12345678912345678123456723456abababa";
 
 describe("tip", () => {
   let appContainer: StartedTestContainer;
-  let rococoContainer: StartedTestContainer;
-  let rococoClient: PolkadotClient;
-  let rococoApi: TypedApi<typeof rococo>;
   let westendContainer: StartedTestContainer;
   let westendClient: PolkadotClient;
   let westendApi: TypedApi<typeof westend>;
   let gitHub: mockServer.MockServer;
   let appPort: number;
 
-  const getUserBalance = async (api: TypedApi<typeof rococo | typeof westend>, userAddress: string) => {
+  const getUserBalance = async (api: TypedApi<typeof westend>, userAddress: string) => {
     const { data } = await api.query.System.Account.getValue(userAddress, { at: "best" });
     return data.free;
   };
@@ -106,17 +103,7 @@ describe("tip", () => {
 
     await TestContainers.exposeHostPorts(gitHubPort);
 
-    [rococoContainer, westendContainer, gitHub] = await Promise.all([
-      new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
-        .withWaitStrategy(Wait.forListeningPorts())
-        .withCommand(("--chain rococo-dev " + commonDockerArgs).split(" "))
-        .withLogConsumer(logConsumer("rococo"))
-        .withWaitStrategy(Wait.forLogMessage("Concluded mandatory round"))
-        .withNetwork(containerNetwork)
-        .withNetworkAliases("localrococo")
-        .withExposedPorts(9945)
-        .withPlatform("linux/amd64")
-        .start(),
+    [westendContainer, gitHub] = await Promise.all([
       new GenericContainer(`parity/polkadot:${POLKADOT_VERSION}`)
         .withWaitStrategy(Wait.forListeningPorts())
         .withCommand(("--chain westend-dev " + commonDockerArgs).split(" "))
@@ -142,8 +129,8 @@ describe("tip", () => {
           "LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBdGovK1RIV2J4\n" +
           "cEdOQ3JxVVBjaUhyQlhkOWM5NGszMjVVU0RFWW4wNzRSYnZpYTM1CklGbGREY0ZmcWFMOTlZeXpI\n" +
           "Q0FabFJDalNULzE1c3ZyV1pkVFFvMDM3OXRtWTVwcWUzLzFZSk40eGJhNnR5SEoKUnhQREl6ZGVj\n" +
-          "emFIYWdjeS95Vm5aeHE4ZHRkanJUa3F2TzJTVXRNdUJLS0tVU3EzZ0YzaFdGQnJremhZcjIragph\n" +
-          "L3lHTis4aE5mZ3Npb0t2K3pZanA1dkVjMFVwSXQ2eVdtZCtHc2NkMzhDZ3UwR2Qvb292OXBnQVZ0\n" +
+          "emFIYWdjeS95Vm5aeHE4ZHRkanJUa3F2TzJTVXRNdUJCS0tVU3EzZ0YzaFdGQnJremhZcjIragph\n" +
+          "S3lHTis4aE5mZ3Npb0t2K3pZanA1dkVjMFVwSXQ2eVdtZCtHc2NkMzhDZ3UwR2Qvb292OXBnQVZ0\n" +
           "TE5BNForCnlPY1JQdXZ5bzU2Y3oraitmaEpOak5IaXpBL3lNTzk0MDM5U1gxeGNCcjJkNWRHK21q\n" +
           "cUk0aHo2bFEwajRnT0EKRExacDVURGNjMHJlSU16ZTF2MFJSU2cyTEt0QlJBekFKUnhXS3dJREFR\n" +
           "QUJBb0lCQVFDRW04K25SclFRS2Z3YwpZR0paQ2o1ZDRwTmN0cGVmaWcxN2tJSVV2OWNBRXpZOFVk\n" +
@@ -151,11 +138,11 @@ describe("tip", () => {
           "TmZpWFFXcUlqU0pQa0orTkhLdDFTVXU2UkpycWVzaC9HMTcwZGgKMVlUWmIydld4RDVwdFBNNzEv\n" +
           "OHBjaVh6b3FDRHYzSldLbnZnMERYQitwemUySjdnVDIrQWFienN4cFN3N0hxTApkMXpmWDF0T2Nx\n" +
           "cWV5b25DL1ZRQkIyZXJaNDRlVWdpVDIvSUJpMlJCRU1aaEwwVWlSZkJzaWdxRmczdHFMMHp6ClEy\n" +
-          "SkdqUFd0YkM1ZDF5cEk0dHRVbDFpZ1JROSsrblI1cE55K3NGZXExTCs2T1VPVWtadVZwNHhES2dI\n" +
+          "SkdqUFd0YkM1ZDF5cEk0dHRVbDFpZ1JROSsrblI1cE55K3NGZXExTEs2T1VPVWtadVZwNHhES2dI\n" +
           "MjlkS0cKdFBCQmg1RVJBb0dCQU8yTForRnVmaU5RTnIzWXJrZTcyQ3BtWUFhdnk0MXhBUjJPazFn\n" +
           "TUJDV01sSHhURlIxdgpVaGVPZ01yaGIxanBiTlJhYWwyc3Z4TVg4alRLSlkvcldJWkVLeWROUm9K\n" +
           "QXB2eGZ0UXFDTkZRWFNESy9XWWVsCm9mQXpNK2xCQVBid3BaR1RZZmNjSGVRcUtxQURGb0xqbWg1\n" +
-          "L002YkcwMTBwOU1RaStWVERBVysvQW9HQkFNUm8KMFRiTS9wLzNCTE9WTFUyS2NUQVFFV0pwVzlj\n" +
+          "T082YkcwMTBwOU1RaStWVERBVysvQW9HQkFNUm8KMFRiTS9wLzNCTE9WTFUyS2NUQVFFV0pwVzlj\n" +
           "bkJjNW1rNzA0cW9SbjhUelJtdnhlVlRXQy9aSGNwNWFYc0s5RApnUFhYenU1bUZPQnhxNXZWNzFa\n" +
           "UkJGa2NmOGw2Wmg2ZFVFTHptSmt4Q2NJaEd3M0hidkxtYitSeHQrcFRDbU9NCklyS2lOZWJxS3Zt\n" +
           "S3kyUzdPMzJIOThvRUVhRHRNbjMydmowS1RMU1ZBb0dBUDJNRHhWUUd0TVdpMWVZTUczZzAKcHB2\n" +
@@ -196,16 +183,12 @@ describe("tip", () => {
 
     appPort = appContainer.getMappedPort(probotPort);
 
-    rococoClient = createClient(getWsProvider(`ws://localhost:${rococoContainer.getMappedPort(9945)}`));
-    rococoApi = rococoClient.getTypedApi(rococo);
-
     westendClient = createClient(getWsProvider(`ws://localhost:${westendContainer.getMappedPort(9945)}`));
     westendApi = westendClient.getTypedApi(westend);
 
     // ensure that the connection works
-    await Promise.all([rococoApi.query.System.Number.getValue(), westendApi.query.System.Number.getValue()]);
+    await westendApi.query.System.Number.getValue();
 
-    assert(Number(await getUserBalance(rococoApi, tipperAccount)) > 0);
     assert(Number(await getUserBalance(westendApi, tipperAccount)) > 0);
 
     const appInstallations = fixtures.github.getAppInstallationsPayload([
@@ -261,12 +244,11 @@ describe("tip", () => {
   });
 
   afterAll(async () => {
-    rococoClient?.destroy();
     westendClient?.destroy();
-    await Promise.all([rococoContainer?.stop(), westendContainer?.stop(), gitHub?.stop(), appContainer?.stop()]);
+    await Promise.all([westendContainer?.stop(), gitHub?.stop(), appContainer?.stop()]);
   });
 
-  describe.each([networks])("%s", (network: "rococo" | "westend") => {
+  describe.each([networks])("%s", (network: "westend") => {
     let contributorAddress: string;
     beforeEach(async () => {
       contributorAddress = randomAddress();
@@ -285,8 +267,7 @@ describe("tip", () => {
     test.each(tipSizes)("tips a user (%s)", async (tipSize) => {
       await expectTipperMembership();
 
-      const api = network === "rococo" ? rococoApi : westendApi;
-      const nextFreeReferendumId = await api.query.Referenda.ReferendumCount.getValue();
+      const nextFreeReferendumId = await westendApi.query.Referenda.ReferendumCount.getValue();
 
       const successEndpoint = await gitHub
         .forPost("/repos/paritytech-stg/testre/issues/4/comments")
@@ -317,9 +298,11 @@ describe("tip", () => {
       expect(body.body).toContain(`Referendum number: **${nextFreeReferendumId}**`);
 
       const referendum = (await firstValueFrom(
-        (api.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId) as Observable<{ type: string }>).pipe(
-          filter((v: unknown) => v !== undefined),
-        ),
+        (
+          westendApi.query.Referenda.ReferendumInfoFor.watchValue(nextFreeReferendumId) as Observable<{
+            type: string;
+          }>
+        ).pipe(filter((v: unknown) => v !== undefined)),
       )) as { type: string };
 
       expect(referendum.type).toEqual("Ongoing");
@@ -350,10 +333,7 @@ describe("tip", () => {
       await until(async () => !(await successEndpoint.isPending()), 500, 50);
       const [request] = await successEndpoint.getSeenRequests();
       const body = (await request.body.getJson()) as { body: string };
-      const currency = network === "rococo" ? "ROC" : "WND";
-      expect(body.body).toContain(
-        `The requested tip value of '1000000 ${currency}' exceeds the BigTipper track maximum`,
-      );
+      expect(body.body).toContain(`The requested tip value of '1000000 WND' exceeds the BigTipper track maximum`);
     });
 
     test(`tip link in ${network}`, async () => {
@@ -390,8 +370,7 @@ describe("tip", () => {
       const extrinsicHex = body.body.match(/decode\/(\w+)/)?.[1];
       expect(extrinsicHex).toBeDefined();
 
-      const api = network === "rococo" ? rococoApi : westendApi;
-      const tx = await api.txFromCallData(Binary.fromHex(extrinsicHex!));
+      const tx = await westendApi.txFromCallData(Binary.fromHex(extrinsicHex!));
       expect(tx.decodedCall.type).toEqual("Referenda");
       expect(tx.decodedCall.value.type).toEqual("submit");
     });

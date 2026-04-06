@@ -16,7 +16,7 @@ Permission to send out tips is limited for a GitHub team, that's configured with
 ### Pull request body
 
 ```sh
-{kusama|polkadot|rococo|westend} address: <SS58 Address>
+{kusama|polkadot|westend} address: <SS58 Address>
 ```
 
 Followed by a _comment_ on said pull request
@@ -114,7 +114,7 @@ $ yarn start
 ### Create a PR and test it
 You'll need 2 gh users: contributor and maintainer (since it's not allowed for contributors to send a tip to themselves)
 
-- From contributor GH account: create a PR and add into PR description `rococo address: <contributor polkadot address>`
+- From contributor GH account: create a PR and add into PR description `westend address: <contributor polkadot address>`
 - From maintainer GH account: write `/tip small` in comments so the bot sends funds to <contributor polkadot address>
 
 ### Docker
@@ -134,9 +134,9 @@ $ docker run \
 
 ## End-to-end tests
 
-For the E2E tests, we need a modified Rococo node in a way that speeds up the referenda and treasury.
+For the E2E tests, we need a modified Westend node in a way that speeds up the referenda and treasury.
 
-### Preparing and running Rococo
+### Preparing and running Westend
 
 ```bash
 git clone https://github.com/paritytech/polkadot-sdk.git
@@ -144,7 +144,7 @@ cd polkadot-sdk
 git checkout polkadot-v1.15.0
 git apply ../polkadot.e2e.patch
 cargo build --release --locked --features=fast-runtime -p polkadot
-./target/release/polkadot --rpc-external --no-prometheus --no-telemetry --chain=rococo-dev --tmp --alice --execution Native --unsafe-force-node-key-generation --rpc-port 9902
+./target/release/polkadot --rpc-external --no-prometheus --no-telemetry --chain=westend-dev --tmp --alice --execution Native --unsafe-force-node-key-generation --rpc-port 9903
 ```
 
 You might need to fund the treasury (`13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB`) if it is broke.

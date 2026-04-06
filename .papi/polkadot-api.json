@@ -7,7 +7,7 @@
       "chain": "polkadot_asset_hub",
       "metadata": ".papi/metadata/polkadot.scale",
       "genesis": "0x68d56f15f85d3136970ec16946040bc1752654e906147f7e43e9d539d7c3de2f",
-      "codeHash": "0xc9a41123542a13aefbf7f98350fd1284c9eb403385697412d697fc1c955abb65"
+      "codeHash": "0x04fa38c2fb117fbd73302c23b339ef18c4f3a200a0b487803208bf279161f1d7"
     },
     "kusama": {
       "wsUrl": "wss://kusama-asset-hub-rpc.polkadot.io",
@@ -21,14 +21,7 @@
       "chain": "westend2_asset_hub",
       "metadata": ".papi/metadata/westend.scale",
       "genesis": "0x67f9723393ef76214df0118c34bbbd3dbebc8ed46a10973a8c969d48fe7598c9",
-      "codeHash": "0xd195ae6fe231497569f212f12ae64eee3c2c8b7525f2aae65535149a9b1386e7"
-    },
-    "rococo": {
-      "wsUrl": "wss://rococo-rpc.polkadot.io",
-      "chain": "rococo_v2_2",
-      "metadata": ".papi/metadata/rococo.scale",
-      "genesis": "0x6408de7737c59c238890533af25896a2c20608d8b380bb01029acb392781063e",
-      "codeHash": "0xf645d939be087a8a76ade94d3e28f51f0c4b70abfc0db8b302e2372590b9e31a"
+      "codeHash": "0x685e6945aa317c15be8a3331b94b1e909ea5d9148a501ac53edc2a0b02fa1a7b"
     }
   }
 }

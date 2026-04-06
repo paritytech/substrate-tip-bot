@@ -18,7 +18,6 @@ const validTipSizes: { [key: string]: TipSize } = { small: "small", medium: "med
 const validNetworks: { [key: string]: TipNetwork } = {
   polkadot: "polkadot",
   kusama: "kusama",
-  rococo: "rococo",
   westend: "westend",
 } as const;
 
