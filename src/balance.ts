@@ -14,7 +14,7 @@ import { TipNetwork } from "./types";
  * After that, the balances (including local ones) will be updated after a tip is executed.
  */
 export const updateAllBalances = async (publicKey: Uint8Array, log: Probot["log"]): Promise<void> => {
-  const networks: TipNetwork[] = ["kusama", "polkadot", "rococo", "westend"];
+  const networks: TipNetwork[] = ["kusama", "polkadot", "westend"];
   for (const network of networks) {
     log.info(`Checking tip bot balance on ${network}`);
     try {

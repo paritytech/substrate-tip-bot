@@ -4,7 +4,7 @@ from the point of creating a tip,
 all the way to completing the referendum.
  */
 
-import { ConvictionVotingVoteAccountVote, MultiAddress, rococo } from "@polkadot-api/descriptors";
+import { ConvictionVotingVoteAccountVote, MultiAddress, westend } from "@polkadot-api/descriptors";
 import { DEV_PHRASE } from "@polkadot-labs/hdkd-helpers";
 import assert from "assert";
 import { createClient, PolkadotClient, PolkadotSigner, TypedApi } from "polkadot-api";
@@ -12,7 +12,7 @@ import { getWsProvider } from "polkadot-api/ws-provider/node";
 import { filter, firstValueFrom, mergeMap, pairwise, race, skip, throwError } from "rxjs";
 
 import { generateSigner } from "./bot-initialize";
-import { getWsUrl, rococoConstants } from "./chain-config";
+import { getWsUrl, westendConstants } from "./chain-config";
 import { randomAddress } from "./testUtil";
 import { tipUser } from "./tip";
 import { State, TipRequest } from "./types";
@@ -23,10 +23,10 @@ logMock.error = console.error.bind(console);
 const tipperAccount = "14E5nqKAp3oAJcmzgZhUD2RcptBeUBScxKHgJKU4HPNcKVf3"; // Bob
 const treasuryAccount = "13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB"; // https://wiki.polkadot.network/docs/learn-account-advanced#system-accounts
 
-const network = "rococo";
+const network = "westend";
 const wsUrl = getWsUrl(network);
 
-const expectBalanceIncrease = async (useraddress: string, api: TypedApi<typeof rococo>, blocksNum: number) =>
+const expectBalanceIncrease = async (useraddress: string, api: TypedApi<typeof westend>, blocksNum: number) =>
   await firstValueFrom(
     race([
       api.query.System.Account.watchValue(useraddress, "best")
@@ -43,14 +43,14 @@ const expectBalanceIncrease = async (useraddress: string, api: TypedApi<typeof r
 
 describe("E2E opengov tip", () => {
   let state: State;
-  let api: TypedApi<typeof rococo>;
+  let api: TypedApi<typeof westend>;
   let alice: PolkadotSigner;
   let client: PolkadotClient;
 
   beforeAll(() => {
     const jsonRpcProvider = getWsProvider(wsUrl);
     client = createClient(jsonRpcProvider);
-    api = client.getTypedApi(rococo);
+    api = client.getTypedApi(westend);
   });
 
   afterAll(() => {
@@ -67,7 +67,7 @@ describe("E2E opengov tip", () => {
       await client.getFinalizedBlock();
     } catch (e) {
       console.log(
-        `For these integrations tests, we're expecting local Rococo on ${wsUrl}. Please refer to the Readme.`,
+        `For these integrations tests, we're expecting local Westend on ${wsUrl}. Please refer to the Readme.`,
       );
     }
 
@@ -124,8 +124,8 @@ describe("E2E opengov tip", () => {
     // Waiting for the referendum voting, enactment, and treasury spend period.
     await expectBalanceIncrease(tipRequest.contributor.account.address, api, 9);
 
-    // At the end, the balance of the contributor should increase by the KSM small tip amount.
-    const expectedTip = BigInt(rococoConstants.namedTips.small) * 10n ** BigInt(rococoConstants.decimals);
+    // At the end, the balance of the contributor should increase by the WND small tip amount.
+    const expectedTip = BigInt(westendConstants.namedTips.small) * 10n ** BigInt(westendConstants.decimals);
     expect(await getUserBalance(tipRequest.contributor.account.address)).toEqual(expectedTip);
   });
 });

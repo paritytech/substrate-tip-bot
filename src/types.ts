@@ -5,7 +5,7 @@ import { Probot } from "probot";
 
 import { Polkassembly } from "./polkassembly/polkassembly";
 
-export type TipNetwork = "kusama" | "polkadot" | "rococo" | "westend";
+export type TipNetwork = "kusama" | "polkadot" | "westend";
 
 export type TipSize = "small" | "medium" | "large";
 

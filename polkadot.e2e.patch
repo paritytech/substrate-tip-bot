@@ -1,75 +1,15 @@
-diff --git a/polkadot/runtime/rococo/src/governance/mod.rs b/polkadot/runtime/rococo/src/governance/mod.rs
-index 4cd7739..08a43de 100644
---- a/polkadot/runtime/rococo/src/governance/mod.rs
-+++ b/polkadot/runtime/rococo/src/governance/mod.rs
-@@ -35,7 +35,7 @@ mod fellowship;
- pub use fellowship::{FellowshipCollectiveInstance, FellowshipReferendaInstance};
- 
- parameter_types! {
--	pub const VoteLockingPeriod: BlockNumber = 7 * DAYS;
-+	pub const VoteLockingPeriod: BlockNumber = 1;
- }
- 
- impl pallet_conviction_voting::Config for Runtime {
-diff --git a/polkadot/runtime/rococo/src/governance/tracks.rs b/polkadot/runtime/rococo/src/governance/tracks.rs
-index 62229ff..70601da 100644
---- a/polkadot/runtime/rococo/src/governance/tracks.rs
-+++ b/polkadot/runtime/rococo/src/governance/tracks.rs
-@@ -215,10 +215,10 @@ const TRACKS_DATA: [pallet_referenda::Track<u16, Balance, BlockNumber>; 15] = [
- 			name: s("small_tipper"),
- 			max_deciding: 200,
- 			decision_deposit: 1 * 3 * CENTS,
--			prepare_period: 1 * MINUTES,
--			decision_period: 14 * MINUTES,
--			confirm_period: 4 * MINUTES,
--			min_enactment_period: 1 * MINUTES,
-+			prepare_period: 1,
-+			decision_period: 1,
-+			confirm_period: 1,
-+			min_enactment_period: 1,
- 			min_approval: APP_SMALL_TIPPER,
- 			min_support: SUP_SMALL_TIPPER,
- 		},
-@@ -229,10 +229,10 @@ const TRACKS_DATA: [pallet_referenda::Track<u16, Balance, BlockNumber>; 15] = [
- 			name: s("big_tipper"),
- 			max_deciding: 100,
- 			decision_deposit: 10 * 3 * CENTS,
--			prepare_period: 4 * MINUTES,
--			decision_period: 14 * MINUTES,
--			confirm_period: 12 * MINUTES,
--			min_enactment_period: 3 * MINUTES,
-+			prepare_period: 1,
-+			decision_period: 1,
-+			confirm_period: 1,
-+			min_enactment_period: 1,
- 			min_approval: APP_BIG_TIPPER,
- 			min_support: SUP_BIG_TIPPER,
- 		},
-diff --git a/polkadot/runtime/rococo/src/lib.rs b/polkadot/runtime/rococo/src/lib.rs
-index 58593ff..1705eab 100644
---- a/polkadot/runtime/rococo/src/lib.rs
-+++ b/polkadot/runtime/rococo/src/lib.rs
-@@ -507,7 +507,7 @@ parameter_types! {
- }
- 
- parameter_types! {
--	pub const SpendPeriod: BlockNumber = 6 * DAYS;
-+	pub const SpendPeriod: BlockNumber = 1;
- 	pub const Burn: Permill = Permill::from_perthousand(2);
- 	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
- 	pub const PayoutSpendPeriod: BlockNumber = 30 * DAYS;
 diff --git a/polkadot/runtime/westend/src/governance/mod.rs b/polkadot/runtime/westend/src/governance/mod.rs
 index 50d29bc..1e86f84 100644
 --- a/polkadot/runtime/westend/src/governance/mod.rs
 +++ b/polkadot/runtime/westend/src/governance/mod.rs
 @@ -32,7 +32,7 @@ mod tracks;
  pub use tracks::TracksInfo;
- 
+
  parameter_types! {
 -	pub const VoteLockingPeriod: BlockNumber = 7 * DAYS;
 +	pub const VoteLockingPeriod: BlockNumber = 1;
  }
- 
+
  impl pallet_conviction_voting::Config for Runtime {
 diff --git a/polkadot/runtime/westend/src/governance/tracks.rs b/polkadot/runtime/westend/src/governance/tracks.rs
 index 62229ff..70601da 100644
@@ -111,7 +51,7 @@ index 9c0db32..8b06e0b 100644
 +++ b/polkadot/runtime/westend/src/lib.rs
 @@ -898,7 +898,7 @@ impl pallet_fast_unstake::Config for Runtime {
  }
- 
+
  parameter_types! {
 -	pub const SpendPeriod: BlockNumber = 6 * DAYS;
 +	pub const SpendPeriod: BlockNumber = 1;
